@@ -57,8 +57,10 @@ input, not hardcoded — so this is a redeploy, not a port.
 
 1. Fund a deployer with ETH on Base.
 
-2. Write `base.env` (gitignored) — same variables as the Celo deploy, with Base
-   values. Verified on-chain via `eth_call` against `https://mainnet.base.org`:
+2. Write `apps/contracts/.env` (gitignored) — copy `base.env.example` to it.
+   Foundry auto-loads `.env` from the project root, so no `source` is needed;
+   verified by running the dry run below with every one of those variables
+   explicitly unset in the shell. Verified on-chain via `eth_call` against `https://mainnet.base.org`:
 
    **`apps/contracts/base.env.example` is filled in and ready to copy.** Its
    values were read off the live Celo world proxy with `cast call`, not
@@ -77,10 +79,18 @@ input, not hardcoded — so this is a redeploy, not a port.
 
    Accepted tokens, both verified on Base via `eth_call` (symbol + decimals):
 
-   | Token | Address | decimals |
-   |---|---|---|
-   | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
-   | USDT | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` | 6 |
+   | Token | Address | decimals | in Nimiq Pay's token list? |
+   |---|---|---|---|
+   | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 | **yes**, byte-identical |
+   | USDT | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` | 6 | **no** |
+
+   **Recommendation: launch USDC-only.** Base's entry in Nimiq's well-known
+   token list has USDC, USDbC, DAI and WETH — no USDT — so a buyer holding Base
+   USDT likely cannot see it in the wallet UI even though the contract would
+   accept it. Base USDT supply is also ~23M against USDC's ~4.3B, roughly 185x
+   smaller. `addAcceptedToken()` is an owner call, so USDT can be added later
+   without a redeploy, once its address is confirmed against Tether's own
+   published Base deployment rather than only against its on-chain `symbol()`.
 
    Celo also accepted 18-decimal USDm. Base has no equivalent, and **nothing on
    Base is 18-decimal** — any code defaulting to 18 is wrong here (this was a
@@ -88,13 +98,25 @@ input, not hardcoded — so this is a redeploy, not a port.
 
 3. Deploy the world map first, then each continent with its mask:
 
+   Dry-run first — no `--broadcast` means nothing is sent:
+
    ```sh
-   source base.env
+   forge script script/Deploy.s.sol --rpc-url base --sender <deployer-address>
+   ```
+
+   Then broadcast. The signer never goes in the env file; it comes from an
+   encrypted keystore (`cast wallet import <name> --interactive`) or a Ledger:
+
+   ```sh
    forge script script/Deploy.s.sol --broadcast --rpc-url base --account <keystore>
    # continents:
    LAND_MASK_PATH=map/continents/africa.json \
      forge script script/Deploy.s.sol --broadcast --rpc-url base --account <keystore>
    ```
+
+   Whichever address signs becomes the contract `owner` — it holds UUPS upgrade
+   authority and the treasury. Decide whether that should be a multisig before
+   broadcasting; it is far easier than transferring ownership afterwards.
 
 4. Wire the proxy addresses into the frontend. Until they are in the registry
    source, use the override env var (comma-separated `id:address`):
