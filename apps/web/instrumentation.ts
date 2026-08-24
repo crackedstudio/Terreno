@@ -42,8 +42,8 @@ export async function register() {
   const { resourceFromAttributes } = await import('@opentelemetry/resources')
 
   const resource = resourceFromAttributes({
-    'service.name': 'mondeto-web',
-    'service.namespace': 'mondeto',
+    'service.name': 'terreno-web',
+    'service.namespace': 'terreno',
     'deployment.environment':
       process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? 'development',
   })

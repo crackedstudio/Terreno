@@ -14,8 +14,8 @@ import {
   shouldRetainRawUserAgent,
 } from "@/lib/userAgentInsight"
 
-const APP_URL = 'https://www.mondeto.app'
-const TITLE = 'Mondeto — every pixel is up for grabs'
+const APP_URL = 'https://www.terreno.app'
+const TITLE = 'Terreno — every pixel is up for grabs'
 const DESCRIPTION = 'Own the world, one pixel at a time. Live on Nimiq Pay, built on Base.'
 // Default share card for links to the app itself; per-share cards come from
 // the /s route's generateMetadata (see app/s/page.tsx).
@@ -23,17 +23,17 @@ const DEFAULT_OG_IMAGE = `${APP_URL}/api/og?k=invite`
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
-  title: 'Mondeto',
+  title: 'Terreno',
   description: DESCRIPTION,
   icons: {
-    icon: '/brand/logo/Mondeto_Globe_Green.svg',
+    icon: '/brand/logo/Terreno_Globe_Green.svg',
     apple: '/brand/logo/logo-256.png',
   },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
     url: APP_URL,
-    siteName: 'Mondeto',
+    siteName: 'Terreno',
     images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {

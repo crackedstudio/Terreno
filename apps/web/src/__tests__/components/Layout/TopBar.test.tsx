@@ -15,18 +15,18 @@ vi.mock('@/components/Layout/MapSwitcher', () => ({
 
 describe('TopBar', () => {
   it('renders the wordmark with the title as alt', () => {
-    render(<TopBar title="MONDETO" />)
-    expect(screen.getByAltText('MONDETO')).toBeInTheDocument()
+    render(<TopBar title="TERRENO" />)
+    expect(screen.getByAltText('TERRENO')).toBeInTheDocument()
   })
 
   it('renders ConnectButton', () => {
-    render(<TopBar title="MONDETO" />)
+    render(<TopBar title="TERRENO" />)
     expect(screen.getByText('Connect')).toBeInTheDocument()
   })
 
   it('renders children', () => {
     render(
-      <TopBar title="MONDETO">
+      <TopBar title="TERRENO">
         <span>child element</span>
       </TopBar>
     )

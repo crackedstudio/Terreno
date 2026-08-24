@@ -39,7 +39,7 @@ export default function ShareRedirect({
         letterSpacing: 2,
       }}
     >
-      ENTERING MONDETO&hellip;
+      ENTERING TERRENO&hellip;
     </div>
   )
 }

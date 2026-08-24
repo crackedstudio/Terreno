@@ -1,5 +1,5 @@
 /**
- * Mondeto — map assignment & leaderboards
+ * Terreno — map assignment & leaderboards
  *
  * Dependency-free domain types. Pixel/price data is expected to be hydrated
  * from the on-chain contracts upstream (one contract per map). This module is

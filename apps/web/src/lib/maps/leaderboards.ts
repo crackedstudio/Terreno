@@ -1,5 +1,5 @@
 /**
- * Mondeto — per-map leaderboards
+ * Terreno — per-map leaderboards
  *
  * Three boards per map (auto-assign model => leaderboards must be per-map):
  *   1. mostPixels            — count of land pixels owned

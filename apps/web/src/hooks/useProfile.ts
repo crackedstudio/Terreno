@@ -12,7 +12,6 @@ import { base } from 'viem/chains'
 import { TERRENO_ABI } from '@/lib/contract'
 import { uint24ToHex, hexToUint24, ownerDefaultColor } from '@/lib/colorUtils'
 import { decodeBytes } from '@/lib/decodeBytes'
-import { getAttributionSuffix } from '@/lib/attribution'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { generateUsername } from '@/lib/username'
 import { isUserRejectedError, GENERIC_RETRY_MESSAGE } from '@/lib/buyErrors'
@@ -34,7 +33,7 @@ const defaultColorFor = ownerDefaultColor
 // on the map (own pixels) the moment it's picked — before the on-chain save
 // confirms, and across page navigations where each `useProfile` instance is
 // separate. On-chain color still overrides this for display once saved.
-const PICKED_COLOR_KEY = 'mondeto-picked-color'
+const PICKED_COLOR_KEY = 'terreno-picked-color'
 
 function readPickedColor(address: string | undefined): string | null {
   if (!address || typeof window === 'undefined') return null
@@ -207,7 +206,6 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
         abi: TERRENO_ABI,
         functionName: 'updateProfile',
         args,
-        dataSuffix: getAttributionSuffix(),
         ...(gas ? { gas } : {}),
       })
 

@@ -49,8 +49,8 @@ export default function ProfilePage() {
   // setUrl is left wired but unused so existing useProfile callers keep
   // their shape; updateProfile is called below with an empty string for url.
   const { revealedMaps, currentMapId } = useMaps()
-  const mondetoContract = getMapContractById(currentMapId)
-  const mondetoAddress = mondetoContract.address
+  const terrenoContract = getMapContractById(currentMapId)
+  const terrenoAddress = terrenoContract.address
   const { rulers } = useMapRulers()
 
   // Maps where the connected wallet currently owns the most land — the
@@ -104,7 +104,7 @@ export default function ProfilePage() {
     // server response is cached 60s server-side, so revalidating every view
     // is cheap. Cache key is versioned (v2) so poisoned v1 entries are ignored.
     async function fetchPnL() {
-      const CACHE_KEY = `mondeto-pnl-v2:${mondetoAddress.toLowerCase()}:${addrStr!.toLowerCase()}`
+      const CACHE_KEY = `terreno-pnl-v2:${terrenoAddress.toLowerCase()}:${addrStr!.toLowerCase()}`
 
       try {
         const cached = localStorage.getItem(CACHE_KEY)
@@ -153,7 +153,7 @@ export default function ProfilePage() {
 
     setPnlReady(false)
     fetchPnL()
-  }, [addrStr, mondetoAddress, currentMapId])
+  }, [addrStr, terrenoAddress, currentMapId])
 
   // Owned-pixel portfolio — PIXELS, LAND VALUE, and RANK, all keyed to what the
   // wallet actually holds across ALL active (revealed) maps rather than the map
@@ -297,7 +297,7 @@ export default function ProfilePage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 60 }}>
-      <TopBar title="MONDETO" />
+      <TopBar title="TERRENO" />
       <div
         style={{
           flex: 1,
@@ -435,7 +435,7 @@ export default function ProfilePage() {
               params={{
                 amount: formatUSDT(earned),
                 mapId: currentMapId,
-                mapName: mondetoContract.displayName,
+                mapName: terrenoContract.displayName,
                 ref: addrStr.toLowerCase(),
               }}
             />
@@ -546,7 +546,7 @@ export default function ProfilePage() {
                     value: String(pixelCount),
                     ruler: rank === 1,
                     mapId: currentMapId,
-                    mapName: mondetoContract.displayName,
+                    mapName: terrenoContract.displayName,
                     ref: addrStr.toLowerCase(),
                     color: (color || '').replace('#', ''),
                   }}

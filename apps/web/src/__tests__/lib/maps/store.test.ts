@@ -20,7 +20,7 @@ describe('memoryAssignmentStore', () => {
   it('persists across simulated reload via localStorage', () => {
     memoryAssignmentStore.set('0xpersist', 5)
     // Reading direct from storage proves the value left the in-memory Map.
-    const raw = window.localStorage.getItem('mondeto-home:0xpersist')
+    const raw = window.localStorage.getItem('terreno-home:0xpersist')
     expect(raw).toBe('5')
   })
 

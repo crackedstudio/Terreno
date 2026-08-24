@@ -16,7 +16,7 @@ const baseRpcUrl = process.env.NEXT_PUBLIC_BASE_RPC_URL
 /**
  * Base mainnet read transport with fallbacks.
  *
- * The failover rationale carried over from the Celo/Forno setup: a single
+ * The failover rationale carried over from the previous chain's setup: a single
  * provider that throttles or times out for users on shared VPN egress IPs
  * must not take the map / leaderboard reads down. viem's `fallback()`
  * rotates to the next transport when the active one fails.

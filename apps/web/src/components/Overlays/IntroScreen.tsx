@@ -179,14 +179,14 @@ export default function IntroScreen({ inline = false }: { inline?: boolean } = {
       setVisible(true)
       return
     }
-    const seen = localStorage.getItem('mondeto-intro-seen')
+    const seen = localStorage.getItem('terreno-intro-seen')
     if (!seen) setVisible(true)
   }, [inline])
 
   if (!visible) return null
 
   const dismiss = () => {
-    localStorage.setItem('mondeto-intro-seen', '1')
+    localStorage.setItem('terreno-intro-seen', '1')
     track('intro_completed', { lastSlideIndex: index })
     setVisible(false)
   }

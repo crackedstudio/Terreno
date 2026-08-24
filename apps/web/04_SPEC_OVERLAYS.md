@@ -1,4 +1,4 @@
-# Mondeto — Screen Spec: Overlays
+# Terreno — Screen Spec: Overlays
 # Feed to: Agent C (drawers, panels, buy flow)
 # Depends on: 01_DESIGN_TOKENS.md, 02_SPEC_MAP_HEATMAP.md
 
@@ -187,10 +187,10 @@ Step 3: Wait for tx confirmation
   → "confirmed" as active step briefly, then success state
 ```
 
-> ⚠️ OPEN QUESTION: In MiniPay, wallet confirmation happens in the MiniPay UI overlay.
-> The user will see the MiniPay approval sheet before the tx fires.
-> Our step 1 (approve) triggers MiniPay sheet → user confirms → then step 2 triggers
-> another MiniPay sheet → user confirms again.
+> ⚠️ OPEN QUESTION: In Nimiq Pay, wallet confirmation happens in the Nimiq Pay UI overlay.
+> The user will see the Nimiq Pay approval sheet before the tx fires.
+> Our step 1 (approve) triggers Nimiq Pay sheet → user confirms → then step 2 triggers
+> another Nimiq Pay sheet → user confirms again.
 > Two wallet popups is not ideal UX. Consider: use permit2 or pre-approve for larger amount.
 > Hackathon recommendation: accept the two-step UX, explain it with step labels.
 

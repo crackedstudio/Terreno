@@ -59,7 +59,7 @@ function seedDemoData() {
   const rng = seededRng(42)
 
   const demoOwners = [
-    { addr: '0x1111111111111111111111111111111111111111', label: 'CeloFan', color: '#3498db', url: 'https://celo.org' },
+    { addr: '0x1111111111111111111111111111111111111111', label: 'PixelFan', color: '#3498db', url: 'https://base.org' },
     { addr: '0x2222222222222222222222222222222222222222', label: 'ETHGlobal', color: '#9b59b6', url: 'https://ethglobal.com' },
     { addr: '0x3333333333333333333333333333333333333333', label: 'Nike', color: '#e74c3c', url: 'https://nike.com' },
     { addr: '0x4444444444444444444444444444444444444444', label: 'Vitalik', color: '#2ecc71', url: '' },
@@ -105,7 +105,7 @@ function seedDemoData() {
   // Extra scattered owners
   const extraOwners = [
     { addr: '0x5555555555555555555555555555555555555555', label: 'Player5', color: '#e67e22', url: 'https://player5.xyz' },
-    { addr: '0x6666666666666666666666666666666666666666', label: 'Celo', color: '#2ecc71', url: 'https://celo.org' },
+    { addr: '0x6666666666666666666666666666666666666666', label: 'Based', color: '#2ecc71', url: 'https://base.org' },
     { addr: '0x7777777777777777777777777777777777777777', label: 'Builder7', color: '#1abc9c', url: '' },
     { addr: '0x8888888888888888888888888888888888888888', label: 'DAOhaus', color: '#00bcd4', url: 'https://daohaus.club' },
     { addr: '0x9999999999999999999999999999999999999999', label: 'Aave', color: '#9b59b6', url: 'https://aave.com' },

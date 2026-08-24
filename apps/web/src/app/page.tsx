@@ -50,7 +50,7 @@ export default function Home() {
 
   const { currentMapId, setCurrentMapId } = useMaps()
   const mapMeta = useCurrentMapMeta()
-  const mondetoAddress = mapMeta.address
+  const terrenoAddress = mapMeta.address
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -135,7 +135,7 @@ export default function Home() {
     if (publicClient) {
       load()
     }
-  }, [publicClient, load, mondetoAddress])
+  }, [publicClient, load, terrenoAddress])
 
   // Auto-zoom to the player's region on first visit. Uses Vercel's
   // IP-derived coordinates via /api/geo instead of the browser
@@ -147,7 +147,7 @@ export default function Home() {
     if (typeof window === 'undefined') return
 
     try {
-      const alreadyZoomed = sessionStorage.getItem('mondeto-geo-zoomed')
+      const alreadyZoomed = sessionStorage.getItem('terreno-geo-zoomed')
       if (alreadyZoomed) {
         return
       }
@@ -197,7 +197,7 @@ export default function Home() {
             // (We previously bumped to 18 on mobile but it overshot.)
             ref.zoomToPixel(targetId, 10)
             try {
-              sessionStorage.setItem('mondeto-geo-zoomed', '1')
+              sessionStorage.setItem('terreno-geo-zoomed', '1')
             } catch {}
             return
           }
@@ -241,7 +241,7 @@ export default function Home() {
         const results = await Promise.allSettled(
           batch.map(addr =>
             publicClient!.readContract({
-              address: mondetoAddress,
+              address: terrenoAddress,
               abi: TERRENO_ABI,
               functionName: 'profiles',
               args: [addr as `0x${string}`],
@@ -309,7 +309,7 @@ export default function Home() {
       hasZoomedPast4xRef.current = true
     }
     // Persist zoom for navigation back
-    try { sessionStorage.setItem('mondeto-zoom', String(scale)) } catch {}
+    try { sessionStorage.setItem('terreno-zoom', String(scale)) } catch {}
   }, [])
 
   const effectiveAddr = addrStr || '0xYOUR000000000000000000000000000000000001'
@@ -430,7 +430,7 @@ export default function Home() {
       const results = await Promise.allSettled(
         [...owners].map(addr =>
           publicClient.readContract({
-            address: mondetoAddress,
+            address: terrenoAddress,
             abi: TERRENO_ABI,
             functionName: 'profiles',
             args: [addr as `0x${string}`],
@@ -467,7 +467,7 @@ export default function Home() {
       }}
     >
       {/* Top bar */}
-      <TopBar title="MONDETO" />
+      <TopBar title="TERRENO" />
 
       {/* HEATMAP / MY LAND / DEALS toggle — sits under the TopBar on the lime band */}
       <div
@@ -642,7 +642,7 @@ export default function Home() {
         </div>
       )}
       <CampaignBanner />
-      {/* Browser-only — points users with empty Celo wallets at Squid to
+      {/* Browser-only — points users with empty Base wallets at Squid to
           bridge in. The component self-hides in MiniPay (where the in-drawer
           TOP UP BALANCE deeplink to MiniPay Add Cash handles the same case). */}
       <BridgeBanner />

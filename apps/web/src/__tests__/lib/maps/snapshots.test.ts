@@ -5,7 +5,7 @@ import {
 } from '@/lib/maps/snapshots'
 import type { MapSnapshot } from '@/lib/maps/types'
 
-const CACHE_KEY = 'mondeto:global-snapshots:v1'
+const CACHE_KEY = 'terreno:global-snapshots:v1'
 
 const SNAPSHOTS: MapSnapshot[] = [
   {

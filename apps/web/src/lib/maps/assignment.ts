@@ -1,5 +1,5 @@
 /**
- * Mondeto — map assignment, referral placement & migration
+ * Terreno — map assignment, referral placement & migration
  *
  * Model: every wallet has ONE "home map" — where the UI drops them by default
  * and where load-balancing places them. The home pointer is:

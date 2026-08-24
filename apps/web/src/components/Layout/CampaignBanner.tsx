@@ -31,7 +31,7 @@ export default function CampaignBanner() {
         setCampaign(data.campaign)
         try {
           setDismissed(
-            sessionStorage.getItem(`mondeto-campaign-dismissed-${data.campaign.id}`) === '1',
+            sessionStorage.getItem(`terreno-campaign-dismissed-${data.campaign.id}`) === '1',
           )
         } catch {}
       })
@@ -59,7 +59,7 @@ export default function CampaignBanner() {
     e.stopPropagation()
     setDismissed(true)
     try {
-      sessionStorage.setItem(`mondeto-campaign-dismissed-${campaign.id}`, '1')
+      sessionStorage.setItem(`terreno-campaign-dismissed-${campaign.id}`, '1')
     } catch {}
   }
 

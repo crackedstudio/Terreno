@@ -4,7 +4,7 @@ import { baseTransport } from '@/lib/chain'
 
 // Regression guard for the throttled-region outage (map + profile blank in
 // India, where the primary RPC was blocked behind Cloudflare). The incident
-// was on Celo/Forno; the failure mode is a property of any single primary
+// was on the previous chain; the failure mode is a property of any single primary
 // endpoint, so the guard carries over to Base unchanged. Client reads go
 // through baseTransport, so it must fail over FAST and across MULTIPLE
 // providers instead of stalling ~10s per read on a blocked primary.

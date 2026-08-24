@@ -36,7 +36,7 @@ const BRAND_LIME = '#A7FF05'
 // flipping tabs or maps doesn't re-hit the chain. Best-effort: any read/write
 // failure just falls through to a fresh multicall.
 const PROFILES_CACHE_TTL_MS = 30_000
-const profilesCacheKey = (addr: string) => `mondeto:profiles:v1:${addr.toLowerCase()}`
+const profilesCacheKey = (addr: string) => `terreno:profiles:v1:${addr.toLowerCase()}`
 
 function readProfilesCache(addr: string): Map<string, OwnerProfileData> | null {
   if (typeof window === 'undefined') return null
@@ -91,8 +91,8 @@ export default function RanksPage() {
   // until they tap a different map's chip, which parks an explicit override.
   const [override, setOverride] = useState<MapId | null>(null)
   const selectedMapId: MapId = override ?? currentMapId
-  const mondetoContract = getMapContractById(selectedMapId)
-  const mondetoAddress = mondetoContract.address
+  const terrenoContract = getMapContractById(selectedMapId)
+  const terrenoAddress = terrenoContract.address
   const [pixelData, setPixelData] = useState<PixelView[]>([])
   const [profilesMap, setProfilesMap] = useState<Map<string, OwnerProfileData>>(new Map())
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('AREA')
@@ -131,12 +131,12 @@ export default function RanksPage() {
       let data: PixelView[] = []
       try {
         if (publicClient) {
-          const { mask } = getMaskData(mondetoContract.slug)
+          const { mask } = getMaskData(terrenoContract.slug)
           data = await fetchAllPixelsFromContract(
             publicClient.readContract.bind(publicClient) as Parameters<typeof fetchAllPixelsFromContract>[0],
-            mondetoAddress,
-            mondetoContract.width,
-            mondetoContract.height,
+            terrenoAddress,
+            terrenoContract.width,
+            terrenoContract.height,
             mask,
           )
         }
@@ -151,7 +151,7 @@ export default function RanksPage() {
     return () => {
       cancelled = true
     }
-  }, [publicClient, mondetoAddress, mondetoContract.slug, mondetoContract.width, mondetoContract.height])
+  }, [publicClient, terrenoAddress, terrenoContract.slug, terrenoContract.width, terrenoContract.height])
 
   // Resolve owner profiles OFF the critical path. A single viem multicall
   // aggregates every owner into Multicall3 `aggregate3` calls (one round-trip of
@@ -172,7 +172,7 @@ export default function RanksPage() {
     if (uniqueOwners.size === 0) return
     const ownerArray = [...uniqueOwners]
 
-    const cached = readProfilesCache(mondetoAddress)
+    const cached = readProfilesCache(terrenoAddress)
     if (cached) {
       setProfilesMap(cached)
       return
@@ -184,7 +184,7 @@ export default function RanksPage() {
         const results = await client.multicall({
           allowFailure: true,
           contracts: ownerArray.map((addr) => ({
-            address: mondetoAddress,
+            address: terrenoAddress,
             abi: TERRENO_ABI,
             functionName: 'profiles',
             args: [addr as `0x${string}`],
@@ -207,13 +207,13 @@ export default function RanksPage() {
       }
       if (cancelled) return
       setProfilesMap(profiles)
-      writeProfilesCache(mondetoAddress, profiles)
+      writeProfilesCache(terrenoAddress, profiles)
     }
     resolveProfiles()
     return () => {
       cancelled = true
     }
-  }, [publicClient, pixelData, mondetoAddress])
+  }, [publicClient, pixelData, terrenoAddress])
 
   // The selected map's board, built from the pixelData loaded above.
   // `homeMapId` is the id that pixelData belongs to so the snapshot uses the
@@ -267,7 +267,7 @@ export default function RanksPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 60 }}>
-      <TopBar title="MONDETO" />
+      <TopBar title="TERRENO" />
       {showSelector && (
         <BoardSelector
           options={selectorOptions}
@@ -294,7 +294,7 @@ export default function RanksPage() {
               unit: bestBoard.s.entry.unit,
               board: bestBoard.board,
               mapId: selectedMapId,
-              mapName: mondetoContract.displayName,
+              mapName: terrenoContract.displayName,
               ref: address?.toLowerCase(),
               color: bestBoard.s.entry.color?.replace('#', ''),
             }}
@@ -329,7 +329,7 @@ export default function RanksPage() {
             }}
           >
             <img
-              src="/brand/mondeto-symbol.gif"
+              src="/brand/terreno-symbol.gif"
               alt=""
               width={72}
               height={72}

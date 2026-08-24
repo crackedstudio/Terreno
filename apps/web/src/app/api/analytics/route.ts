@@ -28,11 +28,13 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 // Base produces a block every 2s (OP-Stack fixed interval), so a day is 43,200
-// blocks and a week 302,400 — NOT the 86,400/604,800 carried over from Celo's
-// ~1s blocks. Measured, not assumed: blocks 50401276→50402136 on Base mainnet
-// spanned 1720s for 860 blocks, exactly 2.0 s/block. Leaving the Celo numbers
-// made every windowed figure on the public analytics page cover twice its
-// stated period — "24h" volume was really 48h, "7d" really 14d.
+// blocks and a week 302,400. Measured, not assumed: blocks 50401276→50402136
+// on Base mainnet spanned 1720s for 860 blocks, exactly 2.0 s/block.
+//
+// These constants were previously sized for a ~1s-block chain, which made every
+// windowed figure on the public analytics page cover twice its stated period —
+// "24h" volume was really 48h, "7d" really 14d. Derive from the block time; do
+// not hardcode a day's worth of blocks again.
 const BASE_BLOCK_SECONDS = 2n
 const BLOCKS_PER_DAY = 86_400n / BASE_BLOCK_SECONDS
 const BLOCKS_PER_WEEK = 604_800n / BASE_BLOCK_SECONDS

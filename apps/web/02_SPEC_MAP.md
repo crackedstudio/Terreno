@@ -1,4 +1,4 @@
-# Mondeto — Screen Spec: Map + Heatmap
+# Terreno — Screen Spec: Map + Heatmap
 # Feed to: Agent A (map canvas, zoom/pan, heatmap toggle)
 # Depends on: 01_DESIGN_TOKENS.md
 
@@ -12,7 +12,7 @@
 │ status bar (22px)        │
 ├─────────────────────────┤
 │ top bar (36px) FROSTED   │  ← position: absolute, z-index: 10
-│  MONDETO    [ heatmap ]  │
+│  TERRENO    [ heatmap ]  │
 ├─────────────────────────┤
 │                          │
 │   <canvas>               │  ← fills remaining height above nav
@@ -29,7 +29,7 @@
 - Height: 36px
 - Background: `rgba(250,247,242,0.82)` + `backdrop-filter: blur(12px)`
 - Border bottom: `0.5px solid rgba(200,190,175,0.4)`
-- Left: "MONDETO" — 11px, weight 500, letter-spacing 3px, color #2d2520
+- Left: "TERRENO" — 11px, weight 500, letter-spacing 3px, color #2d2520
 - Right: `[ heatmap ]` pill button
   - Font: 7px, letter-spacing 0.5px
   - Background: `rgba(200,190,175,0.25)`

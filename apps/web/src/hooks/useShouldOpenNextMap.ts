@@ -20,7 +20,7 @@ import { isLand } from '@/lib/landMask'
 const PIXEL_PRICE_USDT_DECIMALS = 6
 const PIXEL_PRICE_USDT_DIVISOR = 10 ** PIXEL_PRICE_USDT_DECIMALS
 
-const CACHE_KEY = 'mondeto-should-open-next-map-cache'
+const CACHE_KEY = 'terreno-should-open-next-map-cache'
 const CACHE_TTL_MS = 60_000
 
 const DEFAULT_THRESHOLD_USD = 2

@@ -6,7 +6,7 @@ import { GENERIC_RETRY_MESSAGE } from '@/lib/buyErrors'
 
 // Knob-driven doubles, hoisted above the vi.mock factories (which are
 // themselves hoisted). Every knob is reset in beforeEach so each test starts
-// from the same defaults: wallet on Celo, $1 live price, PRICE_DECIMALS=6,
+// from the same defaults: wallet on Base, $1 live price, PRICE_DECIMALS=6,
 // a $10 standing allowance (so the approve step is skipped unless a test
 // lowers it), gas estimates working, receipts succeeding.
 const h = vi.hoisted(() => {
@@ -288,9 +288,9 @@ describe('useBuyPixels spend-cap gates', () => {
 describe('useBuyPixels chain guard', () => {
   it('switches the wallet to Base — not the chain the contracts used to be on', async () => {
     // The assertion that would have caught the migration bug: the guard kept
-    // switching to Celo (42220) after the contracts moved to Base. Celo is not
+    // switching to the previous chain's id (42220) after the contracts moved to Base. It is not
     // in wagmiConfig.chains, so the switch could never succeed and every buy
-    // died at this guard with "Switch your wallet to the Celo network to buy."
+    // died at this guard with a "switch to the wrong network" error.
     h.account.chainId = 1 // any chain that is not Base
     const { result } = renderHook(() => useBuyPixels(0))
     await act(async () => {

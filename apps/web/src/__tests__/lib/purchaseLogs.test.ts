@@ -39,7 +39,7 @@ function windows(): Array<{ from: bigint; to: bigint }> {
 
 describe('scanPurchaseLogs chunking (regression guard for the silent-zero P&L/analytics bug)', () => {
   it('never requests a getLogs window wider than the RPC ~5k-block limit', async () => {
-    // The original code used 50k-block windows, which public Celo RPCs reject
+    // The original code used 50k-block windows, which those public RPCs rejected
     // (or partially answer) — every chunk failed and P&L/analytics silently
     // read $0. Every window must stay <= 5000 blocks so this can't regress.
     await scanPurchaseLogs(ADDR, 0n, 200_000n)
@@ -121,7 +121,7 @@ describe('estimateHistoryFromBlock', () => {
   })
 
   it('walks back seconds-since-first-sale plus the safety buffer', async () => {
-    // Celo L2 is ~1s/block: 50_000s since the first sale ≈ 50_000 blocks, plus
+    // On a ~1s/block chain: 50_000s since the first sale ≈ 50_000 blocks, plus
     // the 100_000-block safety margin → scan starts 150_000 blocks back.
     readContract.mockResolvedValue(1_754_950_000n)
     getBlock.mockResolvedValue({ timestamp: 1_755_000_000n })
@@ -230,7 +230,7 @@ describe('scanNormalizedPurchases', () => {
     readContract.mockImplementation((args: { functionName: string; args?: unknown[] }) => {
       const token = String((args.args as string[])[0]).toLowerCase()
       if (token === CUSD.toLowerCase()) return Promise.resolve([true, 18])
-      return Promise.reject(new Error('HTTP request failed. Status: 429. URL: https://forno.celo.org'))
+      return Promise.reject(new Error('HTTP request failed. Status: 429. URL: https://mainnet.base.org'))
     })
     getLogs.mockResolvedValue([
       purchaseLog({ blockNumber: 1n, logIndex: 0, token: USDC }),

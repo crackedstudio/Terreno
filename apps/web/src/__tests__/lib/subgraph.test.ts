@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 
 // Names the Base deployment — subgraphConfigured() fails closed on an
 // endpoint that does not identify as Base (see the test below).
-const URL = 'https://example.test/api/public/project_x/subgraphs/mondeto-base/1.0.0/gn'
+const URL = 'https://example.test/api/public/project_x/subgraphs/terreno-base/1.0.0/gn'
 
 /** Re-import the module with a controlled NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL. */
 async function load(url: string | undefined) {
@@ -41,11 +41,11 @@ describe('subgraphConfigured', () => {
   })
 
   it('is false for a subgraph that does not identify as Base (fails closed)', async () => {
-    // The migration's most damaging misconfiguration: the Celo subgraph is
+    // The migration's most damaging misconfiguration: the previous chain's subgraph is
     // still live and its schema is identical, so every query would succeed and
-    // serve Celo ownership and earnings against a Base map. Falling back to
-    // live reads is wrong-but-slow; serving Celo data is wrong-and-confident.
-    const m = await load('https://api.goldsky.com/api/public/x/subgraphs/mondeto/1.0.2/gn')
+    // serve the previous chain's ownership and earnings against a Base map. Falling back to
+    // live reads is wrong-but-slow; serving the wrong chain's data is wrong-and-confident.
+    const m = await load('https://api.goldsky.com/api/public/x/subgraphs/terreno/1.0.2/gn')
     expect(m.subgraphConfigured()).toBe(false)
   })
 })

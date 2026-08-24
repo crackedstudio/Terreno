@@ -1,4 +1,4 @@
-# Mondeto — Architecture + Component Map
+# Terreno — Architecture + Component Map
 # Feed to: All agents (read first before starting)
 # Depends on: All spec files
 
@@ -7,7 +7,7 @@
 ## File Structure (complete)
 
 ```
-my-celo-app/apps/web/src/
+terreno/apps/web/src/
 │
 ├── app/
 │   ├── globals.css              ← ADD: CSS variables, IBM Plex Mono import
@@ -20,7 +20,7 @@ my-celo-app/apps/web/src/
 │   │
 │   └── components/
 │       ├── ui/                  ← DO NOT TOUCH (shadcn)
-│       ├── connect-button.tsx   ← KEEP (hide in MiniPay)
+│       ├── connect-button.tsx   ← KEEP (hide in Nimiq Pay)
 │       ├── navbar.tsx           ← REPLACE with BottomNav
 │       ├── user-balance.tsx     ← KEEP (used in profile stats)
 │       ├── wallet-provider.tsx  ← KEEP
@@ -223,26 +223,26 @@ export interface UseBuyPixelsReturn {
 
 ---
 
-## MiniPay Integration
+## Nimiq Pay Integration
 
 ```ts
 // In layout.tsx or wallet-provider.tsx
-const isMiniPay = typeof window !== 'undefined' &&
-  (window as any).ethereum?.isMiniPay === true
+const isNimiq Pay = typeof window !== 'undefined' &&
+  (window as any).ethereum?.isNimiq Pay === true
 
-// If MiniPay:
-// - Hide connect-button.tsx (MiniPay auto-injects wallet)
+// If Nimiq Pay:
+// - Hide connect-button.tsx (Nimiq Pay auto-injects wallet)
 // - Use window.ethereum directly via Viem's custom transport
 // - No RainbowKit modal needed
 ```
 
-Celo mainnet config for Viem:
+Base mainnet config for Viem:
 ```ts
-import { celo } from 'viem/chains'
-// Already in wallet-provider.tsx most likely — verify chain is set to celo not celoAlfajores
+import { base } from 'viem/chains'
+// Already in wallet-provider.tsx most likely — verify chain is set to base
 ```
 
-> For hackathon demo: testnet (Celo Sepolia / Alfajores) until contract deployed to mainnet.
+> For hackathon demo: testnet (Base Sepolia) until contract deployed to mainnet.
 
 ---
 
@@ -282,10 +282,10 @@ const onLoad = (data: PixelView[]) => {
 | 8 | Leaderboard: top 20 or infinite scroll? | Top 20 + "show more" | Low |
 | 9 | Profile: pre-fill fields in drawer? | Yes if wallet connected | Medium |
 | 10 | Insufficient USDT balance check | Check before buy, show warning | High |
-| 11 | MiniPay: two wallet popups for approve + buy | Accept for hackathon | Medium |
+| 11 | Nimiq Pay: two wallet popups for approve + buy | Accept for hackathon | Medium |
 | 12 | "Owner since" date — not in struct | Replace with sale count | Low |
 | 13 | Long-press to inspect in paint mode | 500ms hold = info panel | Low |
 | 14 | Drawer auto-open after paint stops? | 800ms delay auto-open | Medium |
-| 15 | input[type=color] in MiniPay browser? | Test on device, swatch fallback | High |
-| 16 | Current chain in wallet-provider.tsx? | Verify it's Celo | High |
+| 15 | input[type=color] in Nimiq Pay browser? | Test on device, swatch fallback | High |
+| 16 | Current chain in wallet-provider.tsx? | Verify it's Base | High |
 | 17 | Dots vs squares in heatmap render? | Dots (matches reference) | Low |

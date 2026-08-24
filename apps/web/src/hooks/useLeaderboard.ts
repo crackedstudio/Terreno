@@ -174,7 +174,7 @@ export function useLeaderboard(
 
   // AREA comes from the subgraph's OwnerMapStat (pixelCount + lastGainAt) so the
   // board matches the payout snapshot EXACTLY — same value, same "reached it
-  // first" tie-break field (see celo-org/mondeto-admin#48). EMPIRE and TYCOONS
+  // first" tie-break field (see the admin repo issue #48). EMPIRE and TYCOONS
   // still enrich the live snapshot with per-pixel acquisition times (exact), as
   // the subgraph has no aggregate for "biggest block" / "priciest pixel".
   // Without the subgraph configured (or on error) both are null and boards fall

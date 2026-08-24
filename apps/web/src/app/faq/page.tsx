@@ -4,7 +4,7 @@ import IntroScreen from '@/components/Overlays/IntroScreen'
 import { FAQ_GROUPS } from './content'
 
 export const metadata: Metadata = {
-  title: 'FAQ — Mondeto',
+  title: 'FAQ — Terreno',
 }
 
 const PIXEL_FONT = "'Press Start 2P', monospace"

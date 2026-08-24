@@ -1,20 +1,20 @@
-# MiniPay Design Context
+# Nimiq Pay Design Context
 
-A reference for building mini apps inside MiniPay. Focused on layout constraints, component sizing, simplicity conventions, and terminology. Color palette intentionally omitted.
+A reference for building mini apps inside Nimiq Pay. Focused on layout constraints, component sizing, simplicity conventions, and terminology. Color palette intentionally omitted.
 
 ---
 
 ## 1. Environment Constraints
 
-Mini apps run full-screen inside a WebView with a fixed chrome header injected by MiniPay at the top.
+Mini apps run full-screen inside a WebView with a fixed chrome header injected by Nimiq Pay at the top.
 
 ### Viewport
 - Design for **375–430px wide** viewports
-- **Top**: ~56px consumed by the MiniPay chrome header (not controllable)
+- **Top**: ~56px consumed by the Nimiq Pay chrome header (not controllable)
 - **Bottom**: respect iOS safe area / home indicator (~34px)
 - Assume **no hardware back button** — always provide explicit navigation
 
-### MiniPay Chrome Header
+### Nimiq Pay Chrome Header
 Injected at the top of every mini app. Contains:
 - Left: `×` close button
 - Center: app name (plain text)
@@ -28,7 +28,7 @@ You cannot override this. Your app's content starts below it.
 
 ### Page Structure
 ```
-[ MiniPay Chrome Header ]   ← ~56px, injected, not yours
+[ Nimiq Pay Chrome Header ]   ← ~56px, injected, not yours
 [ Your App Header/Nav   ]   ← optional, ~56px
 [ Main Content Area     ]   ← flex-grow, scrollable
 [ Bottom Navigation Bar ]   ← optional, ~60px + safe area
@@ -171,7 +171,7 @@ Success shown as a modal card, not a new page:
 
 | Concept | Use | Avoid |
 |---------|-----|-------|
-| The wallet | MiniPay | "the app", "wallet" |
+| The wallet | Nimiq Pay | "the app", "wallet" |
 | Hosted apps | Mini Apps | "dApps" |
 | Stablecoin payment | USDT / USDC | "crypto", "tokens" |
 | Put money in | Deposit | "fund", "top up" |
@@ -191,7 +191,7 @@ Success shown as a modal card, not a new page:
 4. **Prices belong in buttons.** Don't make users look elsewhere for the cost.
 5. **No tooltips.** Use a tappable `ⓘ` icon for extra info.
 6. **Short copy everywhere.** Taglines: 1 sentence max. Button labels: 2–4 words.
-7. **Support is handled by MiniPay chrome.** Don't build your own support link.
+7. **Support is handled by Nimiq Pay chrome.** Don't build your own support link.
 8. **No modals inside modals.** Use step transitions within a single sheet.
 9. **Blur the background** behind bottom sheets.
 10. **Token symbol always follows the amount.** `873.61 USDT`, not `USDT 873.61`.

@@ -71,18 +71,18 @@ async function computePnl(mapId: MapId, addr: string): Promise<Pnl> {
 
 async function computePnlFromLogs(mapId: MapId, addr: string): Promise<Pnl> {
   const contract = getMapContractById(mapId)
-  const mondetoAddress = contract.address
+  const terrenoAddress = contract.address
   const client = fallbackReadClient
 
   const currentBlock = await client.getBlockNumber()
 
   // Estimate the first-sale block from the contract's own clock so we don't
   // scan from genesis. `null` means no purchases yet — nothing to scan.
-  const fromBlock = await estimateHistoryFromBlock(mondetoAddress, currentBlock)
+  const fromBlock = await estimateHistoryFromBlock(terrenoAddress, currentBlock)
   if (fromBlock === null) return ZERO
 
   const { logs, tokenDecimals, failedChunks, totalChunks } = await scanNormalizedPurchases(
-    mondetoAddress,
+    terrenoAddress,
     fromBlock,
     currentBlock,
   )

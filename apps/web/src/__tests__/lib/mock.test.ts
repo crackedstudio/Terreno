@@ -75,7 +75,7 @@ describe('getProfile / updateProfile', () => {
   it('getProfile returns data for demo owner', async () => {
     const profile = await getProfile('0x1111111111111111111111111111111111111111')
     expect(profile).not.toBeNull()
-    expect(profile!.label).toBe('CeloFan')
+    expect(profile!.label).toBe('PixelFan')
   })
 
   it('updateProfile sets and retrieves profile', async () => {

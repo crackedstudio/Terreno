@@ -123,7 +123,7 @@ async function enrichSnapshotsWithTimestamps(
  * Cross-map AREA board from the subgraph's `OwnerMapStat`: sum each wallet's
  * per-map pixelCount across the revealed maps, tie-broken by `lastGainAt` (the
  * latest across their maps — reached-first). Sourced from the subgraph (not the
- * snapshot) so AREA matches the payout snapshot exactly (celo-org/mondeto-admin#48).
+ * snapshot) so AREA matches the payout snapshot exactly (the admin repo issue #48).
  */
 async function subgraphGlobalArea(mapIds: MapId[]): Promise<LeaderEntry[]> {
   const boards = await Promise.all(mapIds.map((id) => fetchAreaLeaderboard(id)))

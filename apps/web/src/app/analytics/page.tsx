@@ -301,7 +301,7 @@ export default function AnalyticsPage() {
         paddingBottom: 56,
       }}
     >
-      <TopBar title="MONDETO" />
+      <TopBar title="TERRENO" />
 
       <div
         style={{
@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
             marginBottom: 12,
           }}
         >
-          mondeto on-chain · base mainnet
+          terreno on-chain · base mainnet
         </div>
 
         {a.error && (

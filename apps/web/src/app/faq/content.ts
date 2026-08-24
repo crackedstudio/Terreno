@@ -9,7 +9,7 @@
  * the panic.
  *
  * Every item carries a stable `id` so support can send a player straight to one
- * answer (mondeto.app/faq#payout-timing). Don't rename ids casually — they get
+ * answer (terreno.app/faq#payout-timing). Don't rename ids casually — they get
  * pasted into support replies.
  *
  * Numbers here (5% fee, ~30-day halving) were verified against mainnet
@@ -83,7 +83,7 @@ export const FAQ_GROUPS: QaGroup[] = [
         id: 'campaign-updates',
         q: 'Where do I find out about campaigns?',
         a: 'Watch the banner on the map — it appears whenever a campaign is live. Campaigns are also announced on X.',
-        link: { href: X_PROFILE_URL, label: '@mondeto on X' },
+        link: { href: X_PROFILE_URL, label: '@terreno on X' },
       },
     ],
   },
@@ -94,7 +94,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'currency',
         q: 'Which coins can I pay with?',
-        a: 'Mondeto accepts USDC and USDT on Base. One buy uses one coin, so if you are short, top up that coin or select fewer pixels.',
+        a: 'Terreno accepts USDC and USDT on Base. One buy uses one coin, so if you are short, top up that coin or select fewer pixels.',
       },
       {
         id: 'gas',
@@ -134,7 +134,7 @@ export const FAQ_GROUPS: QaGroup[] = [
     items: [
       {
         id: 'what-is',
-        q: 'What is Mondeto?',
+        q: 'What is Terreno?',
         a: 'A pixel-buying game on Base. The world map is 170 × 100 pixels, and each continent map has its own size. You buy pixels with stablecoins and paint the world your color.',
       },
       {
@@ -155,7 +155,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'usernames',
         q: 'I see weird names like "mango-curie". What are those?',
-        a: `When you haven't set a player name yet, Mondeto picks one for you — a fruit plus a famous (and non-controversial) figure. Set your own name on the profile page if you want.`,
+        a: `When you haven't set a player name yet, Terreno picks one for you — a fruit plus a famous (and non-controversial) figure. Set your own name on the profile page if you want.`,
       },
     ],
   },
@@ -170,8 +170,8 @@ export const FAQ_GROUPS: QaGroup[] = [
       },
       {
         id: 'who-runs',
-        q: 'Who runs Mondeto?',
-        a: 'Mondeto is operated by Celo Core Co. It is not operated by, affiliated with, or endorsed by Opera or MiniPay — MiniPay is just the wallet that makes Mondeto accessible inside their app.',
+        q: 'Who runs Terreno?',
+        a: 'Terreno is operated by Celo Core Co. It is not operated by, affiliated with, or endorsed by Opera or MiniPay — MiniPay is just the wallet that makes Terreno accessible inside their app.',
       },
     ],
   },

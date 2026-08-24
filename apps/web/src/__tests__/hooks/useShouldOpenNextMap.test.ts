@@ -109,7 +109,7 @@ describe('pixelViewsToStates', () => {
 describe('cacheKeyFor', () => {
   it('includes the chain id and the sorted revealed ids', () => {
     expect(cacheKeyFor(base.id, [1, 0])).toBe(
-      `mondeto-should-open-next-map-cache:${base.id}:0-1`,
+      `terreno-should-open-next-map-cache:${base.id}:0-1`,
     )
   })
 

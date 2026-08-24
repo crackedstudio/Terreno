@@ -15,7 +15,7 @@ import { getMaskData } from '@/lib/maps/masks'
 import type { MapId, MapSnapshot } from '@/lib/maps/types'
 
 const CACHE_TTL_MS = 30_000
-const CACHE_KEY = 'mondeto:global-snapshots:v1'
+const CACHE_KEY = 'terreno:global-snapshots:v1'
 
 type ReadContractFn = Parameters<typeof fetchAllPixelsFromContract>[0]
 

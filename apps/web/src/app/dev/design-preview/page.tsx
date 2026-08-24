@@ -41,7 +41,7 @@ function UrlBar() {
     <div className="px-3 pb-2">
       <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
         <span className="text-white/60 text-[11px]">⊙</span>
-        <span className="flex-1 text-center text-white/80 text-[12px]">mondeto.app</span>
+        <span className="flex-1 text-center text-white/80 text-[12px]">terreno.app</span>
         <span className="text-white/60 text-[11px]">↗</span>
       </div>
     </div>
@@ -68,7 +68,7 @@ function TopBar() {
     <div className="flex items-center justify-between px-4 py-3 bg-brand-black">
       <div className="flex items-center gap-2">
         <img src={`${BRAND}/logo/logo.svg`} alt="" className="w-7 h-7" style={{ imageRendering: 'pixelated' }} />
-        <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="MONDETO" className="h-4" />
+        <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="TERRENO" className="h-4" />
       </div>
       <ConnectButton />
     </div>
@@ -148,7 +148,7 @@ function SplashScreen() {
             style={{ imageRendering: 'pixelated' }}
           />
         </div>
-        <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="MONDETO" className="h-8" />
+        <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="TERRENO" className="h-8" />
         <div className="mt-2 flex items-center gap-1 font-display text-[10px] tracking-widest text-brand-lime">
           LOADING<span className="animate-blink">_</span>
         </div>
@@ -168,7 +168,7 @@ function LandingScreen() {
     <BrowserChrome>
       <div className="flex flex-col items-center pt-10 pb-6 px-6">
         <img src={`${BRAND}/logo/logo.svg`} alt="" className="w-16 h-16" style={{ imageRendering: 'pixelated' }} />
-        <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="MONDETO" className="h-7 mt-4" />
+        <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="TERRENO" className="h-7 mt-4" />
         <div className="font-mono text-[10px] tracking-widest text-white/80 mt-2 uppercase">Own the world, one pixel at a time</div>
 
         <div className="mt-10 w-full flex flex-col gap-5">
@@ -340,7 +340,7 @@ function AnalyticsScreen() {
 
 function FaqScreen() {
   const qa = [
-    { q: 'WHAT IS MONDETO?', a: 'A pixel-map game on Celo. Claim pixels, paint them, earn when others buy.' },
+    { q: 'WHAT IS TERRENO?', a: 'A pixel-map game on Base. Claim pixels, paint them, earn when others buy.' },
     { q: 'HOW DO I CLAIM A PIXEL?', a: 'Tap a pixel on the map, connect your wallet, and confirm the transaction.' },
     { q: 'WHAT ARE THE PRIZES?', a: 'Weekly leaderboards pay out in cUSD. Hold to climb.' },
   ];
@@ -373,7 +373,7 @@ function TermsScreen({ title = 'TERMS' }: { title?: string }) {
           {Array.from({ length: 5 }).map((_, i) => (
             <p key={i} className="font-mono text-white/80 text-[11px] leading-relaxed">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pixels are owned, prices follow epochs,
-              and resale doubles the floor. By using Mondeto you agree to play nice.
+              and resale doubles the floor. By using Terreno you agree to play nice.
             </p>
           ))}
         </div>
@@ -672,7 +672,7 @@ export default function DesignPreviewPage() {
       <header className="mb-12">
         <div className="flex items-center gap-3">
           <img src={`${BRAND}/logo/logo.svg`} alt="" className="w-10 h-10" style={{ imageRendering: 'pixelated' }} />
-          <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="MONDETO" className="h-7" />
+          <img src={`${BRAND}/wordmark/wordmark-white.svg`} alt="TERRENO" className="h-7" />
           <span className="font-display text-brand-lime text-[14px] tracking-widest ml-4">DESIGN PREVIEW</span>
         </div>
         <p className="font-mono text-white/60 text-[12px] mt-3 max-w-xl">

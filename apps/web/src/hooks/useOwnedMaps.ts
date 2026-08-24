@@ -8,7 +8,7 @@ import { getMaskData } from '@/lib/maps/masks'
 import { READ_CHAIN_ID, fallbackReadClient } from '@/lib/chain'
 import type { MapId } from '@/lib/maps/types'
 
-const CACHE_KEY_PREFIX = 'mondeto-owned-maps'
+const CACHE_KEY_PREFIX = 'terreno-owned-maps'
 const CACHE_TTL_MS = 60_000
 
 export interface OwnedMapsResult {

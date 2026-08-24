@@ -21,7 +21,7 @@ import { logs, SeverityNumber } from '@opentelemetry/api-logs'
 
 type Attributes = Record<string, string | number | boolean | undefined | null>
 
-const LOGGER_NAME = 'mondeto-web'
+const LOGGER_NAME = 'terreno-web'
 
 function emit(
   severityNumber: SeverityNumber,

@@ -113,7 +113,7 @@ export function registerPlatform(): void {
 // sessionStorage (not localStorage): attribution shouldn't outlive the
 // visit — the privacy policy promises no persistent client-side tracking
 // state, and session-scoped is enough to attribute a same-visit buy.
-const REF_KEY = 'mondeto-ref'
+const REF_KEY = 'terreno-ref'
 
 export function storeReferrer(ref: string): void {
   try {

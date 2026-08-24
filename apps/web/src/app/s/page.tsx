@@ -40,12 +40,12 @@ export async function generateMetadata({
 
   const title =
     kind === 'reward'
-      ? 'I just won on Mondeto'
+      ? 'I just won on Terreno'
       : kind === 'rank'
-        ? 'My Mondeto rank'
+        ? 'My Terreno rank'
         : kind === 'positions'
-          ? 'My Mondeto turf'
-          : 'Mondeto — every pixel is up for grabs'
+          ? 'My Terreno turf'
+          : 'Terreno — every pixel is up for grabs'
 
   return {
     title,
@@ -54,7 +54,7 @@ export async function generateMetadata({
       title,
       description,
       url: `${APP_ORIGIN}/s?${sp.toString()}`,
-      siteName: 'Mondeto',
+      siteName: 'Terreno',
       images: [{ url: imageUrl, width: 1200, height: 630 }],
     },
     twitter: {

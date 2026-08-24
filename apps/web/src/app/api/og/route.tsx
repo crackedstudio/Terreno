@@ -4,7 +4,7 @@ import { decodeShareParams, type ShareKind, type ShareParams } from '@/lib/share
 /**
  * Dynamic Open Graph card for the share-to-X flywheel. Renders a 1200x630
  * pixel-art card personalized to the sharer — this is the image X/Farcaster
- * show in the timeline, so each share doubles as a Mondeto ad.
+ * show in the timeline, so each share doubles as a Terreno ad.
  *
  * next/og runs on Satori (flexbox + SVG), NOT canvas — so the app's canvas
  * drawPixels() can't be reused here. Instead we render a decorative grid of
@@ -64,7 +64,7 @@ function subline(kind: ShareKind, params: ShareParams): string {
   const map = params.mapName ? clamp(params.mapName, 16).toUpperCase() : 'THE WORLD'
   switch (kind) {
     case 'reward':
-      return `WON ON MONDETO${params.mapName ? ` — ${map}` : ''}`
+      return `WON ON TERRENO${params.mapName ? ` — ${map}` : ''}`
     case 'rank':
       return `${clamp(params.board ?? 'LAND', 10).toUpperCase()} BOARD — ${map}`
     case 'positions':
@@ -195,7 +195,7 @@ export async function GET(req: Request) {
                 marginBottom: 24,
               }}
             >
-              MONDETO
+              TERRENO
             </div>
             <div
               style={{
@@ -242,7 +242,7 @@ export async function GET(req: Request) {
               alignSelf: 'flex-start',
             }}
           >
-            PLAY ON NIMIQ PAY · MONDETO.APP
+            PLAY ON NIMIQ PAY · TERRENO.APP
           </div>
         </div>
 

@@ -90,9 +90,9 @@ describe('useProfile', () => {
       await result.current.save()
     })
 
-    // Behaviour change from the Celo/MiniPay build, and the reason this
+    // Behaviour change from the previous build, and the reason this
     // assertion is inverted: the ceiling used to sit behind `if (feeCurrency)`,
-    // so any wallet without a Celo fee currency fell through to a send with no
+    // so any wallet without a fee currency fell through to a send with no
     // gas limit. On Base no wallet has a fee currency, which would have made
     // the ceiling dead code and shipped every failed estimate gas-less — the
     // exact case the ladder exists to prevent, since a mini-app WebView host

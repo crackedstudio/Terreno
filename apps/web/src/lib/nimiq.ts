@@ -13,14 +13,13 @@
  *   - Chain. Nimiq Pay exposes a fixed EVM chain list (Ethereum, Polygon,
  *     Arbitrum One, Optimism, Base, BNB Smart Chain, Ethereum Sepolia). Base
  *     was chosen from it. NOTE: `wallet_addEthereumChain` IS supported, so
- *     "Celo could not be reached" — the original reason given for the move —
- *     is not established; see docs/BASE_NIMIQ_MIGRATION.md.
- *   - Gas. There is no Celo-style fee abstraction here; gas is paid in the
+ *     other chains can be added at runtime; see docs/DEPLOYMENT.md.
+ *   - Gas. There is no stablecoin fee abstraction here; gas is paid in the
  *     chain's native asset (ETH on Base). `lib/feeCurrency.ts` is gone.
  *
  * `@nimiq/mini-app-sdk` is NOT imported here, and that is deliberate. Its
  * provider is NIM-native — Lunas, `NQ…` addresses, staking — none of which
- * this app uses; everything Mondeto needs is on `window.ethereum` and the
+ * this app uses; everything Terreno needs is on `window.ethereum` and the
  * `window.nimiqPay` host object. The two host-context helpers below would be
  * the only reason to pull it in, and they are three lines each.
  *

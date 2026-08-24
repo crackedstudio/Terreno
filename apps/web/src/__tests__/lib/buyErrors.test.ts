@@ -124,7 +124,7 @@ describe('categorizeBuyError', () => {
       'HTTP request failed.',
       '',
       'Status: 429',
-      'URL: https://lb.drpc.org/ogrpc?network=celo',
+      'URL: https://lb.drpc.org/ogrpc?network=base',
       'Request body: {"method":"eth_call"}',
       '',
       'Details: Too Many Requests',
@@ -141,7 +141,7 @@ describe('categorizeBuyError', () => {
     const hay = [
       'The contract function "buyPixels" reverted.',
       'Error: CustomErrorNobodyMapped()',
-      'URL: https://lb.drpc.org/ogrpc?network=celo',
+      'URL: https://lb.drpc.org/ogrpc?network=base',
       'Version: viem@2.21.0',
     ].join('\n')
     expect(categorizeBuyError(hay)).toBe('chain_revert')

@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Mondeto',
+  title: 'Privacy Policy — Terreno',
 }
 
-// Mondeto Privacy Policy, provided by counsel — rendered verbatim. Any
+// Terreno Privacy Policy, provided by counsel — rendered verbatim. Any
 // edits to this text need legal sign-off. Analytics-relevant constraint:
 // §6 states no cookies / tracking storage, which is why PostHog runs
 // with persistence: 'memory' (see posthog-provider.tsx).
@@ -14,7 +14,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: '1. Introduction and Scope',
     paragraphs: [
-      'This Privacy Policy explains how Celo Core Co. processes personal data when you use the Services, including the following Mini Apps: MiniQuiz, Mondeto, and MiniStreak, offered through the MiniPay environment on the Celo Network. This Privacy Policy along with the "Celo Mini Apps Terms and Conditions" forms part of a legally binding contract between Celo Core Co. and you.',
+      'This Privacy Policy explains how Celo Core Co. processes personal data when you use the Services, including the following Mini Apps: MiniQuiz, Terreno, and MiniStreak, offered through the MiniPay environment on the Celo Network. This Privacy Policy along with the "Celo Mini Apps Terms and Conditions" forms part of a legally binding contract between Celo Core Co. and you.',
     ],
   },
   {
@@ -39,7 +39,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: '4. The Blockchain and Public Data',
     paragraphs: [
-      'Transactions submitted through the Services are recorded on the Celo blockchain, which is publicly accessible, transparent, and immutable. Data written on-chain (including Wallet addresses, transactions, and in certain cases usernames), cannot be altered, erased, or made private by us and is outside our control. Please consider this carefully before transacting.',
+      'Transactions submitted through the Services are recorded on the Base blockchain, which is publicly accessible, transparent, and immutable. Data written on-chain (including Wallet addresses, transactions, and in certain cases usernames), cannot be altered, erased, or made private by us and is outside our control. Please consider this carefully before transacting.',
     ],
   },
   {
@@ -161,7 +161,7 @@ export default function PrivacyPage() {
         </Link>
       </div>
       <h1 style={{ fontSize: 22, marginBottom: 4 }}>Privacy Policy</h1>
-      <p style={{ fontSize: 13, marginBottom: 4 }}>Mondeto Privacy Policy</p>
+      <p style={{ fontSize: 13, marginBottom: 4 }}>Terreno Privacy Policy</p>
       <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 24 }}>
         Effective Date: June 8, 2026
       </p>
@@ -180,13 +180,13 @@ export default function PrivacyPage() {
       <p style={{ fontSize: 13, marginBottom: 24 }}>
         The Celo Mini Apps Terms and Conditions are available at{' '}
         <Link href="/terms" style={{ color: 'var(--accent)' }}>
-          mondeto.app/terms
+          terreno.app/terms
         </Link>
         .
       </p>
 
       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 32 }}>
-        <Link href="/" style={{ color: 'var(--accent)' }}>← Back to Mondeto</Link>
+        <Link href="/" style={{ color: 'var(--accent)' }}>← Back to Terreno</Link>
       </p>
     </article>
   )

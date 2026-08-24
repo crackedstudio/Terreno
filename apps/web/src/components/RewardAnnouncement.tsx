@@ -12,7 +12,7 @@ import { latestReward, type RewardEntry } from '@/lib/rewards'
 const PIXEL_FONT = "'Press Start 2P', monospace"
 const BRAND_LIME = '#A7FF05'
 
-const SEEN_KEY = 'mondeto-rewards-seen'
+const SEEN_KEY = 'terreno-rewards-seen'
 
 /** A stable signature of the wallet's current reward set, so the modal
  *  auto-shows once per distinct set of winnings and re-shows only when a

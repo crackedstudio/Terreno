@@ -1,7 +1,7 @@
 /**
  * AssignmentStore — wallet → home-map id.
  *
- * Persisted to `localStorage` under `mondeto-home:<lowercased-addr>` so a
+ * Persisted to `localStorage` under `terreno-home:<lowercased-addr>` so a
  * wallet's home stays put across refreshes and across the active-pointer
  * moving forward. When localStorage is unavailable (SSR, private mode,
  * embedded webviews) we fall back to an in-memory Map; the worst case is
@@ -10,7 +10,7 @@
 
 import type { Address, AssignmentStore, MapId } from './types'
 
-const STORAGE_PREFIX = 'mondeto-home:'
+const STORAGE_PREFIX = 'terreno-home:'
 
 function storageKey(address: Address): string {
   return `${STORAGE_PREFIX}${address.toLowerCase()}`

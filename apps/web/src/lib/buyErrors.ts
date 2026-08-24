@@ -68,7 +68,7 @@ export type BuyBlockedReason =
  * which a mini-app WebView may refuse — under MiniPay that answered
  * "permission denied" and killed the buy.
  *
- * `without_fee_currency` was the middle rung on Celo, where the first attempt
+ * `without_fee_currency` was the middle rung on the previous chain, where the attempt
  * carried a CIP-64 fee currency and the retry dropped it. Base has no fee
  * currency, so the ladder is now estimate → ceiling and that rung is gone.
  */

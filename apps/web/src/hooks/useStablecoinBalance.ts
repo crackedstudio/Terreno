@@ -22,7 +22,7 @@ const KNOWN_SYMBOLS: Record<string, 'USDC' | 'USDT'> = {
  * Decimals fallback for the same tokens, used only when the on-chain
  * `decimals()` read fails.
  *
- * The blanket `18` this replaces was a Celo-era assumption: USDm (cUSD) was
+ * The blanket `18` this replaces was an assumption inherited from the previous chain, where the main stablecoin was
  * 18-decimal, so a bad read landed on a plausible value. Nothing on Base is
  * 18 — USDC and USDT are both 6 — so the old default would have understated a
  * balance by 1e12 and told a funded buyer they had insufficient funds.
@@ -62,10 +62,10 @@ export interface StablecoinBalances {
 
 /**
  * Hook returns the user's spendable stablecoin balances against the
- * currently-active Mondeto contract.
+ * currently-active Terreno contract.
  *
  * Token discovery is dynamic: we call `getAcceptedTokens()` on the
- * Mondeto contract, then read each token's decimals + symbol + the
+ * Terreno contract, then read each token's decimals + symbol + the
  * user's balance via batched `useReadContracts`. That way the same
  * frontend works against any deployment — mainnet, Sepolia, or future
  * maps — without baking specific token addresses into the build.
@@ -75,7 +75,7 @@ export function useStablecoinBalance(): StablecoinBalances {
   const { currentMapId } = useMaps()
   const contractAddress = getContractByMapId(currentMapId)
 
-  // Step 1: which tokens does this Mondeto deployment accept?
+  // Step 1: which tokens does this Terreno deployment accept?
   const acceptedTokensRead = useReadContract({
     address: contractAddress,
     abi: TERRENO_ABI,

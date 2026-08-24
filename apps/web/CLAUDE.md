@@ -1,4 +1,4 @@
-# Mondeto web app — conventions
+# Terreno web app — conventions
 
 ## Logging
 

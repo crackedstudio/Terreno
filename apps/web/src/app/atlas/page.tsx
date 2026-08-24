@@ -107,7 +107,7 @@ export default function AtlasPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 60 }}>
-      <TopBar title="MONDETO" />
+      <TopBar title="TERRENO" />
       <div
         style={{
           flex: 1,

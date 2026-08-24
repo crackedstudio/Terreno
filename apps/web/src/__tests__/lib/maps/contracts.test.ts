@@ -54,7 +54,7 @@ describe('contracts registry', () => {
 
   it('carries per-map dimensions matching the deployed continent grids', () => {
     // Chain-independent: the grids come from the mask JSON, which the move
-    // from Celo to Base does not touch.
+    // to Base does not touch.
     const byId = (id: number) => getRegistry().find((m) => m.id === id)!
     expect(byId(0).width).toBe(170)
     expect(byId(0).height).toBe(100)

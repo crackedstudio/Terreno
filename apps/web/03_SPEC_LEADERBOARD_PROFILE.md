@@ -1,4 +1,4 @@
-# Mondeto — Screen Spec: Leaderboard + Profile
+# Terreno — Screen Spec: Leaderboard + Profile
 # Feed to: Agent B (leaderboard, profile, routing)
 # Depends on: 01_DESIGN_TOKENS.md
 
@@ -164,7 +164,7 @@ Three cards in a row, equal width, gap 5px, margin 0 10px 8px:
 ### URL Field
 ```
 [  URL               ]
-[  https://celo.org  ]
+[  https://terreno.app  ]
 ```
 - Same container style as Name field
 - Input type="url" for mobile keyboard optimization

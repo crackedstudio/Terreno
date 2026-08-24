@@ -49,7 +49,7 @@ interface CurrentMapStore {
 
 const CurrentMapContext = createContext<CurrentMapStore | null>(null)
 
-const STORAGE_KEY = 'mondeto-current-map-id'
+const STORAGE_KEY = 'terreno-current-map-id'
 
 function readStoredMapId(): MapId | null {
   if (typeof window === 'undefined') return null

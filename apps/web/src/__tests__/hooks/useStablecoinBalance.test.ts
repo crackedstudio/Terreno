@@ -13,8 +13,8 @@ const MOCK = '0xAbCd000000000000000000000000000000000123' as const // unknown to
 // so no *current* pair exercises mixed magnitudes — but the contract scales per
 // token and accepts any decimals, so the mixed-decimal comparisons below stay:
 // dropping them would retire the guarantee that a raw-integer comparison can
-// never pick the wrong token to spend. On Celo this role was played by
-// 18-decimal USDm, which has no Base equivalent.
+// never pick the wrong token to spend. This role was previously played by an
+// 18-decimal stablecoin that has no Base equivalent.
 const TOKEN18 = '0xBbBb000000000000000000000000000000000456' as const // 18 dec
 
 interface TokenAnswer {
@@ -174,8 +174,8 @@ describe('useStablecoinBalance preferred-token selection', () => {
 
 describe('useStablecoinBalance degraded reads', () => {
   it('falls back to the known decimals for a known token, not a blanket 18', () => {
-    // Behaviour change from the Celo build, and the reason this assertion is
-    // inverted. A failed decimals() read used to assume 18 — plausible on Celo
+    // Behaviour change from the previous build, and the reason this assertion is
+    // inverted. A failed decimals() read used to assume 18 — plausible on the previous chain
     // where USDm was 18-decimal, catastrophic on Base where nothing is: USDC
     // would have been understated by 10^12 ($3.00 shown as $0.000000000003)
     // and a funded buyer told they had insufficient funds.

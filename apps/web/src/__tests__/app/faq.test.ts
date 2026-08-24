@@ -7,7 +7,7 @@ const allCopy = allItems.map((i) => `${i.q} ${i.a}`).join('\n')
 
 describe('FAQ anchors', () => {
   it('has a unique id for every group and every item', () => {
-    // Support pastes these into replies (mondeto.app/faq#payout-timing), and a
+    // Support pastes these into replies (terreno.app/faq#payout-timing), and a
     // duplicate id silently sends the player to the wrong answer.
     const ids = [...FAQ_GROUPS.map((g) => g.id), ...allItems.map((i) => i.id)]
     expect(new Set(ids).size).toBe(ids.length)
@@ -74,7 +74,7 @@ describe('FAQ facts', () => {
   it('does not claim USDT is the only accepted coin', () => {
     const currency = allItems.find((i) => i.id === 'currency')
     expect(currency).toBeDefined()
-    // USDm was a Celo stablecoin (cUSD) and has no Base equivalent; the
+    // USDm was the previous chain's stablecoin and has no Base equivalent; the
     // accepted set on Base is USDC + USDT, both 6-decimal.
     for (const token of ['USDC', 'USDT']) {
       expect(currency!.a).toContain(token)
@@ -84,7 +84,7 @@ describe('FAQ facts', () => {
   })
 
   it('states that gas is paid in ETH, not in the stablecoin', () => {
-    // Money-path copy, and the reason it is pinned: on Celo/MiniPay fees were
+    // Money-path copy, and the reason it is pinned: on the previous host fees were
     // paid automatically in the stablecoin being spent, and the FAQ said so.
     // On Base gas is ETH, so a buyer holding only USDC and following the old
     // answer would be stranded with no way to pay for the transaction.

@@ -1,11 +1,11 @@
-# Mondeto — Design Tokens
+# Terreno — Design Tokens
 # Feed to: Agent responsible for globals.css + tailwind.config.js
 
 ---
 
 ## Brand Identity
 
-**Name**: Mondeto (Esperanto for "small world")
+**Name**: Terreno (Esperanto for "small world")
 **Aesthetic**: Retro terminal meets physical paper map. Monospace type, warm cream surfaces,
 frosted glass overlays, colorful pixel tiles on a muted natural map background.
 **One-liner**: It should feel like someone printed the internet on parchment.
@@ -104,7 +104,7 @@ Fallback: 'IBM Plex Mono', 'Courier New', monospace
 ```
 --tracking-wide:   1px    /* screen titles, field labels */
 --tracking-wider:  2px    /* section headers e.g. LEADERBOARD */
---tracking-widest: 3px    /* logo MONDETO */
+--tracking-widest: 3px    /* logo TERRENO */
 --tracking-button: 1.5px  /* CTAs e.g. [ BUY LAND ] */
 ```
 

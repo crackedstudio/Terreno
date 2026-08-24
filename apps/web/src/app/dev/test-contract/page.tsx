@@ -139,7 +139,7 @@ export default function TestContractPage() {
 
       <p style={{ fontSize: 9, color: '#a09080', marginTop: 16 }}>
         If all rows show data (not errors), the contract integration is ready.
-        Make sure your wallet is on Celo mainnet.
+        Make sure your wallet is on Base mainnet.
       </p>
     </div>
   )

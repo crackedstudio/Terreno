@@ -1,5 +1,5 @@
 /**
- * Client-side price calculation matching the Mondeto smart contract.
+ * Client-side price calculation matching the Terreno smart contract.
  * Uses BigInt for precision — prices can exceed 64-bit integers.
  */
 

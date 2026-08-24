@@ -24,4 +24,4 @@ export const SUPPORT_URL =
 // Where campaigns get announced. There is no community chat channel yet, so
 // this is the only place a player can find out a campaign is starting — the
 // FAQ points at it for exactly that reason.
-export const X_PROFILE_URL = 'https://x.com/mondeto' as const
+export const X_PROFILE_URL = 'https://x.com/terreno' as const

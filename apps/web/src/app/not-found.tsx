@@ -29,7 +29,7 @@ export default function NotFound() {
       }}
     >
       <img
-        src="/brand/mondeto-symbol.gif"
+        src="/brand/terreno-symbol.gif"
         alt=""
         width={96}
         height={96}

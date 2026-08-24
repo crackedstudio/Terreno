@@ -5,7 +5,7 @@
  * There's a single registry (no production/staging env split) — staging was
  * retired; testnet work happens on feature-branch preview deploys.
  *
- * Mondeto runs N map contracts. The "active map" — the one new wallets
+ * Terreno runs N map contracts. The "active map" — the one new wallets
  * get assigned to — auto-advances when the current active map's average
  * pixel price crosses NEXT_PUBLIC_MAP_THRESHOLD_USD (default $2). See
  * `useShouldOpenNextMap` for the threshold read and `activeMapId()` in
@@ -58,8 +58,6 @@ export interface MapContract {
 /**
  * Sentinel for a map whose Base deployment does not exist yet.
  *
- * The Celo deployments do not carry over: Nimiq Pay does not expose Celo to
- * mini apps, so the world + continent contracts are being redeployed to Base.
  * Until `script/Deploy.s.sol` has been run against Base for a given map, its
  * address is this sentinel — never a fabricated address, and never a silent
  * fallback to some other map's contract.
@@ -83,7 +81,7 @@ const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const
 // Full continent lineup: world + the seven continents. Grid dimensions are
 // baked at deploy time and must match the mask JSON in apps/contracts/map/
 // (and the generated masks in src/data/masks/) — those are chain-independent
-// and carry over from Celo unchanged.
+// and are chain-independent.
 const MAPS: readonly MapContract[] = [
   {
     id: 0,

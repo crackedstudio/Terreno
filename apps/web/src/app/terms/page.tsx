@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Terms and Conditions — Mondeto',
+  title: 'Terms and Conditions — Terreno',
 }
 
-// Celo Mini Apps Terms and Conditions, provided by counsel. The Mondeto
+// Celo Mini Apps Terms and Conditions, provided by counsel. The Terreno
 // game description (§5) and fee wording (§6) were aligned with the
 // deployed contract mechanics (price doubles on purchase, halves over
 // each 30-day period to a minimum price; 5% fee deducted from the
@@ -16,7 +16,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: '1. Introduction and Acceptance',
     paragraphs: [
-      'These Terms and Conditions (the "Terms") govern your access to and use of the mini applications operated by cLabs, Inc. d/b/a Celo Core Co. ("Celo Core Co.", "we", "us" or "our"), made available through the MiniPay environment on the Celo network, including MiniQuiz, Mondeto and MiniStreak (collectively the "Mini Apps" or the "Services", singly a "Mini App").',
+      'These Terms and Conditions (the "Terms") govern your access to and use of the mini applications operated by cLabs, Inc. d/b/a Celo Core Co. ("Celo Core Co.", "we", "us" or "our"), made available through the MiniPay environment on the Celo network, including MiniQuiz, Terreno and MiniStreak (collectively the "Mini Apps" or the "Services", singly a "Mini App").',
       'These Terms are a legally binding contract between you and us and apply in full force and effect to your use of the Services. By accessing or using any Mini App you agree to be legally bound by these Terms. If you do not agree with the Terms, you must not use the Services.',
       'These Terms incorporate by reference our Privacy Policy and any app-specific terms presented within a Mini App.',
     ],
@@ -50,7 +50,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
     title: '5. Description of the Services',
     paragraphs: [
       'MiniQuiz (miniquiz.club) — a quiz game where you join a global community and try to solve quizzes as fast as possible. Judging and prize payouts to participants are administered by and according to the sole discretion of Celo Core Co. and paid in USDT. There is currently no fee for playing MiniQuiz.',
-      'Mondeto (mondeto.app) — a game where you may purchase pixels on digital representations of the world, one pixel at a time, across one or more identical maps. When a pixel is purchased, its price immediately doubles (2 times) for the next purchaser. The price of a pixel then gradually halves over each thirty (30) day period, down to a minimum price set in the smart contract. This means that if you purchase a pixel for two (2) units of a given digital asset, the price to purchase that pixel from you starts at four (4) units and returns to approximately two (2) units after thirty (30) days, continuing to halve thereafter while the pixel is not repurchased. When another user purchases a pixel you own, you receive the purchase price minus the service fee described in Section 6. Operated through its own smart contracts; Mondeto accepts payments in USDT, USDC and USDm.',
+      'Terreno (terreno.app) — a game where you may purchase pixels on digital representations of the world, one pixel at a time, across one or more identical maps. When a pixel is purchased, its price immediately doubles (2 times) for the next purchaser. The price of a pixel then gradually halves over each thirty (30) day period, down to a minimum price set in the smart contract. This means that if you purchase a pixel for two (2) units of a given digital asset, the price to purchase that pixel from you starts at four (4) units and returns to approximately two (2) units after thirty (30) days, continuing to halve thereafter while the pixel is not repurchased. When another user purchases a pixel you own, you receive the purchase price minus the service fee described in Section 6. Operated through its own smart contracts; Terreno accepts payments in USDT, USDC and USDm.',
       'MiniStreak — a daily check-in game with weekly rewards.',
       'We may add, modify, suspend or discontinue any feature at any time. The Services are provided on an ‘as available’ basis and depend on third-party infrastructure including the MiniPay environment and the Celo Network.',
     ],
@@ -58,7 +58,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: '6. Fees & Prizes',
     paragraphs: [
-      'For Mondeto, Celo Core Co. may receive a service fee of up to five percent (5%) of the value of each purchase of an owned pixel, deducted from the amount paid to the previous owner. The full purchase price of a previously unowned pixel is paid to Celo Core Co.’s smart-contract treasury. For MiniQuiz, judging and prize amounts are determined in the sole discretion of and paid by Celo Core Co. via its admin process in USDT. Participating in some of the Services and transacting on the Celo Network may require the payment of network "gas" fees. Gas fees fluctuate, are payable by you to network validators, and are non-refundable. Applicable amounts and currency are presented to you before you confirm a transaction.',
+      'For Terreno, Celo Core Co. may receive a service fee of up to five percent (5%) of the value of each purchase of an owned pixel, deducted from the amount paid to the previous owner. The full purchase price of a previously unowned pixel is paid to Celo Core Co.’s smart-contract treasury. For MiniQuiz, judging and prize amounts are determined in the sole discretion of and paid by Celo Core Co. via its admin process in USDT. Participating in some of the Services and transacting on the Celo Network may require the payment of network "gas" fees. Gas fees fluctuate, are payable by you to network validators, and are non-refundable. Applicable amounts and currency are presented to you before you confirm a transaction.',
     ],
   },
   {
@@ -191,7 +191,7 @@ export default function TermsPage() {
         </Link>
       </div>
       <h1 style={{ fontSize: 22, marginBottom: 4 }}>Celo Mini Apps Terms and Conditions</h1>
-      <p style={{ fontSize: 13, marginBottom: 4 }}>Mondeto T&amp;C&rsquo;s</p>
+      <p style={{ fontSize: 13, marginBottom: 4 }}>Terreno T&amp;C&rsquo;s</p>
       <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 24 }}>
         Effective Date: June 8, 2026
       </p>
@@ -210,13 +210,13 @@ export default function TermsPage() {
       <p style={{ fontSize: 13, marginBottom: 24 }}>
         Our Privacy Policy is available at{' '}
         <Link href="/privacy" style={{ color: 'var(--accent)' }}>
-          mondeto.app/privacy
+          terreno.app/privacy
         </Link>
         .
       </p>
 
       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 32 }}>
-        <Link href="/" style={{ color: 'var(--accent)' }}>← Back to Mondeto</Link>
+        <Link href="/" style={{ color: 'var(--accent)' }}>← Back to Terreno</Link>
       </p>
     </article>
   )

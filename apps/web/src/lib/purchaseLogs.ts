@@ -7,7 +7,7 @@ import { TERRENO_ABI } from '@/lib/contract'
  *
  * Both P&L (/api/pnl) and analytics (/api/analytics) reconstruct their numbers
  * from the full purchase-event log, and both were silently returning zero
- * because they scanned in 50k-block windows: public Celo RPCs (Forno, dRPC)
+ * because they scanned in 50k-block windows: the previous chain's public RPCs
  * REJECT `eth_getLogs` windows larger than ~5k blocks, so every chunk failed.
  * Keeping the chunk size + parallelism in one place fixes that gotcha once and
  * stops the two callers drifting apart.
@@ -22,7 +22,7 @@ export const PURCHASE_EVENT = parseAbiItem(
   'event PixelsPurchased(address indexed buyer, address indexed token, uint256[] ids, uint256 totalCost)',
 )
 
-// Public Celo RPCs reject eth_getLogs windows larger than ~5k blocks (verified:
+// Those public RPCs rejected eth_getLogs windows larger than ~5k blocks (verified:
 // 50k and 10k fail, 5k succeeds). Lean on parallelism to keep the many-chunk
 // scan fast.
 const CHUNK_BLOCKS = 5_000n
@@ -87,7 +87,7 @@ export function toMicrocents(cost: bigint, decimals: number): bigint {
 }
 
 // Safety margin when estimating the first-sale block from the contract clock.
-// Celo L2 is ~1s/block, so seconds since the first sale ≈ blocks; overestimating
+// On a ~1s/block chain, seconds since the first sale ≈ blocks; overestimating
 // how far back to scan is safe.
 const SAFETY_BUFFER_BLOCKS = 100_000n
 

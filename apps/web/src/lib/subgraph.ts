@@ -22,17 +22,17 @@ const ENDPOINT = process.env.NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL
 /**
  * Guards against the single most damaging misconfiguration of the Base
  * migration: leaving NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL pointed at the still-live
- * **Celo** subgraph after the frontend moves to Base.
+ * **previous chain's** subgraph after the frontend moved to Base.
  *
  * Nothing about that failure is loud. The schema is identical, every query
  * succeeds, and /api/pnl, /api/analytics, /api/activity and the AREA
- * leaderboard would serve Celo ownership and earnings against a Base map —
+ * leaderboard would serve the previous chain's ownership and earnings against a Base map —
  * wrong balances and wrong payouts, rendered with full confidence.
  *
  * So the deployment is identified in the URL and checked here. Goldsky
  * deployment slugs are operator-chosen, hence the substring convention rather
  * than a network query: name the Base deployment so it contains "base"
- * (e.g. `mondeto-base/1.0.0`). Fails CLOSED — an endpoint that does not
+ * (e.g. `terreno-base/1.0.0`). Fails CLOSED — an endpoint that does not
  * identify itself as Base is treated as unconfigured, and callers fall back to
  * the live log-scan path, which reads from READ_CHAIN and so cannot disagree
  * with the map.

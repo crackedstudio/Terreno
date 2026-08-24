@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from 'react'
 import { useWriteContract, useAccount, usePublicClient, useSwitchChain } from 'wagmi'
 import { base } from 'viem/chains'
 import { TERRENO_ABI, ERC20_ABI } from '@/lib/contract'
-import { getAttributionSuffix } from '@/lib/attribution'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { classifyBuy, isUserRejectedError } from '@/lib/buyErrors'
 import type { BuyBlockedReason, GasFallbackLevel } from '@/lib/buyErrors'
@@ -209,7 +208,6 @@ export function useBuyPixels(mapId?: MapId) {
       if (!publicClient || !address) return
       const { ids, tokenAddress, tokenDecimals, eventProps } = p
       const bigIds = ids.map((id) => BigInt(id))
-      const dataSuffix = getAttributionSuffix()
 
       setStep('buying')
 
@@ -272,7 +270,6 @@ export function useBuyPixels(mapId?: MapId) {
         abi: TERRENO_ABI,
         functionName: 'buyPixels',
         args: [bigIds, tokenAddress, maxTotalCost, deadline],
-        dataSuffix,
         // See approve above: always pass an explicit gas limit so viem never
         // asks the host wallet to estimate.
         ...(buyGas ? { gas: buyGas } : {}),
@@ -385,7 +382,7 @@ export function useBuyPixels(mapId?: MapId) {
     // goes out — but it is the tell for the MiniPay CIP-64 hazard, so it has to
     // be visible on its own rather than only when the buy later dies.
     // `level: 'ceiling'` is always preceded by `'without_fee_currency'` for the
-    // `ceiling` is now the ONLY level: the Celo build had a middle rung
+    // `ceiling` is now the ONLY level: the previous build had a middle rung
     // (`without_fee_currency`) that dropped the CIP-64 fee currency and retried,
     // and both rungs fired for one stage, so the guidance used to be "count the
     // middle rung, not the sum". Base has no fee currency, GasFallbackLevel
@@ -398,9 +395,8 @@ export function useBuyPixels(mapId?: MapId) {
       setError(null)
 
       const bigIds = ids.map((id) => BigInt(id))
-      const dataSuffix = getAttributionSuffix()
       // No fee-currency indirection on Base: gas is paid in ETH by the wallet.
-      // Celo's CIP-64 stablecoin-gas path (and the MiniPay-specific ladder that
+      // The previous chain's stablecoin-gas path (and the host-specific ladder that
       // went with it) has no equivalent on Nimiq Pay's chain list.
 
       // Read the canonical price + canonical-to-token decimal conversion.
@@ -497,7 +493,6 @@ export function useBuyPixels(mapId?: MapId) {
           abi: ERC20_ABI,
           functionName: 'approve',
           args: [contractAddress, safeApprove],
-          dataSuffix,
           // Always pass an explicit gas limit when we have one, so viem never
           // asks the host wallet to estimate on our behalf.
           ...(approveGas ? { gas: approveGas } : {}),

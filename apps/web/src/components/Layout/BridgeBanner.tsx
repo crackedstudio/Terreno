@@ -23,7 +23,7 @@ export default function BridgeBanner() {
   useEffect(() => {
     setInNimiqPay(isNimiqPay())
     try {
-      if (sessionStorage.getItem('mondeto-bridge-dismissed') === '1') {
+      if (sessionStorage.getItem('terreno-bridge-dismissed') === '1') {
         setDismissed(true)
       }
     } catch {}
@@ -37,7 +37,7 @@ export default function BridgeBanner() {
   const onDismiss = () => {
     setDismissed(true)
     try {
-      sessionStorage.setItem('mondeto-bridge-dismissed', '1')
+      sessionStorage.setItem('terreno-bridge-dismissed', '1')
     } catch {}
   }
 

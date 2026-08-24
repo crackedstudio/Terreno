@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
 // Cache TTL so navigating away + back doesn't re-fetch.
-const CACHE_KEY = 'mondeto-analytics-cache'
+const CACHE_KEY = 'terreno-analytics-cache'
 const CACHE_TTL_MS = 60_000
 
 export interface AnalyticsData {

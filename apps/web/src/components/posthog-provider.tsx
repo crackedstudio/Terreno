@@ -9,7 +9,7 @@ import { isNimiqPay } from '@/lib/nimiq'
 // Fire `app_opened` at most once per browser session (not per route change)
 // so it works as a top-of-funnel denominator without inflating with every
 // client-side navigation. sessionStorage is cleared when the tab closes.
-const SESSION_OPEN_KEY = 'mondeto-session-open'
+const SESSION_OPEN_KEY = 'terreno-session-open'
 
 function trackSessionOpen() {
   try {
