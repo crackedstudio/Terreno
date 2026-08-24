@@ -4,7 +4,7 @@
 # dependencies = ["Pillow"]
 # ///
 """
-Convert a BW map PNG to a bitmask for the Mondeto smart contract.
+Convert a BW map PNG to a bitmask for the Terreno smart contract.
 
 Land (black pixels) = 1, Water (white pixels) = 0.
 Dimensions and word count are derived from the image.

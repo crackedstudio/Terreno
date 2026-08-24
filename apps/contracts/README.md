@@ -1,6 +1,6 @@
-# Mondeto
+# Terreno
 
-A pixel world map on Celo where every land pixel is ownable on-chain. Pixels are colored by owner, creating a territorial mosaic. Accepts a set of dollar stablecoins (1:1) as currency, targets MiniPay.
+A pixel world map on Base where every land pixel is ownable on-chain. Pixels are colored by owner, creating a territorial mosaic. Accepts a set of dollar stablecoins (1:1) as currency, targets Nimiq Pay.
 
 ## Build & Test
 

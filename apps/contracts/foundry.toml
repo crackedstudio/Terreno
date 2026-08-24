@@ -14,15 +14,9 @@ remappings = [
 ]
 
 [rpc_endpoints]
-# Base is the deploy target: Nimiq Pay exposes Base to mini apps, and does not
-# expose Celo. The contract itself is chain-agnostic — accepted tokens are
-# constructor/initializer input, not hardcoded — so this is a redeploy, not a
-# port. The Celo entries are kept so the original mainnet deployments stay
-# reachable for reads/migration until they are retired.
+# Base is the deploy target: Nimiq Pay exposes Base to mini apps.
 base = "${BASE_RPC_URL}"
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
-celo = "${CELO_RPC_URL}"
-celo_testnet = "${CELO_TESTNET_RPC_URL}"
 
 # Source verification. Foundry knows Base's explorer endpoint; it only needs a
 # key. A single Etherscan V2 key (etherscan.io) covers Base — a basescan.org key

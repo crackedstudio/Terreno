@@ -6,7 +6,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {Terreno} from "../src/Terreno.sol";
 import {MockUSDT} from "./mocks/MockUSDT.sol";
 import {MockUSDC} from "./mocks/MockUSDC.sol";
-import {MockCUSD} from "./mocks/MockCUSD.sol";
+import {Mock18Dec} from "./mocks/Mock18Dec.sol";
 import {MockBlacklistToken} from "./mocks/MockBlacklistToken.sol";
 
 // Minimal V2 for upgrade test
@@ -20,7 +20,7 @@ contract TerrenoTest is Test {
     Terreno public terreno;
     MockUSDT public usdt;
     MockUSDC public usdc;
-    MockCUSD public cusd;
+    Mock18Dec public cusd;
 
     address public owner = address(this);
     address public alice = address(0xA11CE);
@@ -36,7 +36,7 @@ contract TerrenoTest is Test {
     function setUp() public {
         usdt = new MockUSDT();
         usdc = new MockUSDC();
-        cusd = new MockCUSD();
+        cusd = new Mock18Dec();
 
         // Land mask: mark pixels 0-1023 as land (first 4 words fully set)
         uint256[] memory mask = new uint256[](235);
@@ -61,7 +61,7 @@ contract TerrenoTest is Test {
         for (uint256 i; i < users.length; ++i) {
             usdt.mint(users[i], 1_000_000e6); // 1M USDT
             usdc.mint(users[i], 1_000_000e6); // 1M USDC
-            cusd.mint(users[i], 1_000_000e18); // 1M cUSD
+            cusd.mint(users[i], 1_000_000e18); // 1M MOCK18
             vm.startPrank(users[i]);
             usdt.approve(address(terreno), type(uint256).max);
             usdc.approve(address(terreno), type(uint256).max);
@@ -768,7 +768,7 @@ contract TerrenoTest is Test {
     }
 
     function test_buyWith18DecTokenScalesUp() public {
-        // cUSD is 18 decimals → every transfer is the base amount * 10^12.
+        // MOCK18 is 18 decimals → every transfer is the base amount * 10^12.
         uint256 scale = 1e12;
         uint256[] memory ids = new uint256[](1);
         ids[0] = 0;
@@ -808,7 +808,7 @@ contract TerrenoTest is Test {
     }
 
     function test_addAcceptedToken() public {
-        MockCUSD extra = new MockCUSD();
+        Mock18Dec extra = new Mock18Dec();
         terreno.addAcceptedToken(address(extra));
 
         (bool accepted, uint8 dec) = terreno.tokenConfig(address(extra));
@@ -871,7 +871,7 @@ contract TerrenoTest is Test {
     }
 
     function test_withdrawPerToken() public {
-        // Buy with cUSD so the treasury holds the 18-dec token, then withdraw it.
+        // Buy with MOCK18 so the treasury holds the 18-dec token, then withdraw it.
         uint256[] memory ids = new uint256[](1);
         ids[0] = 0;
         vm.prank(alice);
@@ -892,7 +892,7 @@ contract TerrenoTest is Test {
         uint256[] memory ids2 = new uint256[](1);
         ids2[0] = 1;
         vm.prank(alice);
-        terreno.buyPixels(ids2, address(cusd), type(uint256).max, type(uint256).max); // INITIAL_PRICE * 1e12 of cUSD (18 dec)
+        terreno.buyPixels(ids2, address(cusd), type(uint256).max, type(uint256).max); // INITIAL_PRICE * 1e12 of MOCK18 (18 dec)
 
         uint256 usdtExpected = INITIAL_PRICE;
         uint256 cusdExpected = INITIAL_PRICE * 1e12;

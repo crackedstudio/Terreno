@@ -1,4 +1,4 @@
-# Mondeto
+# Terreno
 
 A 170x100 pixel world map where every land pixel is ownable on-chain. Pixels are colored by owner, creating a territorial mosaic. Accepts a set of dollar stablecoins (1:1) as currency, targets Nimiq Pay.
 
@@ -121,19 +121,13 @@ OZ v5 removed dedicated "Upgradeable" versions of stateless contracts. `Reentran
 
 ## Target Chain
 
-**Base mainnet.** Chosen from the EVM chains Nimiq Pay exposes to mini apps
+**Base mainnet.** One of the EVM chains Nimiq Pay exposes to mini apps
 (Ethereum, Polygon, Arbitrum One, Optimism, Base, BNB Smart Chain, Ethereum
-Sepolia). Celo is not among them — but `wallet_addEthereumChain` IS supported,
-so whether Celo was truly unreachable is an open question, not a settled fact.
-See [`docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
+Sepolia). See [`docs/DEPLOYMENT.md`](../../docs/DEPLOYMENT.md).
 
-The contract needed no Solidity change: accepted tokens are `initialize()`
-input, not hardcoded, and each token's decimals are read on-chain. Prices are
-in `PRICE_DECIMALS = 6` base units (1 = $0.000001) regardless of chain.
+The contract is chain-agnostic: accepted tokens are `initialize()` input, not
+hardcoded, and each token's decimals are read on-chain. Prices are in
+`PRICE_DECIMALS = 6` base units (1 = $0.000001) regardless of chain.
 
-USDC and USDT on Base are both 6-decimal (verified via `eth_call`). Note the
-Celo deployment also accepted 18-decimal USDm; nothing on Base is 18-decimal,
-so any code that assumed 18 as a safe default is wrong here.
-
-The Celo deployments still exist and hold the original pixel state. Nothing
-migrates them; Base starts empty.
+USDC and USDT on Base are both 6-decimal (verified via `eth_call`). Nothing on
+Base is 18-decimal, so any code assuming 18 as a safe default is wrong here.
