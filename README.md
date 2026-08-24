@@ -1,12 +1,10 @@
-# Mondeto
+# Terreno
 
 **Own the world, one pixel at a time.**
 
-Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy, own, and trade land on a 170x100 pixel grid. Built as a [Nimiq Pay](https://nimiq.dev/mini-apps/) mini app on [Base](https://base.org).
+Terreno (Esperanto for "small world") is a pixel world map where anyone can buy, own, and trade land on a 170x100 pixel grid. Built as a [Nimiq Pay](https://nimiq.dev/mini-apps/) mini app on [Base](https://base.org).
 
-> **Migration in progress.** Mondeto originally ran on Celo inside MiniPay. Nimiq Pay exposes a fixed EVM chain list to mini apps that does not include Celo, so the contracts are being redeployed to Base. The frontend is migrated; the Base contracts are not deployed yet. See [`docs/BASE_NIMIQ_MIGRATION.md`](docs/BASE_NIMIQ_MIGRATION.md).
-
-**Live demo:** [mondeto.app](https://mondeto.app/)
+**Live demo:** [terreno.app](https://terreno.app/)
 
 ## How It Works
 
@@ -21,7 +19,7 @@ Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy,
 
 - **Dot-matrix world map** — 170x100 pixel grid rendered as rounded rectangles, no background image
 - **Dark/light mode** — neon green on black (default) or cream palette, toggle in top bar
-- **On-chain data** — all pixel ownership, profiles, and prices read from the Mondeto smart contract
+- **On-chain data** — all pixel ownership, profiles, and prices read from the Terreno smart contract
 - **Land mask from contract** — fetched via `getLandMask()`, only land pixels are purchasable
 - **Real buy flow** — stablecoin approve + `buyPixels()` with balance check and error handling
 - **Profile system** — name, URL, color stored on-chain via `updateProfile()`
@@ -32,7 +30,7 @@ Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy,
 
 ## Smart Contract
 
-The Mondeto contract is a UUPS upgradeable proxy:
+The Terreno contract is a UUPS upgradeable proxy:
 
 - **Grid:** 170x100 (17,000 pixels, ~5,622 land)
 - **Pricing:** `initialPrice << (saleCount - epoch)` with 30-day halving (`config().halvingTime` = 2592000s)
@@ -76,7 +74,7 @@ apps/
       constants/          map.ts (grid dimensions, colors, prices)
       data/               landMask.ts (static fallback, auto-fetched from contract at runtime)
       __tests__/          Vitest tests
-  contracts/              Mondeto.sol (reference copy)
+  contracts/              Terreno.sol (reference copy)
   subgraph/               Goldsky subgraph — earn/spend, AREA leaderboard (time
                           tie-break) and analytics. See apps/subgraph/README.md.
                           Set NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL to point the app at
@@ -87,7 +85,7 @@ scripts/
 
 ## Deployments
 
-Mondeto runs one map contract per continent (plus the whole world), on **Base mainnet**. Each map is its own canvas with a different grid size and land area. All contracts and their grid dimensions live in [`apps/web/src/lib/maps/contracts.ts`](apps/web/src/lib/maps/contracts.ts); the matching land masks are generated into `apps/web/src/data/masks/` by `pnpm -F web build:masks`. `ChainGuard` keeps wallets on Base mainnet.
+Terreno runs one map contract per continent (plus the whole world), on **Base mainnet**. Each map is its own canvas with a different grid size and land area. All contracts and their grid dimensions live in [`apps/web/src/lib/maps/contracts.ts`](apps/web/src/lib/maps/contracts.ts); the matching land masks are generated into `apps/web/src/data/masks/` by `pnpm -F web build:masks`. `ChainGuard` keeps wallets on Base mainnet.
 
 The grid dimensions and land masks are chain-independent and carry over unchanged; only the addresses move.
 
@@ -97,35 +95,23 @@ The grid dimensions and land masks are chain-independent and carry over unchange
 
 ### Base mainnet — world + continents
 
-**Not deployed yet.** Addresses land here once `script/Deploy.s.sol` has been run against Base; until then the registry holds an undeployed sentinel for every map and the UI renders none of them. See [`docs/BASE_NIMIQ_MIGRATION.md`](docs/BASE_NIMIQ_MIGRATION.md).
-
-### Celo mainnet — world + continents (legacy, pre-Nimiq)
-
-The original deployments. They still hold all existing pixel ownership; nothing migrates that state to Base.
-
 | ID | Map | Grid | Land px | Proxy |
 |----|-----|------|---------|-------|
-| 0 | World | 170×100 | 5,622 | [`0xA8cFC1B4365518f56954382B6Fab25a5382f5C49`](https://celoscan.io/address/0xA8cFC1B4365518f56954382B6Fab25a5382f5C49) |
-| 1 | Africa | 127×134 | 8,806 | [`0x8e70ada33714C3F8f35182b781C63449c5e079b7`](https://celoscan.io/address/0x8e70ada33714C3F8f35182b781C63449c5e079b7) |
-| 2 | Asia | 158×107 | 6,208 | [`0x9b8DC1e200A21A97963948A758D9fc4300310661`](https://celoscan.io/address/0x9b8DC1e200A21A97963948A758D9fc4300310661) |
-| 3 | Europe | 160×107 | 7,293 | [`0xDfB39B4d8896F196c13DBc4aC2dBDc3175Fcd767`](https://celoscan.io/address/0xDfB39B4d8896F196c13DBc4aC2dBDc3175Fcd767) |
-| 4 | North America | 159×107 | 5,497 | [`0x5bf55b88220DF9500A33962777B9d48945443106`](https://celoscan.io/address/0x5bf55b88220DF9500A33962777B9d48945443106) |
-| 5 | South America | 115×147 | 6,865 | [`0x822e332ac5f0c760257C7204154BA5eaF7A06586`](https://celoscan.io/address/0x822e332ac5f0c760257C7204154BA5eaF7A06586) |
-| 6 | Oceania | 158×107 | 4,425 | [`0x693CE5fBC50c0aCbd8B3333ad7DcaAb1802A4773`](https://celoscan.io/address/0x693CE5fBC50c0aCbd8B3333ad7DcaAb1802A4773) |
-| 7 | Antarctica | 145×117 | 9,115 | [`0x66C6eF911B3e33B35558956a0E636F33E16063c4`](https://celoscan.io/address/0x66C6eF911B3e33B35558956a0E636F33E16063c4) |
+| 0 | World | 170×100 | 5,622 | [`0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79`](https://basescan.org/address/0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79) |
 
-Implementation (logic) contracts behind each UUPS proxy:
+The seven continent maps are not deployed yet. Each ships in the registry on an
+undeployed sentinel (the zero address); `getMapsForChain()` filters those out,
+so a continent cannot be revealed before it exists — a zero-address read would
+otherwise decode as a map that is entirely free and unowned.
+
+Implementation (logic) contract behind the UUPS proxy:
 
 | Map | Implementation |
 |-----|----------------|
-| World | `0x35b4E020F3978Cc2a4F0C123A6A249204b8340e8` |
-| Africa | `0xd05C6A419c770425831885FDA2cA4a8b13e5caDb` |
-| Asia | `0x869552c7a8e20f2cd45f3B5489A044eE71A29c8F` |
-| Europe | `0x435f62Ad79A045c8b02ef27b44F139b31CD77C1c` |
-| North America | `0x9c9386dbA4Eb28C377C1eD15E4dC763D5f4DB586` |
-| South America | `0x2e965EE6d92777134867d5701CF5A39aA79f5203` |
-| Oceania | `0x2DcF496973a97076A7D97E5Ad75d9B7EFcb6D593` |
-| Antarctica | `0x1D4e86CfA050654C111728517Abd495696e37B07` |
+| World | [`0x7FbA520d7C7935300B750a64eaBBc77Af1500411`](https://basescan.org/address/0x7FbA520d7C7935300B750a64eaBBc77Af1500411) |
+
+Both are source-verified on Basescan. See
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for deploying the remaining maps.
 
 To add or change a map: update the `MAPS` array in the registry (id, slug, displayName, address, grid dims), drop the continent's mask JSON into `apps/contracts/map/` and run `pnpm -F web build:masks`. No other code change is required — rendering, leaderboards, and the active-pointer mechanism all read the registry.
 
@@ -135,8 +121,8 @@ To add or change a map: update the `MAPS` array in the registry (id, slug, displ
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS + CSS variables (dark/light theme)
 - **Canvas:** HTML5 Canvas API with react-zoom-pan-pinch
-- **Wallet:** wagmi + viem + RainbowKit
-- **Chain:** Celo Mainnet / Celo Sepolia
+- **Wallet:** wagmi + viem (Nimiq Pay injected provider; Privy for browsers)
+- **Chain:** Base Mainnet
 - **Smart Contract:** Solidity, UUPS proxy (OpenZeppelin v5)
 - **Testing:** Vitest + React Testing Library
 - **Monorepo:** Turborepo + pnpm

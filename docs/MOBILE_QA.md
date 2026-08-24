@@ -1,13 +1,13 @@
 # Mobile QA — 360×640 + PageSpeed checklist
 
-> MiniPay's minimum supported viewport is **360×640**. Submissions also include a PageSpeed Insights mobile score, target 90+. Both are blocking checks.
+> Nimiq Pay's minimum supported viewport is **360×640**. Submissions also include a PageSpeed Insights mobile score, target 90+. Both are blocking checks.
 
 ## How to test 360×640 locally
 
 1. Open the app in Chrome.
 2. DevTools (Cmd+Opt+I) → Toggle device toolbar (Cmd+Shift+M).
 3. Set custom resolution: **360 × 640**.
-4. Set DPR: 2 (most MiniPay phones).
+4. Set DPR: 2 (most Nimiq Pay phones).
 5. Set throttling: "Slow 4G" (matches the network conditions in emerging markets).
 6. Walk every page and overlay.
 
@@ -34,7 +34,7 @@ Once the app is on a public URL (Vercel or similar):
 1. Go to <https://pagespeed.web.dev>.
 2. Paste the production URL.
 3. Wait for the mobile report.
-4. Capture the screenshot — required for the MiniPay submission form.
+4. Capture the screenshot — required for the Nimiq Pay submission form.
 
 ### Targets
 - **Performance**: ≥ 90 (mobile)
@@ -45,7 +45,7 @@ Once the app is on a public URL (Vercel or similar):
 ### Most common things that drag the mobile score down
 - Render-blocking CSS / fonts → mitigated by the preconnect + preload in `app/layout.tsx`.
 - Large hero images → we don't currently load any.
-- Third-party JS at load time (Privy, WalletConnect) → these load only when the connect modal is opened on web; in MiniPay they don't load at all.
+- Third-party JS at load time (Privy, WalletConnect) → these load only when the connect modal is opened on web; in Nimiq Pay they don't load at all.
 - Missing `viewport` meta → set in `app/layout.tsx` via `export const viewport`.
 
 If the score lands below 90, capture the report and we'll go through the diagnostics one at a time.

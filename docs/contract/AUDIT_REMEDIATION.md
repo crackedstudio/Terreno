@@ -1,4 +1,10 @@
-# Mondeto — Audit Remediation Summary
+# Terreno — Audit Remediation Summary
+
+> **ARCHIVE.** This predates the move to Base and describes deployments and
+> tooling on the chain the project previously ran on. The contract logic and the
+> audit findings still apply — `Terreno.sol` was redeployed unchanged — but every
+> address, explorer link and chain reference below is historical. Current
+> deployment: [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md).
 
 **Purpose:** give the auditing team a fast path through the fixes for each
 finding — the original finding, the decision taken, the exact change (with
@@ -23,7 +29,7 @@ subsequently landed on `main` via merge commit `d2af1cd`. All four fixes are
 on `main` and in the deployed implementations (verification below).
 
 The frontend change required by M-02 is tracked separately in **PR #129**
-(`mondeto-fe`), since the new `buyPixels` parameters are supplied by the client.
+(`terreno-fe`), since the new `buyPixels` parameters are supplied by the client.
 
 ## Status overview
 
@@ -134,7 +140,7 @@ frontend change to supply the new parameters.
   `selectionPrice`). Callers can opt out of either guard by passing
   `type(uint256).max`.
 
-**Fix — frontend** (PR #129, `mondeto-fe`).
+**Fix — frontend** (PR #129, `terreno-fe`).
 
 - The buy flow now quotes `maxTotalCost = selectionPrice × (1 + slippage)` and
   sets `deadline = now + window`, passing both to `buyPixels`. The same slippage

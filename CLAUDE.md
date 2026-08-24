@@ -1,4 +1,4 @@
-# Mondeto — how this repo works
+# Terreno — how this repo works
 
 This file records the conventions the repo already follows, so that work
 landing from here on stays consistent with what came before. It is
@@ -13,8 +13,8 @@ Domain-specific conventions live next to the code they govern and are
 - [`apps/contracts/CLAUDE.md`](apps/contracts/CLAUDE.md) — UUPS storage
   layout, price formula, land mask, upgrade checklist
 - [`docs/README.md`](docs/README.md) — index of migration, QA and contract docs
-- [`docs/BASE_NIMIQ_MIGRATION.md`](docs/BASE_NIMIQ_MIGRATION.md) — the Celo/MiniPay
-  → Base/Nimiq Pay move: what changed, what does not carry over, what is open
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — deploying a map to Base,
+  verifying it, wiring it into the registry and subgraph, and what still bites
 
 ## Layout
 
@@ -25,7 +25,7 @@ pnpm workspace (`apps/*`) driven by Turborepo.
 | `apps/web` | Next.js App Router app — the product. Most work happens here. |
 | `apps/contracts` | Foundry / Solidity. UUPS proxy, one deployed map per continent. Also the Python land-mask tooling under `map/`. |
 | `apps/subgraph` | Goldsky subgraph — earn/spend, time-ordered leaderboards, analytics. |
-| `docs/` | Base/Nimiq migration runbook, mobile QA, contract proposals + audit remediation. Also the superseded MiniPay playbook/submission docs. |
+| `docs/` | Base/Nimiq migration runbook, mobile QA, contract proposals + audit remediation. Also the superseded Nimiq Pay playbook/submission docs. |
 | `scripts/` | Land-mask conversion helpers (Python). |
 
 ## Setup
@@ -144,7 +144,7 @@ not included` in #183) instead of widening.
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on PRs to
 `main` and on pushes to `main`. It calls the pm-kit shared baseline
-(`celo-org/pm-kit` `ci-node.yml`), which runs the root scripts — the
+(`the shared pm-kit` `ci-node.yml`), which runs the root scripts — the
 required check is `ci / ci`:
 
 ```sh
@@ -163,7 +163,7 @@ contracts has no package.json (Foundry), and the subgraph defines no
 `lint`/`test` scripts, so the turbo tasks don't reach them.
 
 Dependencies are managed by Renovate (`renovate.json`, extending
-`celo-org/.github`), with `rebaseWhen: behind-base-branch` — added in #166
+`the shared org config`), with `rebaseWhen: behind-base-branch` — added in #166
 to prevent a recurrence of the `pnpm-lock.yaml` merge corruption repaired
 in #162.
 
@@ -171,12 +171,10 @@ in #162.
 
 Detail lives in [`README.md`](README.md); what matters when writing code:
 
-- The app targets **Base mainnet** and runs as a **Nimiq Pay mini app**. Base
-  was chosen from the chains Nimiq Pay exposes; Celo is not among them, though
-  `wallet_addEthereumChain` is supported so that choice is not fully settled —
-  see `docs/BASE_NIMIQ_MIGRATION.md`. Until the Base deploy happens every map
-  sits on an undeployed sentinel and the UI renders none of them; that is the
-  guard working, not a bug.
+- The app targets **Base mainnet** and runs as a **Nimiq Pay mini app**. The
+  world map is live; the seven continents each sit on an undeployed sentinel and
+  the UI renders none of them until deployed. That is the guard working, not a
+  bug — see `docs/DEPLOYMENT.md`.
 - One contract per map (world + 7 continents), registered
   in `apps/web/src/lib/maps/contracts.ts`. Adding or changing a map is a
   registry edit plus `pnpm -F web build:masks` — rendering, leaderboards

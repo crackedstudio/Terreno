@@ -1,4 +1,4 @@
-# Mondeto docs
+# Terreno docs
 
 Index of what lives where. Edit the underlying doc, not this index.
 
@@ -7,19 +7,19 @@ team's private drive, not in this repository.
 
 ## Migration (current)
 
-- [`BASE_NIMIQ_MIGRATION.md`](BASE_NIMIQ_MIGRATION.md) — **start here.** Moving the
-  app from Celo/MiniPay to Base/Nimiq Pay: why the chain had to move, what does
+- [`DEPLOYMENT.md`](DEPLOYMENT.md) — **start here.** Moving the
+  app from Base: deploying a map, verifying it, wiring it into the registry, and what
   not carry over, deploy steps, and what is still open.
 
 ## Wallet host & QA
 
 - [`MOBILE_QA.md`](MOBILE_QA.md) — pre-submission QA at 360×640 + PageSpeed targets.
   The viewport and performance targets still apply; the wallet host does not.
-- [`MINIPAY_BUILD_PLAYBOOK.md`](MINIPAY_BUILD_PLAYBOOK.md) — **superseded.** MiniPay
+- [`MINIPAY_BUILD_PLAYBOOK.md`](MINIPAY_BUILD_PLAYBOOK.md) — **superseded.** Nimiq Pay
   integration practices, kept as the record of the previous host. Much of it
   (WebView constraints, mobile-first layout) transfers to Nimiq Pay; the
-  MiniPay-specific APIs do not.
-- [`MINIPAY_SUBMISSION.md`](MINIPAY_SUBMISSION.md) — **superseded.** MiniPay's
+  Nimiq Pay-specific APIs do not.
+- [`MINIPAY_SUBMISSION.md`](MINIPAY_SUBMISSION.md) — **superseded.** Nimiq Pay's
   submission process, which does not apply to Nimiq Pay.
 
 ## Contract

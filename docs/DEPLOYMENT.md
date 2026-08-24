@@ -1,173 +1,112 @@
-# Migrating Mondeto from Celo/MiniPay to Base/Nimiq Pay
+# Deploying Terreno
 
-Status: **code migrated, contracts not yet deployed.** The frontend targets
-Base and Nimiq Pay; every map in the registry still points at the undeployed
-sentinel until the steps below are run.
+Terreno runs on **Base mainnet** as a [Nimiq Pay](https://nimiq.dev/mini-apps/)
+mini app. Nimiq Pay injects a standard `window.ethereum`, so wagmi/viem and the
+Solidity contracts work unchanged; Base is one of the EVM chains it exposes
+(Ethereum, Polygon, Arbitrum One, Optimism, Base, BNB Smart Chain, Ethereum
+Sepolia).
 
-## Why the chain had to move
+## Current state
 
-Nimiq Pay mini apps get a standard `window.ethereum` injected by the host, so
-wagmi/viem/Solidity carry over unchanged.
+| | |
+|---|---|
+| World proxy | [`0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79`](https://basescan.org/address/0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79) |
+| World implementation | [`0x7FbA520d7C7935300B750a64eaBBc77Af1500411`](https://basescan.org/address/0x7FbA520d7C7935300B750a64eaBBc77Af1500411) |
+| Deployed | block 50404393 |
+| Accepted token | USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (6 decimals) |
+| Continents | not deployed — each on the undeployed sentinel |
 
-Nimiq Pay exposes a fixed set of EVM chains (Ethereum, Polygon, Arbitrum One,
-Optimism, Base, BNB Smart Chain, and Ethereum Sepolia for testing). Base was
-chosen from that set.
+## Deploying a map
 
-**Correction — read this before treating the move as settled.** The original
-justification here was "a mini app cannot add a chain, so Celo is unreachable".
-That is contradicted by Nimiq's own documentation: `wallet_addEthereumChain` is
-listed as a supported provider method, and both `SKILL.md` and
-`references/chains-and-tokens.md` state that custom chains can be added. It is
-therefore *possible* that Mondeto could have stayed on Celo and kept every
-existing pixel, price and treasury balance.
+1. Fund a deployer with ETH on Base. The world map cost **0.00002144 ETH**
+   (4,287,691 gas over two transactions).
 
-What remains genuinely undetermined: whether an added chain persists, and
-whether Nimiq's RPC proxy must already know a chain for `eth_call` /
-`eth_sendTransaction` to route (the docs describe read-only methods as "routed
-through RPC" — i.e. through the host, not the app's own transport). The
-first-party `evm-mini-wallet` reference implementation hardcodes the seven
-documented chains and never calls `wallet_addEthereumChain`, which is
-suggestive but not decisive.
+2. Copy `apps/contracts/base.env.example` to `apps/contracts/.env`. Foundry
+   auto-loads `.env` from the project root — no `source` needed, and `export`
+   prefixes and `$VAR` interpolation both work.
 
-**This is a ~30 minute device test that could preserve all user state:** open
-Nimiq Pay and call `wallet_addEthereumChain` with Celo's config (chainId
-`0xa4ec`), then try an `eth_call` against a Celo map contract. Do it before
-deploying to Base. Record the result precisely — "added but calls do not route"
-is a different finding from "the host refuses to add it".
+   The signing key does **not** go in that file. It gets sourced, `cat`'d,
+   backed up and screen-shared. Use an encrypted keystore
+   (`cast wallet import <name> --interactive`) or `--ledger`.
 
-Nimiq's native side was never an option for this product regardless: Nimiq has
-no general-purpose smart contracts, only protocol-level vesting and HTLC
-account types, so there is nothing to own a pixel with.
-
-`Terreno.sol` needed **no Solidity changes** — accepted tokens are initializer
-input, not hardcoded — so this is a redeploy, not a port.
-
-## What does not carry over
-
-- **All existing pixel ownership, prices and treasury balances.** The Celo
-  contracts keep their state; the Base deployments start empty. There is no
-  migration path in this change, and writing one is a separate decision.
-- **Celo fee abstraction (CIP-64).** `lib/feeCurrency.ts` is deleted. On Base
-  gas is paid in ETH by the host wallet — buyers need a small ETH balance,
-  which is a real UX change from MiniPay's stablecoin-only wallets.
-- **The MiniPay "Add Cash" deeplink.** Nimiq Pay has no verified equivalent, so
-  the top-up CTA is hidden until `NEXT_PUBLIC_TOPUP_URL` is set.
-
-## Deploy steps
-
-1. Fund a deployer with ETH on Base.
-
-2. Write `apps/contracts/.env` (gitignored) — copy `base.env.example` to it.
-   Foundry auto-loads `.env` from the project root, so no `source` is needed;
-   verified by running the dry run below with every one of those variables
-   explicitly unset in the shell. Verified on-chain via `eth_call` against `https://mainnet.base.org`:
-
-   **`apps/contracts/base.env.example` is filled in and ready to copy.** Its
-   values were read off the live Celo world proxy with `cast call`, not
-   remembered, so Base reproduces production economics:
-
-   | | live Celo value | meaning |
-   |---|---|---|
-   | `initialPrice` | `30000` | $0.03 at `PRICE_DECIMALS = 6` |
-   | `minPrice` | `1` | $0.000001 |
-   | `feeRate` | `500` | 5% resale fee (bps) |
-   | `HALVING_TIME` | `2592000` | 30 days |
-
-   Note this contradicts the older `deploy.env.example`, which still says
-   $0.01 and 182 days — those placeholders have drifted from production. Re-read
-   the live values before deploying; they are owner-mutable.
-
-   Accepted tokens, both verified on Base via `eth_call` (symbol + decimals):
-
-   | Token | Address | decimals | in Nimiq Pay's token list? |
-   |---|---|---|---|
-   | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 | **yes**, byte-identical |
-   | USDT | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` | 6 | **no** |
-
-   **Recommendation: launch USDC-only.** Base's entry in Nimiq's well-known
-   token list has USDC, USDbC, DAI and WETH — no USDT — so a buyer holding Base
-   USDT likely cannot see it in the wallet UI even though the contract would
-   accept it. Base USDT supply is also ~23M against USDC's ~4.3B, roughly 185x
-   smaller. `addAcceptedToken()` is an owner call, so USDT can be added later
-   without a redeploy, once its address is confirmed against Tether's own
-   published Base deployment rather than only against its on-chain `symbol()`.
-
-   Celo also accepted 18-decimal USDm. Base has no equivalent, and **nothing on
-   Base is 18-decimal** — any code defaulting to 18 is wrong here (this was a
-   real bug in `useStablecoinBalance`, now fixed).
-
-3. Deploy the world map first, then each continent with its mask:
-
-   Dry-run first — no `--broadcast` means nothing is sent:
+3. Dry-run first — without `--broadcast` nothing is sent:
 
    ```sh
+   cd apps/contracts
    forge script script/Deploy.s.sol --rpc-url base --sender <deployer-address>
    ```
 
-   Then broadcast. The signer never goes in the env file; it comes from an
-   encrypted keystore (`cast wallet import <name> --interactive`) or a Ledger:
+   A successful dry run proves more than it looks: `initialize()` reads
+   `decimals()` on every address in `ACCEPTED_TOKENS`, so it validates the token
+   list on-chain.
+
+4. Broadcast:
 
    ```sh
    forge script script/Deploy.s.sol --broadcast --rpc-url base --account <keystore>
-   # continents:
+   # a continent:
    LAND_MASK_PATH=map/continents/africa.json \
      forge script script/Deploy.s.sol --broadcast --rpc-url base --account <keystore>
    ```
 
-   Whichever address signs becomes the contract `owner` — it holds UUPS upgrade
-   authority and the treasury. Decide whether that should be a multisig before
-   broadcasting; it is far easier than transferring ownership afterwards.
+   **Whichever address signs becomes the contract `owner`** — it holds UUPS
+   upgrade authority *and* the treasury. Decide whether that should be a
+   multisig before broadcasting; transferring afterwards is another transaction
+   and another window.
 
-4. Wire the proxy addresses into the frontend. Until they are in the registry
-   source, use the override env var (comma-separated `id:address`):
+5. Verify the source (needs `ETHERSCAN_API_KEY`; a single Etherscan V2 key
+   covers Base). The proxy and implementation verify separately:
 
+   ```sh
+   forge verify-contract <impl> src/Terreno.sol:Terreno --chain base --watch \
+     --constructor-args $(cast abi-encode "constructor(uint16,uint16,uint256)" 170 100 2592000)
    ```
-   NEXT_PUBLIC_MAP_ADDRESS_OVERRIDES=0:0x…,1:0x…
-   NEXT_PUBLIC_REVEALED_MAP_IDS=0
-   ```
 
-   `getMapsForChain()` filters out any map still on the sentinel, so a map
-   cannot be revealed before it exists — verify by loading the app with the
-   reveal list set and the override missing: nothing should render.
+   Read the constructor args off the live contract's own getters rather than
+   from the env — they are immutables baked into bytecode and verification fails
+   on a mismatch.
 
-5. Repoint the subgraph. Fill in `apps/subgraph/maps.base.json` with each
+6. Wire the address into `apps/web/src/lib/maps/contracts.ts` (the permanent
+   home) and reveal it. For a preview deploy, `NEXT_PUBLIC_MAP_ADDRESS_OVERRIDES`
+   (`0:0xabc…`) repoints a map without editing the registry.
+
+7. Repoint the subgraph: fill in `apps/subgraph/maps.base.json` with each
    proxy's address and deploy block (from
    `broadcast/Deploy.s.sol/8453/run-latest.json`), then:
 
    ```sh
-   cd apps/subgraph && pnpm gen-manifest        # or: node scripts/gen-subgraph-yaml.js --only 0
+   cd apps/subgraph && pnpm gen-manifest    # or: node scripts/gen-subgraph-yaml.js --only 0
    ```
 
-   The generator refuses to emit a manifest for any map still null, so it cannot
-   silently index the wrong contract. Then redeploy to Goldsky and update
-   `NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL`. Until then the app falls back to the live
-   log-scan path, which must keep working.
+   The generator refuses to emit a manifest for a map still on the sentinel, so
+   it cannot silently index the wrong contract. Then redeploy to Goldsky and set
+   `NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL`. It **must name a Base deployment** —
+   `subgraphConfigured()` fails closed on a URL that does not contain "base",
+   falling back to live log-scan reads.
+
+## Notes that bite
+
+- **Gas is ETH, not the stablecoin.** Buyers need a small ETH balance on Base
+  alongside their USDC. There is no fee abstraction here.
+- **Nothing on Base is 18-decimal.** USDC and USDT are both 6. Any code
+  defaulting to 18 is wrong; `useStablecoinBalance` keeps a verified per-token
+  decimals map for exactly this reason.
+- **Base USDT is not in Nimiq Pay's token list** (Base's entry there is USDC,
+  USDbC, DAI, WETH), so a buyer holding it may not see it in the wallet UI.
+  `addAcceptedToken()` is an owner call, so it can be added later.
+- **`initialPrice` has no setter.** It is fixed at deployment forever — a setter
+  would retroactively reprice the map out from under existing owners.
 
 ## Still open
 
-- **Legal + marketing copy** (`app/terms`, `app/privacy`, `app/faq`,
-  `app/layout` metadata) still names MiniPay, Celo Core Co. and the Celo
-  network. That is a legal decision, not a refactor, and was deliberately left
-  untouched.
-- **PostHog dashboards** segmenting on `isMiniPay` must be repointed to
-  `isNimiqPay`. The property was renamed rather than reused so Nimiq Pay
-  traffic is not filed under a MiniPay segment.
-- **`NEXT_PUBLIC_TOPUP_URL`** — unset, CTA hidden.
-- **Does `wallet_addEthereumChain` work for Celo?** See the correction above.
-  This is the highest-value open question in this document — it decides whether
-  every existing pixel owner keeps their land.
-- **Nimiq Pay chain-switch semantics are undocumented.** `ChainGuard` calls
-  `wallet_switchEthereumChain` and treats rejection as a warning; whether the
-  host honours it, or always sits on a user-selected chain, needs a real device
-  test.
-- **Gas ceilings are uncalibrated.** The approve / buy / profile fallbacks
-  (150k, 300k + 80k per pixel, 200k) are the Celo numbers unchanged. Gas units
-  are EVM-identical so they are plausible, but the per-pixel 80k for a
-  many-distinct-owner resale batch has no measurement behind it. Pin them with
-  an `estimateGas` test against a forked Base deployment.
-- **Base USDT is not in Nimiq Pay's own token list.** The reference token list
-  has USDC, USDbC, DAI and WETH for Base, but no USDT. Mondeto reads balances
-  directly via `eth_call` so it works — but a buyer holding only USDT may not
-  see it in the wallet UI. Consider shipping USDC-only at launch.
-- **Mini-app submission.** `docs/MINIPAY_SUBMISSION.md` describes MiniPay's
-  process and does not apply.
+- Gas ceilings in `useBuyPixels` / `useProfile` (150k approve, 300k + 80k per
+  pixel, 200k profile) are uncalibrated. Pin them with an `estimateGas` test
+  against a forked Base deployment.
+- No `error.tsx` / `global-error.tsx` in `apps/web/src/app`.
+- Mobile checklist: 6–7px body text and sub-44px tap targets fail Nimiq's
+  minimums.
+- `NEXT_PUBLIC_TOPUP_URL` is unset — no verified Nimiq Pay funding deeplink, so
+  the top-up CTA stays hidden.
+- The legal pages (`app/terms`, `app/privacy`) still name a third-party operator
+  and contact address inherited from the previous host. They need counsel, not a
+  find-and-replace.

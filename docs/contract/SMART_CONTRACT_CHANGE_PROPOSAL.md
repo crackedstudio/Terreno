@@ -1,6 +1,12 @@
-# Mondeto — Smart Contract Change Proposal
+# Terreno — Smart Contract Change Proposal
 
-Single source of truth for everything that touches the Mondeto smart contract, for review by the smart contract developer. All app-layer work is tracked separately in the decision register and does not belong here.
+> **ARCHIVE.** This predates the move to Base and describes deployments and
+> tooling on the chain the project previously ran on. The contract logic and the
+> audit findings still apply — `Terreno.sol` was redeployed unchanged — but every
+> address, explorer link and chain reference below is historical. Current
+> deployment: [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md).
+
+Single source of truth for everything that touches the Terreno smart contract, for review by the smart contract developer. All app-layer work is tracked separately in the decision register and does not belong here.
 
 ---
 
@@ -67,11 +73,11 @@ The contract must accept **USDT, USDC, and USDm** as payment tokens, not USDT-on
 ### Rationale
 
 - USDT is not buyable in many European jurisdictions; restricting payment to USDT excludes a large slice of the addressable user base. Multi-currency unblocks Europe.
-- MiniPay's listing rules (§2 Currency & Stablecoin Logic) also require supporting all three native stablecoins.
+- Nimiq Pay's listing rules (§2 Currency & Stablecoin Logic) also require supporting all three native stablecoins.
 
 ### Accepted UX trade-off
 
-Mondeto is peer-to-peer: when buyer A purchases seller B's pixel, B receives most of the payment. With multi-currency enabled, **sellers receive whatever currency the buyer paid in** — not the currency they originally paid with. A player who entered with USDT may later receive USDC or USDm when their pixel sells.
+Terreno is peer-to-peer: when buyer A purchases seller B's pixel, B receives most of the payment. With multi-currency enabled, **sellers receive whatever currency the buyer paid in** — not the currency they originally paid with. A player who entered with USDT may later receive USDC or USDm when their pixel sells.
 
 This is acceptable. Stablecoins are economically fungible; balances will simply accrue across all three. The frontend displays totals in USD-equivalent and treats any of the three as "money in". Player confusion is an accepted cost of unblocking the European market — we do not add an internal auto-swap, and we do not segregate liquidity per token.
 
@@ -184,7 +190,7 @@ Old single-arg signature stays as a thin wrapper around `withdraw(usdt, ...)` fo
 
 ## DECIDED — multi-sig ownership & batch deployment
 
-Every privileged role on every Mondeto contract is held by a **multi-sig**, never an EOA. This applies to the existing v1 deployment after migration and every new batch deployment going forward.
+Every privileged role on every Terreno contract is held by a **multi-sig**, never an EOA. This applies to the existing v1 deployment after migration and every new batch deployment going forward.
 
 ### Roles held by the multi-sig
 
