@@ -1,0 +1,40 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "type-check": {
+      "dependsOn": ["^type-check"]
+    },
+    "clean": {
+      "cache": false
+    },
+    "compile": {
+      "dependsOn": ["^compile"],
+      "outputs": ["artifacts/**", "cache/**", "typechain-types/**"]
+    },
+    "test": {
+      "dependsOn": ["compile"]
+    },
+    "test:coverage": {
+      "outputs": ["coverage/**"]
+    },
+    "deploy": {
+      "dependsOn": ["compile"]
+    },
+    "deploy:celo-sepolia": {
+      "dependsOn": ["compile"]
+    },
+    "deploy:celo": {
+      "dependsOn": ["compile"]
+    }
+  }
+}

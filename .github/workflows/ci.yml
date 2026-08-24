@@ -1,0 +1,25 @@
+name: CI
+
+# Gate merges on lint + type-check + unit tests via the pm-kit shared
+# baseline (celo-org/pm-kit ci-node.yml). Deploys/build are handled by
+# Vercel; this workflow is the fast correctness check — in particular the
+# regression guards for the silent RPC-data failures (getLogs chunk size,
+# transport failover config). Coverage floors live in
+# apps/web/vitest.config.ts and fail the `test` step on regression.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref so a rapid push sequence doesn't queue.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: celo-org/pm-kit/.github/workflows/ci-node.yml@main
+    with:
+      node-version: '20'
+      run-build: false # Vercel builds; CI is the correctness gate (matches current behavior)

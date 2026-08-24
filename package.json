@@ -1,0 +1,30 @@
+{
+  "name": "my-celo-app",
+  "version": "0.1.0",
+  "description": "A new Celo blockchain project",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "type-check": "turbo run type-check",
+    "typecheck": "turbo run type-check",
+    "test": "turbo run test:coverage",
+    "contracts:compile": "turbo run compile --filter=hardhat",
+    "contracts:test": "turbo run test --filter=hardhat",
+    "contracts:deploy": "turbo run deploy --filter=hardhat",
+    "contracts:deploy:celo-sepolia": "turbo run deploy:celo-sepolia --filter=hardhat",
+    "contracts:deploy:celo": "turbo run deploy:celo --filter=hardhat"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "turbo": "^2",
+    "typescript": "^5.2.2"
+  },
+  "packageManager": "pnpm@8.10.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
