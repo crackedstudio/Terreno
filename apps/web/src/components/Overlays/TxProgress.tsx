@@ -19,7 +19,11 @@ const steps: StepDef[] = [
   {
     label: 'FUNDS UNLOCKED',
     getState: (step) =>
-      ['buying', 'confirming', 'success'].includes(step) ? 'done' : 'active',
+      // 'approved' counts as done: the allowance is set and the flow is
+      // parked waiting for the player's confirm tap, not still working.
+      ['approved', 'buying', 'confirming', 'success'].includes(step)
+        ? 'done'
+        : 'active',
   },
   {
     label: 'LOCKING IT IN...',

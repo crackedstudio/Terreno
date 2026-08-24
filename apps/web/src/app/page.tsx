@@ -360,6 +360,12 @@ export default function Home() {
     buy.execute([...selectedIds], totalPrice)
   }, [selectedIds, totalPrice, buy])
 
+  // Second, explicit tap after an approval dialog. Kept separate from
+  // handleBuy so the buy is never sent off the same tap that approved.
+  const handleConfirmPurchase = useCallback(() => {
+    buy.confirmPurchase()
+  }, [buy])
+
   const handleDone = useCallback(() => {
     clearSelection()
     setActiveOverlay('none')
@@ -715,6 +721,7 @@ export default function Home() {
           onRemovePixels={handleRemovePixels}
           onClear={handleClear}
           onBuy={handleBuy}
+          onConfirmPurchase={handleConfirmPurchase}
           onDone={handleDone}
         />
       )}

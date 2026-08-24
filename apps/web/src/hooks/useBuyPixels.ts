@@ -20,7 +20,34 @@ import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { getReferrer, track } from '@/lib/analytics'
 import type { MapId } from '@/lib/maps/types'
 
-export type TxStep = 'idle' | 'approving' | 'buying' | 'confirming' | 'success' | 'error'
+export type TxStep =
+  | 'idle'
+  | 'approving'
+  /**
+   * Allowance is set and the buy has NOT been sent. The flow deliberately
+   * stops here and waits for a second, explicit tap.
+   *
+   * Nimiq Pay's guidance: "Do not fire multiple provider calls that require
+   * user confirmation in rapid sequence... sequence confirmation-requiring
+   * calls with clear user intent between them." Approve and buy are two
+   * native dialogs; running them off one tap gave the player a second dialog
+   * they never asked for. Only reachable when an approval was actually
+   * needed — a buy covered by the standing allowance still sends on one tap
+   * and never passes through here.
+   */
+  | 'approved'
+  | 'buying'
+  | 'confirming'
+  | 'success'
+  | 'error'
+
+/** Everything the buy phase needs, captured when the approval completes. */
+interface PendingBuy {
+  ids: number[]
+  tokenAddress: `0x${string}`
+  tokenDecimals: number
+  eventProps: Record<string, unknown>
+}
 
 // How long a signed buy stays valid, in seconds. Past this the contract
 // rejects it (DeadlineExpired) rather than executing a stale transaction at a
@@ -81,11 +108,206 @@ export function useBuyPixels(mapId?: MapId) {
   // wallet prompts, potential double spend).
   const inFlight = useRef(false)
 
+  // Buy parameters captured at approval time, consumed by `confirmPurchase`.
+  // Only the *selection* is carried across the pause — never the price or the
+  // deadline, both of which `runBuy` re-reads, because the player controls how
+  // long they sit on the confirm step.
+  const pendingBuy = useRef<PendingBuy | null>(null)
+
   const checkBalance = useCallback((totalPrice: bigint, userBalance: bigint) => {
     const insufficient = userBalance < totalPrice
     setInsufficientBalance(insufficient)
     return !insufficient
   }, [])
+
+  /**
+   * Shared failure path for both wallet dialogs. Extracted when the buy split
+   * into approve → confirm so the two entry points classify, report and render
+   * an error identically — a divergence here would mean the second dialog's
+   * rejections were tracked differently from the first's.
+   */
+  /**
+   * Hoisted to hook scope when the buy split into approve → confirm: the buy
+   * phase now runs from `runBuy`, outside `execute`'s closure, so both entry
+   * points must report gas fallbacks through the same function.
+   */
+  const trackGasFallback = useCallback(
+    (
+    stage: 'approve' | 'buy',
+    level: GasFallbackLevel,
+    err: unknown,
+    eventProps: Record<string, unknown>,
+    ) => {
+    track('pixel_buy_gas_fallback', {
+      ...eventProps,
+      stage,
+      level,
+      // Unwrapped, not the raw message. viem masks provider failures as "An
+      // unknown RPC error occurred" at the top level and puts the real reason
+      // in `.cause`/`.details` — so for the MiniPay estimate failure this
+      // event exists to explain, the raw first 100 chars are boilerplate and
+      // a URL while `permission denied` sits well past the cut. Using the
+      // unwrapped detail also keeps the authenticated RPC URL out of PostHog.
+      detail: extractErrorDetail(err).slice(0, 100),
+    })
+    },
+    [],
+  )
+
+  const handleBuyFailure = useCallback(
+    (e: unknown, eventProps: Record<string, unknown>) => {
+      // Unwrap the wallet-masked error so a real reason survives. Match against
+      // both the top-level message and the unwrapped detail.
+      const detail = extractErrorDetail(e)
+      const msg = e instanceof Error ? e.message : String(e)
+      const hay = `${msg} ${detail}`
+      // A wallet rejection is the user backing out on purpose, not a failure.
+      // Silently return them to the buying frame (BUY button ready again) —
+      // no red error, nothing to dismiss.
+      if (isUserRejectedError(e, hay)) {
+        track('pixel_buy_rejected', eventProps)
+        setError(null)
+        setStep('idle')
+        return
+      }
+      // Keep the raw error in the console for debugging; show players only the
+      // short, human-readable line — never the raw viem/wallet dump.
+      console.error('Buy failed:', detail, e)
+      const { message: short, category } = classifyBuy(hay, preferred?.symbol ?? '')
+      // `reason` is player copy and moves with wording; `category` is the
+      // stable key to segment on. `detail` carries the unwrapped raw error
+      // (truncated, same as profile_save_failed) so a rising `unknown` bucket
+      // can be read and turned into a new branch instead of guessed at.
+      track('pixel_buy_failed', {
+        ...eventProps,
+        reason: short,
+        category,
+        detail: detail.slice(0, 100),
+      })
+      setError(short)
+      setStep('error')
+    },
+    [preferred],
+  )
+
+  /**
+   * Send the buy. Split out of `execute` so it can run either as the tail of a
+   * single-tap buy (standing allowance, one dialog) or as the second, explicitly
+   * confirmed step after an approval dialog.
+   *
+   * Re-reads the price and rebuilds `maxTotalCost` and `deadline` on every call.
+   * That is the whole reason this is safe to pause in front of: between approving
+   * and confirming, the player may sit on the confirm step for minutes, in which
+   * time the price can tick up and a deadline computed at approval time would
+   * burn down. Reusing the approval-time values would either revert on-chain
+   * (DeadlineExpired) or buy against a ceiling the player never saw.
+   *
+   * Throws on failure; callers own the catch.
+   */
+  const runBuy = useCallback(
+    async (p: PendingBuy) => {
+      if (!publicClient || !address) return
+      const { ids, tokenAddress, tokenDecimals, eventProps } = p
+      const bigIds = ids.map((id) => BigInt(id))
+      const dataSuffix = getAttributionSuffix()
+
+      setStep('buying')
+
+      // Fresh price read — see the doc comment above.
+      const [canonicalPrice, priceDecimalsRaw] = await Promise.all([
+        publicClient.readContract({
+          address: contractAddress,
+          abi: MONDETO_ABI,
+          functionName: 'selectionPrice',
+          args: [bigIds],
+        }) as Promise<bigint>,
+        publicClient.readContract({
+          address: contractAddress,
+          abi: MONDETO_ABI,
+          functionName: 'PRICE_DECIMALS',
+        }) as Promise<number>,
+      ])
+      const priceDecimals = Number(priceDecimalsRaw)
+      const maxTotalCost = (canonicalPrice * (BPS_DENOM + SLIPPAGE_BPS)) / BPS_DENOM
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_SECONDS)
+
+      // Re-check the spend cap against the price as it stands NOW. The check in
+      // `execute` cleared a price that may since have moved while the player sat
+      // on the confirm step; without this the pause would be a hole in the cap.
+      const tenToTokenDec = 10n ** BigInt(tokenDecimals)
+      const tenToPriceDec = 10n ** BigInt(priceDecimals)
+      const priceInToken = (canonicalPrice * tenToTokenDec) / tenToPriceDec
+      const bufferedInToken = (priceInToken * (BPS_DENOM + SLIPPAGE_BPS)) / BPS_DENOM
+      if (bufferedInToken > APPROVAL_CAP_USD * tenToTokenDec) {
+        track('pixel_buy_over_cap', { ...eventProps, reason: 'price_moved' })
+        setError(PRICE_MOVED_MESSAGE)
+        setStep('error')
+        return
+      }
+
+      // Estimate gas via the read client and pass it explicitly. Passing the
+      // limit matters inside a wallet WebView: a gas-less send makes viem call
+      // the host's own eth_estimateGas, which it may refuse.
+      let buyGas: bigint | undefined
+      try {
+        const g = await publicClient.estimateContractGas({
+          address: contractAddress,
+          abi: MONDETO_ABI,
+          functionName: 'buyPixels',
+          args: [bigIds, tokenAddress, maxTotalCost, deadline],
+          account: address,
+        })
+        buyGas = (g * 12n) / 10n
+      } catch (err) {
+        // Never fall through to a gas-less send (see approve above). Un-gated
+        // for the same reason: the old `if (feeCurrency)` guard made this
+        // ceiling unreachable for any wallet without a fee currency, which on
+        // Base is every wallet.
+        console.warn('buyPixels gas estimate failed; using ceiling:', err)
+        trackGasFallback('buy', 'ceiling', err, eventProps)
+        buyGas = 300_000n + BigInt(bigIds.length) * 80_000n
+      }
+      const buyHash = await writeContractAsync({
+        address: contractAddress,
+        abi: MONDETO_ABI,
+        functionName: 'buyPixels',
+        args: [bigIds, tokenAddress, maxTotalCost, deadline],
+        dataSuffix,
+        // See approve above: always pass an explicit gas limit so viem never
+        // asks the host wallet to estimate.
+        ...(buyGas ? { gas: buyGas } : {}),
+      })
+
+      setTxHash(buyHash)
+      setStep('confirming')
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: buyHash })
+
+      if (receipt.status === 'reverted') {
+        // Try to surface the revert reason via a simulation re-run.
+        try {
+          await publicClient.simulateContract({
+            address: contractAddress,
+            abi: MONDETO_ABI,
+            functionName: 'buyPixels',
+            args: [bigIds, tokenAddress, maxTotalCost, deadline],
+            account: address,
+          })
+        } catch (simErr) {
+          console.error('Revert reason:', simErr)
+          throw new Error(
+            'Transaction reverted: ' +
+              (simErr instanceof Error ? simErr.message.slice(0, 150) : 'unknown reason'),
+          )
+        }
+        throw new Error('Transaction reverted on-chain')
+      }
+
+      track('pixel_buy_succeeded', { ...eventProps, txHash: buyHash })
+      setStep('success')
+    },
+    [writeContractAsync, publicClient, address, contractAddress, trackGasFallback],
+  )
 
   const execute = useCallback(async (ids: number[], totalPriceHint: bigint) => {
     if (!publicClient || !address) return
@@ -166,20 +388,6 @@ export function useBuyPixels(mapId?: MapId) {
     // same stage — the ceiling branch is nested inside the retry's catch — so
     // count `without_fee_currency` to size the affected buys. `ceiling` is a
     // strict subset, and summing raw events overstates by roughly 2x.
-    const trackGasFallback = (stage: 'approve' | 'buy', level: GasFallbackLevel, err: unknown) => {
-      track('pixel_buy_gas_fallback', {
-        ...eventProps,
-        stage,
-        level,
-        // Unwrapped, not the raw message. viem masks provider failures as "An
-        // unknown RPC error occurred" at the top level and puts the real reason
-        // in `.cause`/`.details` — so for the MiniPay estimate failure this
-        // event exists to explain, the raw first 100 chars are boilerplate and
-        // a URL while `permission denied` sits well past the cut. Using the
-        // unwrapped detail also keeps the authenticated RPC URL out of PostHog.
-        detail: extractErrorDetail(err).slice(0, 100),
-      })
-    }
     track('pixel_buy_started', eventProps)
 
     try {
@@ -245,7 +453,8 @@ export function useBuyPixels(mapId?: MapId) {
         args: [address, contractAddress],
       })) as bigint
 
-      if (currentAllowance < approveAmount) {
+      const neededApproval = currentAllowance < approveAmount
+      if (neededApproval) {
         // Funnel step between started and succeeded: fired only when the
         // wallet actually surfaces an approval prompt. Buys that clear on a
         // standing allowance skip this, so the drop-off here measures the
@@ -277,7 +486,7 @@ export function useBuyPixels(mapId?: MapId) {
           // On Base there is no fee currency at all, so that guard would
           // have made the fallback dead code.
           console.warn('approve gas estimate failed; using ceiling:', err)
-          trackGasFallback('approve', 'ceiling', err)
+          trackGasFallback('approve', 'ceiling', err, eventProps)
           approveGas = 150_000n
         }
         const approveHash = await writeContractAsync({
@@ -295,110 +504,77 @@ export function useBuyPixels(mapId?: MapId) {
         await new Promise((r) => setTimeout(r, 3000))
       }
 
-      // Step 2: Buy pixels with the chosen token.
-      setStep('buying')
-      // Estimate gas via the read client and pass it explicitly. Passing the
-      // limit matters inside a wallet WebView: a gas-less send makes viem call
-      // the host's own eth_estimateGas, which it may refuse.
-      let buyGas: bigint | undefined
-      try {
-        const g = await publicClient.estimateContractGas({
-          address: contractAddress,
-          abi: MONDETO_ABI,
-          functionName: 'buyPixels',
-          args: [bigIds, tokenAddress, maxTotalCost, deadline],
-          account: address,
-        })
-        buyGas = (g * 12n) / 10n
-      } catch (err) {
-        // Never fall through to a gas-less send (see approve above). Un-gated
-        // for the same reason: the old `if (feeCurrency)` guard made this
-        // ceiling unreachable for any wallet without a fee currency, which on
-        // Base is every wallet.
-        console.warn('buyPixels gas estimate failed; using ceiling:', err)
-        trackGasFallback('buy', 'ceiling', err)
-        buyGas = 300_000n + BigInt(bigIds.length) * 80_000n
-      }
-      const buyHash = await writeContractAsync({
-        address: contractAddress,
-        abi: MONDETO_ABI,
-        functionName: 'buyPixels',
-        args: [bigIds, tokenAddress, maxTotalCost, deadline],
-        dataSuffix,
-        // See approve above: always pass an explicit gas limit so viem never
-        // asks the host wallet to estimate.
-        ...(buyGas ? { gas: buyGas } : {}),
-      })
-
-      setTxHash(buyHash)
-      setStep('confirming')
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: buyHash })
-
-      if (receipt.status === 'reverted') {
-        // Try to surface the revert reason via a simulation re-run.
-        try {
-          await publicClient.simulateContract({
-            address: contractAddress,
-            abi: MONDETO_ABI,
-            functionName: 'buyPixels',
-            args: [bigIds, tokenAddress, maxTotalCost, deadline],
-            account: address,
-          })
-        } catch (simErr) {
-          console.error('Revert reason:', simErr)
-          throw new Error(
-            'Transaction reverted: ' +
-              (simErr instanceof Error ? simErr.message.slice(0, 150) : 'unknown reason'),
-          )
-        }
-        throw new Error('Transaction reverted on-chain')
-      }
-
-      track('pixel_buy_succeeded', { ...eventProps, txHash: buyHash })
-      setStep('success')
-    } catch (e) {
-      // Unwrap the wallet-masked error so a real reason survives. Match against
-      // both the top-level message and the unwrapped detail.
-      const detail = extractErrorDetail(e)
-      const msg = e instanceof Error ? e.message : String(e)
-      const hay = `${msg} ${detail}`
-      // A wallet rejection is the user backing out on purpose, not a failure.
-      // Silently return them to the buying frame (BUY button ready again) —
-      // no red error, nothing to dismiss.
-      if (isUserRejectedError(e, hay)) {
-        track('pixel_buy_rejected', eventProps)
-        setError(null)
-        setStep('idle')
+      // Approval fired a native dialog. Stop here rather than immediately
+      // firing a second one — see the `approved` step for the reasoning.
+      // `runBuy` re-reads the price when the player confirms, so the pause
+      // cannot buy against a stale ceiling or a burnt-down deadline.
+      if (neededApproval) {
+        pendingBuy.current = { ids, tokenAddress, tokenDecimals, eventProps }
+        track('pixel_buy_approved', eventProps)
+        setStep('approved')
         return
       }
-      // Keep the raw error in the console for debugging; show players only the
-      // short, human-readable line — never the raw viem/wallet dump.
-      console.error('Buy failed:', detail, e)
-      const { message: short, category } = classifyBuy(hay, preferred.symbol)
-      // `reason` is player copy and moves with wording; `category` is the
-      // stable key to segment on. `detail` carries the unwrapped raw error
-      // (truncated, same as profile_save_failed) so a rising `unknown` bucket
-      // can be read and turned into a new branch instead of guessed at.
-      track('pixel_buy_failed', {
-        ...eventProps,
-        reason: short,
-        category,
-        detail: detail.slice(0, 100),
-      })
-      setError(short)
-      setStep('error')
+
+      // No approval dialog was shown, so this is still the player's single
+      // tap — send the buy directly and keep the one-dialog path intact.
+      await runBuy({ ids, tokenAddress, tokenDecimals, eventProps })
+    } catch (e) {
+      handleBuyFailure(e, eventProps)
     } finally {
       inFlight.current = false
     }
-  }, [writeContractAsync, publicClient, address, chainId, switchChainAsync, contractAddress, preferred, mapId])
+  }, [
+    writeContractAsync,
+    publicClient,
+    address,
+    chainId,
+    switchChainAsync,
+    contractAddress,
+    preferred,
+    mapId,
+    runBuy,
+    handleBuyFailure,
+    trackGasFallback,
+  ])
+
+  /**
+   * Second, explicit step of an approved buy: the player has seen the approval
+   * dialog resolve and tapped again. This is the "clear user intent" that
+   * separates the two native dialogs.
+   *
+   * No-op unless the flow is actually parked on `approved` with captured
+   * parameters, so a stray call cannot send a buy the player never set up.
+   */
+  const confirmPurchase = useCallback(async () => {
+    const p = pendingBuy.current
+    if (!p || inFlight.current) return
+    inFlight.current = true
+    try {
+      await runBuy(p)
+      pendingBuy.current = null
+    } catch (e) {
+      handleBuyFailure(e, p.eventProps)
+    } finally {
+      inFlight.current = false
+    }
+  }, [runBuy, handleBuyFailure])
 
   const reset = useCallback(() => {
+    pendingBuy.current = null
     setStep('idle')
     setError(null)
     setTxHash(null)
     setInsufficientBalance(false)
   }, [])
 
-  return { execute, step, txHash, error, reset, insufficientBalance, checkBalance }
+  return {
+    execute,
+    confirmPurchase,
+    step,
+    txHash,
+    error,
+    reset,
+    insufficientBalance,
+    checkBalance,
+  }
 }

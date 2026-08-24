@@ -339,9 +339,57 @@ describe('useBuyPixels buy flow', () => {
     // Approves the flat $10 standing cap (not the exact price) so repeat buys
     // skip the prompt — and never a single wei above the cap.
     expect(approveArgs.args[1]).toBe(10_000_000n)
+    expect(trackedEvents('pixel_buy_approve_shown')).toHaveLength(1)
+
+    // The flow now STOPS here. Nimiq Pay's guidance is not to fire a second
+    // confirmation dialog off the same tap, so the buy waits for explicit
+    // intent. This is the assertion that would have caught the regression:
+    // before the split, `execute` sent both writes from one call.
+    expect(result.current.step).toBe('approved')
+    expect(buyCalls()).toHaveLength(0)
+  })
+
+  it('sends the buy only on the explicit second tap after an approval', async () => {
+    h.allowance.value = 0n
+    h.writeContractAsync.mockReset()
+    h.writeContractAsync
+      .mockResolvedValueOnce(APPROVE_HASH)
+      .mockResolvedValueOnce(BUY_HASH)
+    vi.useFakeTimers()
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      const p = result.current.execute([1], 1_000_000n)
+      await vi.runAllTimersAsync()
+      await vi.runAllTimersAsync()
+      await p
+    })
+    expect(result.current.step).toBe('approved')
+    expect(buyCalls()).toHaveLength(0)
+
+    // The second tap.
+    await act(async () => {
+      await result.current.confirmPurchase()
+    })
     expect(buyCalls()).toHaveLength(1)
     expect(result.current.step).toBe('success')
-    expect(trackedEvents('pixel_buy_approve_shown')).toHaveLength(1)
+    expect(result.current.txHash).toBe(BUY_HASH)
+
+    // The deadline is rebuilt at confirm time, not carried over from approval:
+    // the player controls how long they sit on the confirm step.
+    const buyArgs = buyCalls()[0][0] as { args: [bigint[], string, bigint, bigint] }
+    const nowSec = BigInt(Math.floor(Date.now() / 1000))
+    expect(buyArgs.args[3]).toBeGreaterThan(nowSec)
+  })
+
+  it('confirmPurchase is a no-op when nothing was approved', async () => {
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      await result.current.confirmPurchase()
+    })
+    // Paired with the test above, so this "never called" assertion is provably
+    // able to fail: a stray confirm must not send a buy the player never set up.
+    expect(buyCalls()).toHaveLength(0)
+    expect(result.current.step).toBe('idle')
   })
 
   it('skips the approve-shown funnel event when the allowance already covers (control)', async () => {

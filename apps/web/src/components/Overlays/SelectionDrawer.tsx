@@ -43,6 +43,8 @@ interface SelectionDrawerProps {
   onRemovePixels: (ids: number[]) => void
   onClear: () => void
   onBuy: () => void
+  /** Second, explicit tap that sends the buy after an approval. */
+  onConfirmPurchase: () => void
   onDone: () => void
 }
 
@@ -62,9 +64,18 @@ export default function SelectionDrawer({
   onRemovePixels,
   onClear,
   onBuy,
+  onConfirmPurchase,
   onDone,
 }: SelectionDrawerProps) {
-  const isTxActive = txStep === 'approving' || txStep === 'buying' || txStep === 'confirming'
+  // 'approved' is included so the progress panel stays up showing FUNDS
+  // UNLOCKED — but it is a decision point, not an in-flight state, so the
+  // panel swaps its disabled spinner button for a live CONFIRM button.
+  const isTxActive =
+    txStep === 'approving' ||
+    txStep === 'approved' ||
+    txStep === 'buying' ||
+    txStep === 'confirming'
+  const awaitingConfirm = txStep === 'approved'
   const pixelCount = selectedIds.size
 
   // Each buy is settled in a single stablecoin — the user's highest-balance
@@ -215,7 +226,37 @@ export default function SelectionDrawer({
             <div style={{ fontSize: 18, fontFamily: "'Press Start 2P', monospace", color: 'var(--text)' }}>{formatUSDT(totalPrice)} <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{payToken}</span></div>
           </div>
           <TxProgress step={txStep} />
+          {awaitingConfirm && (
+            <div
+              style={{
+                fontSize: 6,
+                fontFamily: "'Press Start 2P', monospace",
+                color: 'var(--text-muted)',
+                letterSpacing: 1,
+                lineHeight: 1.6,
+                textAlign: 'center',
+                marginTop: 8,
+              }}
+            >
+              one more tap to buy — your wallet will ask again
+            </div>
+          )}
           <div style={{ flex: 1 }} />
+          {awaitingConfirm ? (
+            <button
+              onClick={onConfirmPurchase}
+              className="pixel-btn pixel-btn-filled font-display"
+              style={{
+                width: '100%',
+                fontSize: 10,
+                letterSpacing: 2,
+                padding: 12,
+                cursor: 'pointer',
+              }}
+            >
+              CONFIRM PURCHASE
+            </button>
+          ) : (
           <button
             disabled
             className="pixel-btn pixel-btn-filled font-display"
@@ -223,6 +264,7 @@ export default function SelectionDrawer({
           >
             MAKING MOVES…
           </button>
+          )}
         </div>
       )}
 
