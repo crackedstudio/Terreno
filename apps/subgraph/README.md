@@ -1,10 +1,5 @@
 # Terreno subgraph (Goldsky)
 
-> **Migration.** The committed `subgraph.yaml` still targets Celo — it is the
-> last generated manifest and stays until the Base deployments exist. Regenerate
-> it from `maps.base.json` after deploying. See
-> [`../../docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
-
 A [The Graph](https://thegraph.com)-protocol subgraph, hosted on
 [Goldsky](https://goldsky.com), that indexes the eight Terreno map contracts.
 It replaces the old Envio indexer and is the durable source for:
@@ -26,9 +21,8 @@ prices.
   Regenerate with `pnpm gen-manifest`. Keep `maps.base.json` in sync with
   `apps/web/src/lib/maps/contracts.ts` (the source of truth).
 - `maps.base.json` — the Base deployment addresses and per-map `startBlock`.
-  **Ships with every entry null**: the Celo deployments do not carry over (Nimiq
-  Pay does not expose Celo to mini apps) and the Base proxies do not exist until
-  `script/Deploy.s.sol` has been run. The generator refuses to emit a manifest
+  **A map's entry is null until its proxy exists** — only the world map is
+  deployed so far. The generator refuses to emit a manifest
   for a map whose address or `startBlock` is still null, rather than indexing the
   wrong contract or silently indexing nothing. Use `--only 0` to ship the world
   map before the continents exist.
@@ -56,7 +50,7 @@ config (`~/.goldsky`), **never** in this repo.
 > pointing production at the subgraph, deploy it under a company-owned Goldsky
 > Team** (Team = shared billing + access; see
 > https://docs.goldsky.com/teams-and-projects). Goldsky has no personal→personal
-> "transfer"; moving = redeploy `mondeto/<next-version>` under the company Team, then swap
+> "transfer"; moving = redeploy `terreno/<next-version>` under the company Team, then swap
 > `NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL` to the new URL and redeploy the frontend
 > (no code change; re-indexing from the start block is automatic and
 > deterministic, so no data is lost).
@@ -65,16 +59,16 @@ config (`~/.goldsky`), **never** in this repo.
 npm install -g @goldskycom/cli      # or: curl https://goldsky.com | sh
 goldsky login                        # paste the API key from Goldsky project settings
 pnpm --filter subgraph codegen && pnpm --filter subgraph build
-cd apps/subgraph && goldsky subgraph deploy mondeto/1.0.2 --path .
+cd apps/subgraph && goldsky subgraph deploy terreno/1.0.2 --path .
 ```
 
 Deploy prints the **public GraphQL query URL**, of the form:
 
 ```
-https://api.goldsky.com/api/public/project_<PROJECT_ID>/subgraphs/mondeto/1.0.2/gn
+https://api.goldsky.com/api/public/project_<PROJECT_ID>/subgraphs/terreno/1.0.2/gn
 ```
 
-> **Versions can't be overwritten.** `goldsky subgraph deploy mondeto/<v>` fails
+> **Versions can't be overwritten.** `goldsky subgraph deploy terreno/<v>` fails
 > with "a deployment with this name & version already exists" if `<v>` was used
 > before — **bump the version** each redeploy (the `deploy` script tracks the
 > next one). Each version has its own URL, so the frontend
@@ -83,8 +77,8 @@ https://api.goldsky.com/api/public/project_<PROJECT_ID>/subgraphs/mondeto/1.0.2/
 > **For a stable URL that survives redeploys, use a tag** so production doesn't
 > chase version numbers:
 > ```bash
-> goldsky subgraph tag create mondeto/1.0.2 --tag prod
-> # stable endpoint: .../subgraphs/mondeto/prod/gn — repoint the tag on each deploy
+> goldsky subgraph tag create terreno/1.0.2 --tag prod
+> # stable endpoint: .../subgraphs/terreno/prod/gn — repoint the tag on each deploy
 > ```
 
 ## Wire the frontend
@@ -92,7 +86,7 @@ https://api.goldsky.com/api/public/project_<PROJECT_ID>/subgraphs/mondeto/1.0.2/
 Put that URL in `apps/web/.env.local` (git-ignored) as:
 
 ```
-NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL=https://api.goldsky.com/api/public/project_<ID>/subgraphs/mondeto/1.0.2/gn
+NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL=https://api.goldsky.com/api/public/project_<ID>/subgraphs/terreno/1.0.2/gn
 ```
 
 `NEXT_PUBLIC_*` is inlined at build time, so on Vercel a change needs a redeploy.

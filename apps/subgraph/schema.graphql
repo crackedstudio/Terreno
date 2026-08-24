@@ -1,4 +1,4 @@
-# Data model for the Mondeto Goldsky subgraph (The Graph protocol stack).
+# Data model for the Terreno Goldsky subgraph (The Graph protocol stack).
 #
 # Ported from the retired Envio indexer (apps/indexer/schema.graphql) with three
 # additions the frontend now depends on:

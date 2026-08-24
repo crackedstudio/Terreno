@@ -5,10 +5,8 @@
  * manifest is eight near-identical dataSources. Generating it keeps the
  * addresses/ids/handlers in one place.
  *
- * Addresses live in maps.base.json rather than inline here: the Celo
- * deployments do not carry over (Celo is not among the chains Nimiq Pay
- * exposes), and the Base proxies do not exist until script/Deploy.s.sol has
- * been run.
+ * Addresses live in maps.base.json rather than inline here, because a map's
+ * proxy does not exist until script/Deploy.s.sol has been run for it.
  * Rather than ship placeholder addresses that would index the wrong contract —
  * or worse, silently index nothing — this script REFUSES to emit a manifest
  * for a map whose address or startBlock is still null.
