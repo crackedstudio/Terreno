@@ -23,3 +23,16 @@ base = "${BASE_RPC_URL}"
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 celo = "${CELO_RPC_URL}"
 celo_testnet = "${CELO_TESTNET_RPC_URL}"
+
+# Source verification. Foundry knows Base's explorer endpoint; it only needs a
+# key. A single Etherscan V2 key (etherscan.io) covers Base — a basescan.org key
+# also works. Set ETHERSCAN_API_KEY in .env (auto-loaded) and run:
+#
+#   forge verify-contract <addr> src/Terreno.sol:Terreno --chain base --watch
+#
+# The proxy and the implementation are verified separately: verify the
+# implementation for the source, then mark the proxy as a proxy on the explorer
+# so it renders the implementation's read/write tabs.
+[etherscan]
+base = { key = "${ETHERSCAN_API_KEY}", chain = 8453 }
+base_sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 84532 }
