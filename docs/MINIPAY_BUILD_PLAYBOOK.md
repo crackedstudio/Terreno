@@ -1,5 +1,14 @@
 # MiniPay mini-app build playbook
 
+> **Superseded — historical record.**
+>
+> Mondeto no longer targets MiniPay. It runs as a [Nimiq Pay](https://nimiq.dev/mini-apps/)
+> mini app on Base; see [`BASE_NIMIQ_MIGRATION.md`](BASE_NIMIQ_MIGRATION.md).
+> This document is kept because the constraints it describes (Android System
+> WebView limits, mobile-first layout, gas-limit handling) largely transfer to
+> any wallet WebView — but every MiniPay-specific API, deeplink and process in
+> it no longer applies.
+
 General takeaways from building a MiniPay mini-app on Celo. Opinionated defaults — adapt as needed, but each item is here because skipping it cost us time.
 
 ---

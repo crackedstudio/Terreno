@@ -2,7 +2,9 @@
 
 **Own the world, one pixel at a time.**
 
-Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy, own, and trade land on a 170x100 pixel grid. Built for [MiniPay](https://www.opera.com/products/minipay) on the [Celo](https://celo.org) blockchain.
+Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy, own, and trade land on a 170x100 pixel grid. Built as a [Nimiq Pay](https://nimiq.dev/mini-apps/) mini app on [Base](https://base.org).
+
+> **Migration in progress.** Mondeto originally ran on Celo inside MiniPay. Nimiq Pay exposes a fixed EVM chain list to mini apps that does not include Celo, so the contracts are being redeployed to Base. The frontend is migrated; the Base contracts are not deployed yet. See [`docs/BASE_NIMIQ_MIGRATION.md`](docs/BASE_NIMIQ_MIGRATION.md).
 
 **Live demo:** [mondeto.app](https://mondeto.app/)
 
@@ -11,7 +13,7 @@ Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy,
 1. **Zoom in** to the dot-matrix world map and enter paint mode (4x zoom)
 2. **Select pixels** on any continent — water is not selectable (enforced on-chain)
 3. **Review your selection** — see total cost, balance, and breakdown by current owner
-4. **Buy land** — pay in supported dollar stablecoins on Celo. Price doubles with each sale, halves every 30 days without resale.
+4. **Buy land** — pay in supported dollar stablecoins on Base. Price doubles with each sale, halves every 30 days without resale.
 5. **Customize** — set your name, website URL, and color on your profile (stored on-chain)
 6. **Climb the leaderboard** — ranked by total area, largest empire (contiguous territory), or most expensive pixel
 
@@ -25,12 +27,12 @@ Mondeto (Esperanto for "small world") is a pixel world map where anyone can buy,
 - **Profile system** — name, URL, color stored on-chain via `updateProfile()`
 - **Leaderboard** — AREA, EMPIRE (BFS contiguous), HOT_PX tabs with profile names and clickable URLs
 - **Heatmap mode** — yellow/orange/red gradient showing price hotspots
-- **Wallet integration** — RainbowKit for browser, auto-connects in MiniPay
+- **Wallet integration** — RainbowKit for browser, auto-connects in Nimiq Pay
 - **Mock fallback** — works without wallet/contract for development
 
 ## Smart Contract
 
-The Mondeto contract is a UUPS upgradeable proxy on Celo:
+The Mondeto contract is a UUPS upgradeable proxy:
 
 - **Grid:** 170x100 (17,000 pixels, ~5,622 land)
 - **Pricing:** `initialPrice << (saleCount - epoch)` with 30-day halving (`config().halvingTime` = 2592000s)
@@ -85,13 +87,21 @@ scripts/
 
 ## Deployments
 
-Mondeto runs one map contract per continent (plus the whole world) on **Celo mainnet**. Each map is its own canvas with a different grid size and land area. All contracts and their grid dimensions live in [`apps/web/src/lib/maps/contracts.ts`](apps/web/src/lib/maps/contracts.ts); the matching land masks are generated into `apps/web/src/data/masks/` by `pnpm -F web build:masks`. `ChainGuard` keeps wallets on Celo mainnet.
+Mondeto runs one map contract per continent (plus the whole world), on **Base mainnet**. Each map is its own canvas with a different grid size and land area. All contracts and their grid dimensions live in [`apps/web/src/lib/maps/contracts.ts`](apps/web/src/lib/maps/contracts.ts); the matching land masks are generated into `apps/web/src/data/masks/` by `pnpm -F web build:masks`. `ChainGuard` keeps wallets on Base mainnet.
 
-**Gradual rollout.** All continents are deployed and listed in the registry, but visibility is opened over time. By default only **WORLD** is revealed (launch state); continents stay hidden until opened. Set `NEXT_PUBLIC_REVEALED_MAP_IDS` (comma-separated ids, e.g. `0,1,2` for World + Africa + Asia) to reveal more, then redeploy — no code change. When more than one map is revealed, the map switcher and the per-map leaderboard selector appear automatically.
+The grid dimensions and land masks are chain-independent and carry over unchanged; only the addresses move.
+
+**Gradual rollout.** All continents are listed in the registry, but visibility is opened over time — and on Base a map is only shown once it is actually deployed, whatever the reveal list says. By default only **WORLD** is revealed (launch state); continents stay hidden until opened. Set `NEXT_PUBLIC_REVEALED_MAP_IDS` (comma-separated ids, e.g. `0,1,2` for World + Africa + Asia) to reveal more, then redeploy — no code change. When more than one map is revealed, the map switcher and the per-map leaderboard selector appear automatically.
 
 **Active-map pointer.** Among the *revealed* maps, new wallets are auto-assigned to the current "active" map (the lowest-id map whose average pixel price is below `NEXT_PUBLIC_MAP_THRESHOLD_USD`, default `$2`); the pointer advances as each map fills. Existing wallets keep their sticky home (persisted to `localStorage`).
 
-### Celo mainnet — world + continents
+### Base mainnet — world + continents
+
+**Not deployed yet.** Addresses land here once `script/Deploy.s.sol` has been run against Base; until then the registry holds an undeployed sentinel for every map and the UI renders none of them. See [`docs/BASE_NIMIQ_MIGRATION.md`](docs/BASE_NIMIQ_MIGRATION.md).
+
+### Celo mainnet — world + continents (legacy, pre-Nimiq)
+
+The original deployments. They still hold all existing pixel ownership; nothing migrates that state to Base.
 
 | ID | Map | Grid | Land px | Proxy |
 |----|-----|------|---------|-------|

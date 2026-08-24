@@ -12,7 +12,9 @@ Domain-specific conventions live next to the code they govern and are
   PostHog vs. browser `console.warn/error`), `/dev` route gating
 - [`apps/contracts/CLAUDE.md`](apps/contracts/CLAUDE.md) — UUPS storage
   layout, price formula, land mask, upgrade checklist
-- [`docs/README.md`](docs/README.md) — index of MiniPay/QA and contract docs
+- [`docs/README.md`](docs/README.md) — index of migration, QA and contract docs
+- [`docs/BASE_NIMIQ_MIGRATION.md`](docs/BASE_NIMIQ_MIGRATION.md) — the Celo/MiniPay
+  → Base/Nimiq Pay move: what changed, what does not carry over, what is open
 
 ## Layout
 
@@ -23,7 +25,7 @@ pnpm workspace (`apps/*`) driven by Turborepo.
 | `apps/web` | Next.js App Router app — the product. Most work happens here. |
 | `apps/contracts` | Foundry / Solidity. UUPS proxy, one deployed map per continent. Also the Python land-mask tooling under `map/`. |
 | `apps/subgraph` | Goldsky subgraph — earn/spend, time-ordered leaderboards, analytics. |
-| `docs/` | MiniPay playbook, mobile QA, contract proposals + audit remediation. |
+| `docs/` | Base/Nimiq migration runbook, mobile QA, contract proposals + audit remediation. Also the superseded MiniPay playbook/submission docs. |
 | `scripts/` | Land-mask conversion helpers (Python). |
 
 ## Setup
@@ -101,7 +103,7 @@ Types in use, by frequency: `fix`, `feat`, `chore`, `docs`, `perf`,
 
 Scopes are the product surface or subsystem touched — the recurring ones
 are `buy`, `profile`, `ranks`, `deals`, `rewards`, `share`, `analytics`,
-`minipay`, `wallet`, `maps`, `geo`, `rpc`, `contract`, `contracts`,
+`nimiq`, `wallet`, `maps`, `geo`, `rpc`, `contract`, `contracts`,
 `web`, `deps`.
 
 ### Pull request body
@@ -169,7 +171,12 @@ in #162.
 
 Detail lives in [`README.md`](README.md); what matters when writing code:
 
-- One contract per map (world + 7 continents) on Celo mainnet, registered
+- The app targets **Base mainnet** and runs as a **Nimiq Pay mini app**. The
+  Celo/MiniPay build is history — Nimiq Pay exposes a fixed EVM chain list that
+  excludes Celo, so the maps are being redeployed to Base. Until that deploy
+  happens every map sits on an undeployed sentinel and the UI renders none of
+  them; that is the guard working, not a bug.
+- One contract per map (world + 7 continents), registered
   in `apps/web/src/lib/maps/contracts.ts`. Adding or changing a map is a
   registry edit plus `pnpm -F web build:masks` — rendering, leaderboards
   and the active-map pointer all read the registry.

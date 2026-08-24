@@ -79,7 +79,7 @@ export async function scanPurchaseLogs(
 }
 
 // Normalize a token amount to 6 decimals (the unit `formatUSDT` renders), so
-// mixed-token totals (e18 USDm vs e6 USDC) sum in one magnitude.
+// mixed-token totals (differing token decimals) sum in one magnitude.
 export function toMicrocents(cost: bigint, decimals: number): bigint {
   if (decimals === 6) return cost
   if (decimals > 6) return cost / 10n ** BigInt(decimals - 6)

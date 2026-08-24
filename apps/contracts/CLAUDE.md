@@ -1,6 +1,6 @@
 # Mondeto
 
-A 170x100 pixel world map on Celo where every land pixel is ownable on-chain. Pixels are colored by owner, creating a territorial mosaic. Accepts a set of dollar stablecoins (1:1) as currency, targets MiniPay.
+A 170x100 pixel world map where every land pixel is ownable on-chain. Pixels are colored by owner, creating a territorial mosaic. Accepts a set of dollar stablecoins (1:1) as currency, targets Nimiq Pay.
 
 ## Build & Test
 
@@ -121,4 +121,18 @@ OZ v5 removed dedicated "Upgradeable" versions of stateless contracts. `Reentran
 
 ## Target Chain
 
-Celo mainnet. USDT on Celo is a standard ERC-20 with 6 decimals. All price values in the contract are in USDT's smallest unit (1 = 0.000001 USDT).
+**Base mainnet.** Moved from Celo because Nimiq Pay exposes a fixed EVM chain
+list to mini apps (Ethereum, Arbitrum One, Optimism, Base, BNB Smart Chain,
+Sepolia) that a mini app cannot add to, and Celo is not on it. See
+[`docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
+
+The contract needed no Solidity change: accepted tokens are `initialize()`
+input, not hardcoded, and each token's decimals are read on-chain. Prices are
+in `PRICE_DECIMALS = 6` base units (1 = $0.000001) regardless of chain.
+
+USDC and USDT on Base are both 6-decimal (verified via `eth_call`). Note the
+Celo deployment also accepted 18-decimal USDm; nothing on Base is 18-decimal,
+so any code that assumed 18 as a safe default is wrong here.
+
+The Celo deployments still exist and hold the original pixel state. Nothing
+migrates them; Base starts empty.

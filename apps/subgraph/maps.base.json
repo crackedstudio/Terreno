@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "Base mainnet deployments of the eight Mondeto map proxies.",
+    "Fill in `address` and `startBlock` for each map AFTER running",
+    "script/Deploy.s.sol against Base, then regenerate the manifest with",
+    "`node scripts/gen-subgraph-yaml.js`.",
+    "startBlock is the block the proxy was deployed in — take it from",
+    "broadcast/Deploy.s.sol/8453/run-latest.json. Setting it too low makes",
+    "Goldsky scan millions of empty blocks; too high silently drops history.",
+    "Keep addresses in sync with apps/web/src/lib/maps/contracts.ts."
+  ],
+  "network": "base",
+  "maps": [
+    { "id": 0, "slug": "world",         "address": null, "startBlock": null },
+    { "id": 1, "slug": "africa",        "address": null, "startBlock": null },
+    { "id": 2, "slug": "asia",          "address": null, "startBlock": null },
+    { "id": 3, "slug": "europe",        "address": null, "startBlock": null },
+    { "id": 4, "slug": "north-america", "address": null, "startBlock": null },
+    { "id": 5, "slug": "south-america", "address": null, "startBlock": null },
+    { "id": 6, "slug": "oceania",       "address": null, "startBlock": null },
+    { "id": 7, "slug": "antarctica",    "address": null, "startBlock": null }
+  ]
+}

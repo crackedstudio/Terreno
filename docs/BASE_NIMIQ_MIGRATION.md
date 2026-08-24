@@ -37,23 +37,31 @@ input, not hardcoded — so this is a redeploy, not a port.
 2. Write `base.env` (gitignored) — same variables as the Celo deploy, with Base
    values. Verified on-chain via `eth_call` against `https://mainnet.base.org`:
 
+   **`apps/contracts/base.env.example` is filled in and ready to copy.** Its
+   values were read off the live Celo world proxy with `cast call`, not
+   remembered, so Base reproduces production economics:
+
+   | | live Celo value | meaning |
+   |---|---|---|
+   | `initialPrice` | `30000` | $0.03 at `PRICE_DECIMALS = 6` |
+   | `minPrice` | `1` | $0.000001 |
+   | `feeRate` | `500` | 5% resale fee (bps) |
+   | `HALVING_TIME` | `2592000` | 30 days |
+
+   Note this contradicts the older `deploy.env.example`, which still says
+   $0.01 and 182 days — those placeholders have drifted from production. Re-read
+   the live values before deploying; they are owner-mutable.
+
+   Accepted tokens, both verified on Base via `eth_call` (symbol + decimals):
+
    | Token | Address | decimals |
    |---|---|---|
-   | USDC (Base) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
+   | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
+   | USDT | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` | 6 |
 
-   ```sh
-   export ACCEPTED_TOKENS=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
-   export INITIAL_PRICE=10000
-   export MIN_PRICE=...
-   export HALVING_TIME_DAYS=...
-   export INITIAL_FEE_RATE=500
-   export BASE_RPC_URL=https://mainnet.base.org
-   export ETH_RPC_URL=$BASE_RPC_URL
-   ```
-
-   Match `INITIAL_PRICE` / `MIN_PRICE` / `HALVING_TIME_DAYS` / `INITIAL_FEE_RATE`
-   to the live Celo values unless the economics are deliberately being changed —
-   read them off the Celo proxy rather than from memory.
+   Celo also accepted 18-decimal USDm. Base has no equivalent, and **nothing on
+   Base is 18-decimal** — any code defaulting to 18 is wrong here (this was a
+   real bug in `useStablecoinBalance`, now fixed).
 
 3. Deploy the world map first, then each continent with its mask:
 
@@ -77,10 +85,18 @@ input, not hardcoded — so this is a redeploy, not a port.
    cannot be revealed before it exists — verify by loading the app with the
    reveal list set and the override missing: nothing should render.
 
-5. Repoint the subgraph. `apps/subgraph` indexes the Celo contracts; it needs a
-   Base deployment against the new addresses and start blocks, and
-   `NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL` updated. Until then the app falls back to
-   the live log-scan path, which must keep working.
+5. Repoint the subgraph. Fill in `apps/subgraph/maps.base.json` with each
+   proxy's address and deploy block (from
+   `broadcast/Deploy.s.sol/8453/run-latest.json`), then:
+
+   ```sh
+   cd apps/subgraph && pnpm gen-manifest        # or: node scripts/gen-subgraph-yaml.js --only 0
+   ```
+
+   The generator refuses to emit a manifest for any map still null, so it cannot
+   silently index the wrong contract. Then redeploy to Goldsky and update
+   `NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL`. Until then the app falls back to the live
+   log-scan path, which must keep working.
 
 ## Still open
 

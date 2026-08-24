@@ -1,8 +1,13 @@
 # Mondeto subgraph (Goldsky)
 
+> **Migration.** The committed `subgraph.yaml` still targets Celo — it is the
+> last generated manifest and stays until the Base deployments exist. Regenerate
+> it from `maps.base.json` after deploying. See
+> [`../../docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
+
 A [The Graph](https://thegraph.com)-protocol subgraph, hosted on
-[Goldsky](https://goldsky.com), that indexes the eight Mondeto map contracts on
-Celo mainnet. It replaces the old Envio indexer and is the durable source for:
+[Goldsky](https://goldsky.com), that indexes the eight Mondeto map contracts.
+It replaces the old Envio indexer and is the durable source for:
 
 - **earn / spend** per wallet per map (`/api/pnl`),
 - the **AREA leaderboard** ordered by pixel count with a **"who reached the count
@@ -16,10 +21,17 @@ prices.
 
 ## Layout
 
-- `subgraph.yaml` — **generated** by `scripts/gen-subgraph-yaml.js` from the map
-  registry (eight UUPS proxies → eight dataSources sharing one mapping). Regenerate
-  with `pnpm gen-manifest`. Keep the address list in the script in sync with
+- `subgraph.yaml` — **generated** by `scripts/gen-subgraph-yaml.js` from
+  `maps.base.json` (eight UUPS proxies → eight dataSources sharing one mapping).
+  Regenerate with `pnpm gen-manifest`. Keep `maps.base.json` in sync with
   `apps/web/src/lib/maps/contracts.ts` (the source of truth).
+- `maps.base.json` — the Base deployment addresses and per-map `startBlock`.
+  **Ships with every entry null**: the Celo deployments do not carry over (Nimiq
+  Pay does not expose Celo to mini apps) and the Base proxies do not exist until
+  `script/Deploy.s.sol` has been run. The generator refuses to emit a manifest
+  for a map whose address or `startBlock` is still null, rather than indexing the
+  wrong contract or silently indexing nothing. Use `--only 0` to ship the world
+  map before the continents exist.
 - `schema.graphql` — the entity model (see the header there for money-unit and id
   conventions).
 - `src/mapping.ts` — the AssemblyScript handlers.

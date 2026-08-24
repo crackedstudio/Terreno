@@ -6,13 +6,29 @@ import { ERC20_ABI, MONDETO_ABI } from '@/lib/contract'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { useMaps } from '@/hooks/useMaps'
 
-// Well-known mainnet stablecoin addresses → display symbol. Used as a
+// Well-known Base mainnet stablecoin addresses → display symbol. Used as a
 // label fallback if the on-chain `symbol()` call returns something odd
 // (or the test deployment uses a mock token without `symbol`).
-const KNOWN_SYMBOLS: Record<string, 'USDm' | 'USDC' | 'USDT'> = {
-  '0x765de816845861e75a25fca122bb6898b8b1282a': 'USDm',
-  '0xceba9300f2b948710d2653dd7b07f33a8b32118c': 'USDC',
-  '0x48065fbbe25f71c9282ddf5e1cd6d6a887483d5e': 'USDT',
+// Both verified on-chain via `eth_call` against Base mainnet.
+const KNOWN_SYMBOLS: Record<string, 'USDC' | 'USDT'> = {
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 'USDC',
+  '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2': 'USDT',
+}
+
+/**
+ * Decimals fallback for the same tokens, used only when the on-chain
+ * `decimals()` read fails.
+ *
+ * The blanket `18` this replaces was a Celo-era assumption: USDm (cUSD) was
+ * 18-decimal, so a bad read landed on a plausible value. Nothing on Base is
+ * 18 — USDC and USDT are both 6 — so the old default would have understated a
+ * balance by 1e12 and told a funded buyer they had insufficient funds.
+ * Guessing a token's decimals is a mispricing, so prefer a verified value and
+ * keep 18 only as the last resort for a token we do not know at all.
+ */
+const KNOWN_DECIMALS: Record<string, number> = {
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 6,
+  '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2': 6,
 }
 
 export interface StablecoinHolding {
@@ -89,7 +105,9 @@ export function useStablecoinBalance(): StablecoinBalances {
     const symbolRes = tokenReads.data?.[base + 1]
     const balanceRes = tokenReads.data?.[base + 2]
     const decimals =
-      decimalsRes?.status === 'success' ? Number(decimalsRes.result) : 18
+      decimalsRes?.status === 'success'
+        ? Number(decimalsRes.result)
+        : (KNOWN_DECIMALS[token.toLowerCase()] ?? 18)
     const onChainSymbol =
       symbolRes?.status === 'success' ? String(symbolRes.result) : ''
     const knownSymbol = KNOWN_SYMBOLS[token.toLowerCase()]
