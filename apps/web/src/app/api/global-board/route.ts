@@ -19,7 +19,7 @@ import { readRevealedMapIdsServer } from '@/lib/maps/reveals'
 import { MONDETO_ABI } from '@/lib/contract'
 import { decodeBytes } from '@/lib/decodeBytes'
 import { uint24ToHex } from '@/lib/colorUtils'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import type { MapContract } from '@/lib/maps/contracts'
 import type { Address, LeaderEntry, MapId, MapSnapshot } from '@/lib/maps/types'
 import { logger } from '@/lib/logger'
@@ -292,7 +292,7 @@ export async function GET(request: Request) {
 
     // Aggregate only the currently-revealed maps (Edge Config / env / WORLD).
     const revealedIds = await readRevealedMapIdsServer()
-    const maps = getMapsForChain(celo.id, revealedIds)
+    const maps = getMapsForChain(base.id, revealedIds)
     const snapshots = await fetchGlobalSnapshots(read, maps)
 
     // EMPIRE/TYCOONS break ties by per-pixel acquisition time (exact), so enrich

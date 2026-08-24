@@ -4,12 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useConnect, WagmiProvider, createConfig } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { celo, celoSepolia } from "viem/chains";
+import { base, baseSepolia } from "viem/chains";
 import { ChainGuard } from "./ChainGuard";
 import { WalletAnalytics } from "./wallet-analytics";
-import { celoTransport, celoSepoliaTransport } from "@/lib/chain";
+import { baseTransport, baseSepoliaTransport } from "@/lib/chain";
+import { isNimiqPay } from "@/lib/nimiq";
 
-// Architecture — MiniPay first, Privy lazy.
+// Architecture — Nimiq Pay first, Privy lazy.
 //
 // 1. SSR + first client paint always render the vanilla wagmi tree
 //    below. No Privy module is imported on this path; child hooks
@@ -18,12 +19,14 @@ import { celoTransport, celoSepoliaTransport } from "@/lib/chain";
 //    `useWallets` throw cannot fire if the tree above never touches
 //    Privy.
 //
-// 2. After hydration, MiniPay is detected synchronously from
-//    `window.ethereum.isMiniPay`. MiniPay users keep the vanilla tree
-//    and the injected connector auto-connects. The Privy SDK never
-//    loads for them — if Privy is broken, MiniPay still works.
+// 2. After hydration, Nimiq Pay is detected synchronously from
+//    `window.nimiqPay`, the host context object Nimiq Pay seeds before
+//    the mini app's page script runs. Nimiq Pay users keep the vanilla
+//    tree and the injected connector auto-connects against the
+//    `window.ethereum` Nimiq Pay injects. The Privy SDK never loads for
+//    them — if Privy is broken, the mini app still works.
 //
-// 3. Non-MiniPay clients load the Privy tree with a dynamic `import()`
+// 3. Non-Nimiq-Pay clients load the Privy tree with a dynamic `import()`
 //    started from an effect, and swap to it only once the chunk has
 //    resolved — children stay mounted in the vanilla tree the whole
 //    time, so there is exactly one provider swap and no window where
@@ -36,7 +39,7 @@ import { celoTransport, celoSepoliaTransport } from "@/lib/chain";
 //    loading state unmounts the entire app and remounts it when the
 //    chunk arrives. Whether an in-flight async callback then hits a
 //    ref that unmount already nulled is a chunk-timing race — that is
-//    how an unrelated dependency bump took every non-MiniPay browser
+//    how an unrelated dependency bump took every non-Nimiq-Pay browser
 //    down for days (#221) while no source diff explained it.
 //
 // The previous design rendered `PrivyProvider` during SSR; since Privy
@@ -52,12 +55,12 @@ import { celoTransport, celoSepoliaTransport } from "@/lib/chain";
 // error #418 and the downstream tree is replayed, which in our setup
 // then crashes the lazy Privy chunk mid-load.
 const wagmiConfig = createConfig({
-  chains: [celo, celoSepolia],
+  chains: [base, baseSepolia],
   connectors: [injected()],
   ssr: true,
   transports: {
-    [celo.id]: celoTransport,
-    [celoSepolia.id]: celoSepoliaTransport,
+    [base.id]: baseTransport,
+    [baseSepolia.id]: baseSepoliaTransport,
   },
 });
 
@@ -65,12 +68,7 @@ const queryClient = new QueryClient();
 
 type PrivyTreeComponent = React.ComponentType<{ children: React.ReactNode }>;
 
-function detectMiniPaySync(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!(window.ethereum as { isMiniPay?: boolean } | undefined)?.isMiniPay;
-}
-
-function MiniPayAutoConnect() {
+function NimiqPayAutoConnect() {
   const { connect, connectors } = useConnect();
 
   useEffect(() => {
@@ -88,7 +86,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // on the server. Combined with the `mounted` gate below this avoids
   // hydration mismatch — both SSR and the first client render output
   // the same vanilla tree.
-  const [isMiniPay] = useState(detectMiniPaySync);
+  const [inNimiqPay] = useState(isNimiqPay);
   const [mounted, setMounted] = useState(false);
   const [Privy, setPrivy] = useState<PrivyTreeComponent | null>(null);
   useEffect(() => setMounted(true), []);
@@ -96,10 +94,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // Start the Privy chunk load; the vanilla tree below keeps rendering
   // until it resolves. This must stay a dynamic `import()` — a static
   // import would put Privy (and its `x402` / `@solana/kit` subtree) in
-  // the shared chunk MiniPay clients download, undoing the isolation
-  // asserted in minipay-privy-isolation.test.ts.
+  // the shared chunk Nimiq Pay clients download, undoing the isolation
+  // asserted in nimiq-privy-isolation.test.ts.
   useEffect(() => {
-    if (isMiniPay) return;
+    if (inNimiqPay) return;
     let live = true;
     import("./wallet-provider-privy")
       .then((m) => {
@@ -113,16 +111,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     return () => {
       live = false;
     };
-  }, [isMiniPay]);
+  }, [inNimiqPay]);
 
-  // SSR + first paint: vanilla wagmi only. Also the branch for MiniPay
+  // SSR + first paint: vanilla wagmi only. Also the branch for Nimiq Pay
   // once mounted — no Privy code path is reachable here — and for
   // browsers while the Privy chunk is still in flight.
-  if (!mounted || isMiniPay || !Privy) {
+  if (!mounted || inNimiqPay || !Privy) {
     return (
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
-          {mounted && isMiniPay && <MiniPayAutoConnect />}
+          {mounted && inNimiqPay && <NimiqPayAutoConnect />}
           <ChainGuard />
           <WalletAnalytics />
           {children}
@@ -131,7 +129,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Browser, non-MiniPay, chunk resolved: one deterministic swap into
+  // Browser, outside Nimiq Pay, chunk resolved: one deterministic swap into
   // the Privy tree. No Privy code ran on the server.
   return <Privy>{children}</Privy>;
 }

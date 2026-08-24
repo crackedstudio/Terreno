@@ -5,7 +5,6 @@ import { useWriteContract, useAccount, usePublicClient, useSwitchChain } from 'w
 import { celo } from 'viem/chains'
 import { MONDETO_ABI, ERC20_ABI } from '@/lib/contract'
 import { getAttributionSuffix } from '@/lib/attribution'
-import { getFeeCurrency } from '@/lib/feeCurrency'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { classifyBuy, isUserRejectedError } from '@/lib/buyErrors'
 import type { BuyBlockedReason, GasFallbackLevel } from '@/lib/buyErrors'
@@ -189,9 +188,9 @@ export function useBuyPixels(mapId?: MapId) {
 
       const bigIds = ids.map((id) => BigInt(id))
       const dataSuffix = getAttributionSuffix()
-      // In MiniPay, pay gas in the same stablecoin being spent (CIP-64) — the
-      // wallet holds no CELO. undefined elsewhere, so other wallets are unchanged.
-      const feeCurrency = getFeeCurrency(tokenAddress)
+      // No fee-currency indirection on Base: gas is paid in ETH by the wallet.
+      // Celo's CIP-64 stablecoin-gas path (and the MiniPay-specific ladder that
+      // went with it) has no equivalent on Nimiq Pay's chain list.
 
       // Read the canonical price + canonical-to-token decimal conversion.
       // `selectionPrice` returns the price in PRICE_DECIMALS units (the
@@ -252,8 +251,8 @@ export function useBuyPixels(mapId?: MapId) {
         // standing allowance skip this, so the drop-off here measures the
         // approval wall specifically.
         track('pixel_buy_approve_shown', eventProps)
-        // Estimate gas via the read client (Forno) and pass it explicitly
-        // (see buyPixels below for why this matters in MiniPay).
+        // Estimate gas via the read client and pass it explicitly
+        // (see buyPixels below for why this matters in a wallet WebView).
         let approveGas: bigint | undefined
         try {
           const g = await publicClient.estimateContractGas({
@@ -262,33 +261,24 @@ export function useBuyPixels(mapId?: MapId) {
             functionName: 'approve',
             args: [contractAddress, safeApprove],
             account: address,
-            ...(feeCurrency ? { feeCurrency } : {}),
           })
           approveGas = (g * 12n) / 10n
         } catch (err) {
-          console.warn('approve gas estimate (feeCurrency) failed:', err)
-          // In MiniPay we must NEVER send without a gas limit — a gas-less send
-          // makes the wallet run its own eth_estimateGas, which returns
-          // "permission denied". Retry the estimate without feeCurrency (widely
-          // accepted), padding for the CIP-64 intrinsic overhead; last resort a
-          // safe ceiling so the tx still goes out with a limit.
-          if (feeCurrency) {
-            trackGasFallback('approve', 'without_fee_currency', err)
-            try {
-              const g = await publicClient.estimateContractGas({
-                address: tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'approve',
-                args: [contractAddress, safeApprove],
-                account: address,
-              })
-              approveGas = (g * 12n) / 10n + 60_000n
-            } catch (err2) {
-              console.warn('approve gas fallback failed; using ceiling:', err2)
-              trackGasFallback('approve', 'ceiling', err2)
-              approveGas = 150_000n
-            }
-          }
+          // Never fall through to a gas-less send: that makes viem ask the
+          // wallet to run its own eth_estimateGas, which a mini-app WebView
+          // may refuse — under MiniPay that surfaced as "permission denied"
+          // and killed the buy. Fall back to a safe ceiling so the tx still
+          // goes out with a limit.
+          //
+          // Un-gated on purpose. This ladder used to sit behind
+          // `if (feeCurrency)`, so on any wallet without a fee currency a
+          // failed estimate left `approveGas` undefined and the send went
+          // out gas-less — the exact case the ladder existed to prevent.
+          // On Base there is no fee currency at all, so that guard would
+          // have made the fallback dead code.
+          console.warn('approve gas estimate failed; using ceiling:', err)
+          trackGasFallback('approve', 'ceiling', err)
+          approveGas = 150_000n
         }
         const approveHash = await writeContractAsync({
           address: tokenAddress,
@@ -296,13 +286,8 @@ export function useBuyPixels(mapId?: MapId) {
           functionName: 'approve',
           args: [contractAddress, safeApprove],
           dataSuffix,
-          // feeCurrency + gas are Celo (CIP-64) fields wagmi's generic write
-          // type doesn't surface; spread them so the rest stays type-checked.
-          ...(feeCurrency ? { feeCurrency } : {}),
-          // Always pass an explicit gas limit when we have one. REQUIRED in
-          // MiniPay (feeCurrency set): without it viem asks MiniPay to estimate
-          // and MiniPay returns "permission denied". This mirrors the on-chain
-          // config that worked (CIP-64 tx + explicit gas).
+          // Always pass an explicit gas limit when we have one, so viem never
+          // asks the host wallet to estimate on our behalf.
           ...(approveGas ? { gas: approveGas } : {}),
         })
         await publicClient.waitForTransactionReceipt({ hash: approveHash })
@@ -312,10 +297,9 @@ export function useBuyPixels(mapId?: MapId) {
 
       // Step 2: Buy pixels with the chosen token.
       setStep('buying')
-      // Estimate gas via the read client (Forno) and pass it explicitly. A
-      // fee-currency (CIP-64) tx costs more intrinsic gas. Passing the limit is
-      // REQUIRED in MiniPay: a gas-less send makes viem call MiniPay's own
-      // eth_estimateGas, which returns "permission denied" and kills the buy.
+      // Estimate gas via the read client and pass it explicitly. Passing the
+      // limit matters inside a wallet WebView: a gas-less send makes viem call
+      // the host's own eth_estimateGas, which it may refuse.
       let buyGas: bigint | undefined
       try {
         const g = await publicClient.estimateContractGas({
@@ -324,30 +308,16 @@ export function useBuyPixels(mapId?: MapId) {
           functionName: 'buyPixels',
           args: [bigIds, tokenAddress, maxTotalCost, deadline],
           account: address,
-          ...(feeCurrency ? { feeCurrency } : {}),
         })
         buyGas = (g * 12n) / 10n
       } catch (err) {
-        console.warn('buyPixels gas estimate (feeCurrency) failed:', err)
-        // MiniPay: never fall through to a gas-less send (see approve above).
-        // Retry without feeCurrency, then a pixel-count-scaled ceiling.
-        if (feeCurrency) {
-          trackGasFallback('buy', 'without_fee_currency', err)
-          try {
-            const g = await publicClient.estimateContractGas({
-              address: contractAddress,
-              abi: MONDETO_ABI,
-              functionName: 'buyPixels',
-              args: [bigIds, tokenAddress, maxTotalCost, deadline],
-              account: address,
-            })
-            buyGas = (g * 12n) / 10n + 100_000n
-          } catch (err2) {
-            console.warn('buyPixels gas fallback failed; using ceiling:', err2)
-            trackGasFallback('buy', 'ceiling', err2)
-            buyGas = 300_000n + BigInt(bigIds.length) * 80_000n
-          }
-        }
+        // Never fall through to a gas-less send (see approve above). Un-gated
+        // for the same reason: the old `if (feeCurrency)` guard made this
+        // ceiling unreachable for any wallet without a fee currency, which on
+        // Base is every wallet.
+        console.warn('buyPixels gas estimate failed; using ceiling:', err)
+        trackGasFallback('buy', 'ceiling', err)
+        buyGas = 300_000n + BigInt(bigIds.length) * 80_000n
       }
       const buyHash = await writeContractAsync({
         address: contractAddress,
@@ -355,9 +325,8 @@ export function useBuyPixels(mapId?: MapId) {
         functionName: 'buyPixels',
         args: [bigIds, tokenAddress, maxTotalCost, deadline],
         dataSuffix,
-        ...(feeCurrency ? { feeCurrency } : {}),
-        // See approve above: always pass an explicit gas limit — required in
-        // MiniPay so viem never asks the wallet to estimate.
+        // See approve above: always pass an explicit gas limit so viem never
+        // asks the host wallet to estimate.
         ...(buyGas ? { gas: buyGas } : {}),
       })
 

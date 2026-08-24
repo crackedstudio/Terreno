@@ -1,7 +1,7 @@
 /**
  * Multi-map contract registry.
  *
- * The FE points at the world + seven-continent contracts on Celo mainnet.
+ * The FE points at the world + seven-continent contracts on Base mainnet.
  * There's a single registry (no production/staging env split) — staging was
  * retired; testnet work happens on feature-branch preview deploys.
  *
@@ -24,10 +24,10 @@
  * helpers here can only see the env/static fallbacks.
  */
 
-import { celo, celoSepolia } from 'viem/chains'
+import { base, baseSepolia } from 'viem/chains'
 import type { MapId } from './types'
 
-export type ChainId = typeof celo.id | typeof celoSepolia.id
+export type ChainId = typeof base.id | typeof baseSepolia.id
 
 export type MapSlug =
   | 'world'
@@ -55,26 +55,43 @@ export interface MapContract {
   revealed: boolean
 }
 
-// Full continent lineup deployed by the SC dev on Celo mainnet: world + the
-// seven continents. Grid dimensions baked at deploy time match the mask JSON
-// in apps/contracts/map/ (and the generated masks in src/data/masks/).
+/**
+ * Sentinel for a map whose Base deployment does not exist yet.
+ *
+ * The Celo deployments do not carry over: Nimiq Pay does not expose Celo to
+ * mini apps, so the world + continent contracts are being redeployed to Base.
+ * Until `script/Deploy.s.sol` has been run against Base for a given map, its
+ * address is this sentinel — never a fabricated address, and never a silent
+ * fallback to some other map's contract.
+ *
+ * Supply real addresses through NEXT_PUBLIC_MAP_ADDRESS_OVERRIDES
+ * ("0:0xabc…,1:0xdef…") and flip `revealed` / NEXT_PUBLIC_REVEALED_MAP_IDS
+ * once each is live. `assertDeployed()` below turns any leak of this value
+ * into a loud throw instead of a call to the zero address.
+ */
+const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const
+
+// Full continent lineup: world + the seven continents. Grid dimensions are
+// baked at deploy time and must match the mask JSON in apps/contracts/map/
+// (and the generated masks in src/data/masks/) — those are chain-independent
+// and carry over from Celo unchanged.
 const MAPS: readonly MapContract[] = [
   {
     id: 0,
     slug: 'world',
     displayName: 'WORLD',
-    address: '0xA8cFC1B4365518f56954382B6Fab25a5382f5C49',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 170,
     height: 100,
-    revealed: true,
+    revealed: false,
   },
   {
     id: 1,
     slug: 'africa',
     displayName: 'AFRICA',
-    address: '0x8e70ada33714C3F8f35182b781C63449c5e079b7',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 127,
     height: 134,
     revealed: false,
@@ -83,8 +100,8 @@ const MAPS: readonly MapContract[] = [
     id: 2,
     slug: 'asia',
     displayName: 'ASIA',
-    address: '0x9b8DC1e200A21A97963948A758D9fc4300310661',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 158,
     height: 107,
     revealed: false,
@@ -93,8 +110,8 @@ const MAPS: readonly MapContract[] = [
     id: 3,
     slug: 'europe',
     displayName: 'EUROPE',
-    address: '0xDfB39B4d8896F196c13DBc4aC2dBDc3175Fcd767',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 160,
     height: 107,
     revealed: false,
@@ -103,8 +120,8 @@ const MAPS: readonly MapContract[] = [
     id: 4,
     slug: 'north-america',
     displayName: 'NORTH AMERICA',
-    address: '0x5bf55b88220DF9500A33962777B9d48945443106',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 159,
     height: 107,
     revealed: false,
@@ -113,8 +130,8 @@ const MAPS: readonly MapContract[] = [
     id: 5,
     slug: 'south-america',
     displayName: 'SOUTH AMERICA',
-    address: '0x822e332ac5f0c760257C7204154BA5eaF7A06586',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 115,
     height: 147,
     revealed: false,
@@ -123,8 +140,8 @@ const MAPS: readonly MapContract[] = [
     id: 6,
     slug: 'oceania',
     displayName: 'OCEANIA',
-    address: '0x693CE5fBC50c0aCbd8B3333ad7DcaAb1802A4773',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 158,
     height: 107,
     revealed: false,
@@ -133,8 +150,8 @@ const MAPS: readonly MapContract[] = [
     id: 7,
     slug: 'antarctica',
     displayName: 'ANTARCTICA',
-    address: '0x66C6eF911B3e33B35558956a0E636F33E16063c4',
-    chainId: celo.id,
+    address: UNDEPLOYED,
+    chainId: base.id,
     width: 145,
     height: 117,
     revealed: false,
@@ -168,6 +185,29 @@ function addressOverrides(): Map<number, `0x${string}`> | null {
     out.set(id, addrPart as `0x${string}`)
   }
   return out.size > 0 ? out : null
+}
+
+/** True when `m` points at a real Base deployment rather than the sentinel. */
+export function isDeployed(m: MapContract): boolean {
+  return m.address !== UNDEPLOYED
+}
+
+/**
+ * Throw rather than let the undeployed sentinel reach an on-chain call.
+ *
+ * A zero-address contract read returns empty data, which viem decodes as a
+ * zero/empty result — i.e. a map that looks free and unowned. That is exactly
+ * the silent-wrong-data failure the money-path checklist exists to prevent, so
+ * this fails closed and loudly.
+ */
+export function assertDeployed(m: MapContract): MapContract {
+  if (!isDeployed(m)) {
+    throw new Error(
+      `Map ${m.id} (${m.slug}) has no Base deployment. Run script/Deploy.s.sol ` +
+        `against Base and set its address via NEXT_PUBLIC_MAP_ADDRESS_OVERRIDES.`,
+    )
+  }
+  return m
 }
 
 /**
@@ -217,11 +257,15 @@ export function getMapsForChain(
   chainId: ChainId | undefined,
   revealedIds?: number[],
 ): MapContract[] {
-  const effective = chainId ?? celo.id
+  const effective = chainId ?? base.id
   const override = revealedIds ? new Set(revealedIds) : revealedIdOverride()
   return getRegistry()
     .filter((m) => m.chainId === effective)
     .filter((m) => (override ? override.has(m.id) : m.revealed))
+    // A map cannot be shown before it exists on Base, whatever the reveal
+    // list says — an operator revealing id 3 before deploying it would
+    // otherwise render a map backed by the zero address.
+    .filter(isDeployed)
     .sort((a, b) => a.id - b.id)
 }
 
@@ -253,7 +297,7 @@ export function getMapContractById(
   id: MapId,
   chainId?: ChainId,
 ): MapContract {
-  const effective = chainId ?? celo.id
+  const effective = chainId ?? base.id
   const known = getRegistry().find(
     (m) => m.id === id && m.chainId === effective,
   )
@@ -272,8 +316,8 @@ export function isRevealedMapId(id: MapId, chainId?: ChainId): boolean {
 
 /**
  * Legacy alias for callers that haven't been chain-ified yet. Returns
- * the default chain's list (Celo mainnet).
+ * the default chain's list (Base mainnet).
  */
 export function getRevealedMaps(): MapContract[] {
-  return getMapsForChain(celo.id)
+  return getMapsForChain(base.id)
 }

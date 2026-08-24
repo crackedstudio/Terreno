@@ -1,15 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { celo } from 'viem/chains'
-import { celoTransport } from '@/lib/chain'
+import { base } from 'viem/chains'
+import { baseTransport } from '@/lib/chain'
 
 // Regression guard for the throttled-region outage (map + profile blank in
-// India, where Forno is blocked behind Cloudflare). Client reads go through
-// celoTransport, so it must fail over FAST and across MULTIPLE providers
-// instead of stalling ~10s per read on a blocked primary.
-describe('celoTransport failover config', () => {
-  // Instantiate the transport (with a chain so the URL-less Forno transport
+// India, where the primary RPC was blocked behind Cloudflare). The incident
+// was on Celo/Forno; the failure mode is a property of any single primary
+// endpoint, so the guard carries over to Base unchanged. Client reads go
+// through baseTransport, so it must fail over FAST and across MULTIPLE
+// providers instead of stalling ~10s per read on a blocked primary.
+describe('baseTransport failover config', () => {
+  // Instantiate the transport (with a chain so any URL-less inner transport
   // resolves the chain default) to inspect its resolved config.
-  const inst = celoTransport({ chain: celo }) as {
+  const inst = baseTransport({ chain: base }) as {
     config: { type: string; retryCount: number }
     value?: { transports: Array<{ config: { timeout?: number } }> }
   }
@@ -26,7 +28,7 @@ describe('celoTransport failover config', () => {
       expect(t).toBeDefined()
       expect(t as number).toBeLessThanOrEqual(10_000)
     }
-    // The Forno primary must be the shortest, so a Cloudflare-throttled region
+    // The the Base endpoint primary must be the shortest, so a Cloudflare-throttled region
     // rotates to dRPC/Ankr in seconds rather than ~10s per read.
     expect(timeouts[0] as number).toBeLessThanOrEqual(6_000)
     expect(timeouts[0] as number).toBeLessThan(timeouts[1] as number)

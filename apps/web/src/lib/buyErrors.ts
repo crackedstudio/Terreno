@@ -56,18 +56,23 @@ export type BuyErrorCategory =
 export type BuyBlockedReason =
   /** The player declined the network switch. */
   | 'chain_switch_rejected'
-  /** The switch failed for any other reason — a wallet that can't add Celo. */
+  /** The switch failed for any other reason — a wallet that can't add Base. */
   | 'chain_switch_failed'
   | 'no_stablecoin_balance'
   | 'over_spend_cap'
 
 /**
- * Which gas-estimate rung a buy ended up on. The happy path (`feeCurrency`
- * estimate succeeds) emits nothing; the fallbacks are the interesting signal,
- * because in MiniPay a send with no gas limit makes the wallet run its own
- * `eth_estimateGas`, which answers "permission denied" and kills the buy.
+ * Which gas-estimate rung a buy ended up on. The happy path (the estimate
+ * succeeds) emits nothing; the fallback is the interesting signal, because a
+ * send with no gas limit makes the host wallet run its own `eth_estimateGas`,
+ * which a mini-app WebView may refuse — under MiniPay that answered
+ * "permission denied" and killed the buy.
+ *
+ * `without_fee_currency` was the middle rung on Celo, where the first attempt
+ * carried a CIP-64 fee currency and the retry dropped it. Base has no fee
+ * currency, so the ladder is now estimate → ceiling and that rung is gone.
  */
-export type GasFallbackLevel = 'without_fee_currency' | 'ceiling'
+export type GasFallbackLevel = 'ceiling'
 
 export const GENERIC_RETRY_MESSAGE = "That didn't go through — please try again."
 

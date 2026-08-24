@@ -13,7 +13,6 @@ import { MONDETO_ABI } from '@/lib/contract'
 import { uint24ToHex, hexToUint24, ownerDefaultColor } from '@/lib/colorUtils'
 import { decodeBytes } from '@/lib/decodeBytes'
 import { getAttributionSuffix } from '@/lib/attribution'
-import { getFeeCurrency } from '@/lib/feeCurrency'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { generateUsername } from '@/lib/username'
 import { isUserRejectedError, GENERIC_RETRY_MESSAGE } from '@/lib/buyErrors'
@@ -178,18 +177,13 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
         }
       }
 
-      // In MiniPay, pay gas in cUSD (CIP-64) — the wallet holds no CELO. Profile
-      // edits don't move a payment token, so default to cUSD. undefined for
-      // other wallets, which keep their CELO gas path.
-      const feeCurrency = getFeeCurrency()
       const args = [hexToUint24(color), name, url] as const
 
-      // Estimate gas via the read client and pass it explicitly. On Celo the
-      // wallet's own estimation is flaky and can under-estimate → an
-      // out-of-gas revert that clears on retry (the reported bug). Passing the
-      // limit is also REQUIRED in MiniPay: a gas-less send makes viem call
-      // MiniPay's eth_estimateGas, which returns "permission denied". Mirrors
-      // useBuyPixels.
+      // Estimate gas via the read client and pass it explicitly. Wallet-side
+      // estimation is flaky and can under-estimate → an out-of-gas revert that
+      // clears on retry (the reported bug). Passing the limit also stops viem
+      // asking a mini-app WebView host to estimate, which it may refuse.
+      // Mirrors useBuyPixels.
       let gas: bigint | undefined
       try {
         const g = await publicClient.estimateContractGas({
@@ -198,29 +192,14 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
           functionName: 'updateProfile',
           args,
           account: address as `0x${string}`,
-          ...(feeCurrency ? { feeCurrency } : {}),
         })
         gas = (g * 12n) / 10n
       } catch (err) {
-        console.warn('updateProfile gas estimate (feeCurrency) failed:', err)
-        // MiniPay: never fall through to a gas-less send. Retry without
-        // feeCurrency (widely accepted), padding for the CIP-64 intrinsic
-        // overhead; last resort a safe ceiling so the tx still ships a limit.
-        if (feeCurrency) {
-          try {
-            const g = await publicClient.estimateContractGas({
-              address: contractAddress,
-              abi: MONDETO_ABI,
-              functionName: 'updateProfile',
-              args,
-              account: address as `0x${string}`,
-            })
-            gas = (g * 12n) / 10n + 60_000n
-          } catch (err2) {
-            console.warn('updateProfile gas fallback failed; using ceiling:', err2)
-            gas = PROFILE_GAS_CEILING
-          }
-        }
+        // Never fall through to a gas-less send. Un-gated: this ceiling used
+        // to sit behind `if (feeCurrency)` and so was unreachable for wallets
+        // without one — on Base, every wallet.
+        console.warn('updateProfile gas estimate failed; using ceiling:', err)
+        gas = PROFILE_GAS_CEILING
       }
 
       const txHash = await writeContractAsync({
@@ -229,9 +208,6 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
         functionName: 'updateProfile',
         args,
         dataSuffix: getAttributionSuffix(),
-        // feeCurrency + gas are Celo (CIP-64) fields wagmi's generic write type
-        // doesn't surface; spread them so the rest stays type-checked.
-        ...(feeCurrency ? { feeCurrency } : {}),
         ...(gas ? { gas } : {}),
       })
 

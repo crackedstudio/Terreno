@@ -81,7 +81,7 @@ describe('useProfile', () => {
     expect(result.current.error).toBeTruthy()
   })
 
-  it('still confirms when gas estimation fails (non-MiniPay: wallet estimates)', async () => {
+  it('falls back to the gas ceiling when estimation fails, never a gas-less send', async () => {
     mocks.estimateContractGas.mockRejectedValue(new Error('estimate failed'))
     const { result } = renderHook(() => useProfile(ADDR))
     act(() => result.current.setName('lena'))
@@ -90,12 +90,32 @@ describe('useProfile', () => {
       await result.current.save()
     })
 
-    // Outside MiniPay (feeCurrency undefined) there is no retry ladder, so the
-    // write ships without an explicit gas limit rather than a gas-less MiniPay
-    // send — the wallet estimates. The tx still confirms.
+    // Behaviour change from the Celo/MiniPay build, and the reason this
+    // assertion is inverted: the ceiling used to sit behind `if (feeCurrency)`,
+    // so any wallet without a Celo fee currency fell through to a send with no
+    // gas limit. On Base no wallet has a fee currency, which would have made
+    // the ceiling dead code and shipped every failed estimate gas-less — the
+    // exact case the ladder exists to prevent, since a mini-app WebView host
+    // may refuse to run eth_estimateGas on our behalf.
     expect(result.current.saveState).toBe('saved')
     const call = mocks.writeContractAsync.mock.calls[0][0]
-    expect(call.gas).toBeUndefined()
+    expect(call.gas).toBe(200_000n) // PROFILE_GAS_CEILING
+  })
+
+  it('CONTROL: uses the padded estimate when estimation succeeds', async () => {
+    // Pairs with the test above so the ceiling assertion cannot pass against
+    // a code path that always sets the ceiling regardless of the estimate.
+    mocks.estimateContractGas.mockResolvedValue(100_000n)
+    const { result } = renderHook(() => useProfile(ADDR))
+    act(() => result.current.setName('lena'))
+
+    await act(async () => {
+      await result.current.save()
+    })
+
+    expect(result.current.saveState).toBe('saved')
+    const call = mocks.writeContractAsync.mock.calls[0][0]
+    expect(call.gas).toBe(120_000n) // 100k * 1.2, not the ceiling
   })
 
   it('keeps a name the user typed even when the contract read refetches (MiniPay churn)', () => {

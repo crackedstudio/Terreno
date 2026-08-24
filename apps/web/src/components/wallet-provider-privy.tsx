@@ -7,13 +7,13 @@ import {
 } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { injected } from "wagmi/connectors";
-import { celo, celoSepolia } from "viem/chains";
+import { base, baseSepolia } from "viem/chains";
 import { ChainGuard } from "./ChainGuard";
 import { WalletAnalytics } from "./wallet-analytics";
 import { PrivyReadyContext } from "./privy-ready-context";
-import { celoTransport, celoSepoliaTransport } from "@/lib/chain";
+import { baseTransport, baseSepoliaTransport } from "@/lib/chain";
 
-// Privy-only tree, isolated from the MiniPay path. Lazy-loaded by
+// Privy-only tree, isolated from the Nimiq Pay path. Lazy-loaded by
 // WalletProvider via next/dynamic({ ssr: false }) so this module never
 // executes in the server bundle. That isolation is load-bearing —
 // `@privy-io/wagmi`'s wagmi hooks internally call `useWallets`, which
@@ -24,12 +24,12 @@ import { celoTransport, celoSepoliaTransport } from "@/lib/chain";
 // `@privy-io/wagmi`, not from `wagmi` directly. See
 // https://docs.privy.io/wallets/connectors/ethereum/integrations/wagmi
 const privyWagmiConfig = createPrivyWagmiConfig({
-  chains: [celo, celoSepolia],
+  chains: [base, baseSepolia],
   connectors: [injected()],
   ssr: true,
   transports: {
-    [celo.id]: celoTransport,
-    [celoSepolia.id]: celoSepoliaTransport,
+    [base.id]: baseTransport,
+    [baseSepolia.id]: baseSepoliaTransport,
   },
 });
 
@@ -60,10 +60,10 @@ export function PrivyTree({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "cmmxiatqc01fa0cjv4eg3b9kp"}
       config={{
-        defaultChain: celo,
-        supportedChains: [celo, celoSepolia],
+        defaultChain: base,
+        supportedChains: [base, baseSepolia],
         // Needed for the wallet_connect entry in walletList below — the
-        // desktop QR-code flow. MiniPay users never reach this tree.
+        // desktop QR-code flow. Nimiq Pay users never reach this tree.
         walletConnectCloudProjectId:
           process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
         loginMethods: ["wallet"],

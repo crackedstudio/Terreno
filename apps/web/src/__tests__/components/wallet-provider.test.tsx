@@ -8,7 +8,7 @@ import { WalletProvider } from '@/components/wallet-provider'
  *
  * The failure mode this pins down: `PrivyTree` used to be mounted via
  * `next/dynamic({ loading: () => null })` with `{children}` as its child, so
- * every non-MiniPay page load rendered vanilla → `null` (entire app tree
+ * every page load outside Nimiq Pay rendered vanilla → `null` (entire app tree
  * unmounted) → Privy. Whether an in-flight async callback then dereferenced a
  * ref that unmount had already nulled was a chunk-timing race — which is how
  * a postcss patch bump (#212) took every browser down with no explanatory
@@ -41,9 +41,12 @@ function Probe() {
 afterEach(() => {
   cleanup()
   delete window.ethereum
+  // Must be reset too: a leaked host context would make every later test
+  // take the Nimiq Pay branch and silently stop exercising the Privy path.
+  delete window.nimiqPay
 })
 
-describe('WalletProvider (browser, non-MiniPay)', () => {
+describe('WalletProvider (browser, outside Nimiq Pay)', () => {
   it('keeps children mounted while the Privy chunk is loading, then swaps once', async () => {
     render(
       <WalletProvider>
@@ -71,12 +74,18 @@ describe('WalletProvider (browser, non-MiniPay)', () => {
   })
 })
 
-describe('WalletProvider (MiniPay)', () => {
+describe('WalletProvider (Nimiq Pay)', () => {
   it('never mounts the Privy tree', async () => {
+    // Nimiq Pay is detected from the host context object it seeds before the
+    // mini app's page script runs — not from a marker on window.ethereum,
+    // which it injects without any vendor flag.
+    window.nimiqPay = {
+      language: 'en',
+      requestDeviceIdentifier: vi.fn(async () => 'a'.repeat(64)),
+    }
     window.ethereum = {
-      isMiniPay: true,
       request: vi.fn(async ({ method }: { method: string }) => {
-        if (method === 'eth_chainId') return '0xa4ec'
+        if (method === 'eth_chainId') return '0x2105' // Base mainnet (8453)
         if (method === 'eth_accounts' || method === 'eth_requestAccounts') return []
         return null
       }),

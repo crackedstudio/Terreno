@@ -4,7 +4,7 @@ import {
   pixelViewsToStates,
   summarizeMap,
 } from '@/hooks/useShouldOpenNextMap'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { getMaskData } from '@/lib/maps/masks'
 import type { PixelState } from '@/lib/maps/types'
@@ -108,16 +108,16 @@ describe('pixelViewsToStates', () => {
 
 describe('cacheKeyFor', () => {
   it('includes the chain id and the sorted revealed ids', () => {
-    expect(cacheKeyFor(celo.id, [1, 0])).toBe(
-      `mondeto-should-open-next-map-cache:${celo.id}:0-1`,
+    expect(cacheKeyFor(base.id, [1, 0])).toBe(
+      `mondeto-should-open-next-map-cache:${base.id}:0-1`,
     )
   })
 
   it('differs across reveal sets so a pre-reveal entry cannot shadow a wider one', () => {
-    expect(cacheKeyFor(celo.id, [0])).not.toBe(cacheKeyFor(celo.id, [0, 1]))
+    expect(cacheKeyFor(base.id, [0])).not.toBe(cacheKeyFor(base.id, [0, 1]))
   })
 
   it('is insensitive to reveal-id ordering', () => {
-    expect(cacheKeyFor(celo.id, [1, 0])).toBe(cacheKeyFor(celo.id, [0, 1]))
+    expect(cacheKeyFor(base.id, [1, 0])).toBe(cacheKeyFor(base.id, [0, 1]))
   })
 })

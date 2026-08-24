@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { celo } from "viem/chains";
+import { base } from "viem/chains";
 
-// Force Celo mainnet. The world + continent contracts wired in
-// `lib/maps/contracts.ts` are deployed there.
-const TARGET_CHAIN = celo;
+// Force Base mainnet. The world + continent contracts wired in
+// `lib/maps/contracts.ts` are deployed there, and Base is on the EVM chain
+// list Nimiq Pay exposes to mini apps.
+const TARGET_CHAIN = base;
 
 /** Chains the wallet is allowed to sit on without being prompted. */
 function allowedChainIds(): number[] {
-  return [celo.id as number];
+  return [base.id as number];
 }
 
 interface EthereumProvider {
@@ -36,6 +37,14 @@ async function readWalletChainId(eth: EthereumProvider): Promise<number | null> 
  * Ask the wallet to switch chains. Tries the standard switch first; if the
  * chain isn't known to the wallet (error 4902), falls back to add+switch
  * using viem's chain metadata.
+ *
+ * Inside Nimiq Pay the add-chain fallback is expected to be a no-op: the host
+ * exposes a fixed chain list set by Nimiq's own configuration and a mini app
+ * cannot add to it. Base is already on that list, so the plain switch is the
+ * path that matters there; the 4902 branch remains for desktop/extension
+ * wallets outside the mini app. Nimiq Pay's exact switch semantics are not
+ * documented — hence the caller treating a rejection as a warning, not a
+ * crash, and the map staying read-only rather than the app breaking.
  */
 async function requestSwitchChain(eth: EthereumProvider): Promise<void> {
   const hex = `0x${TARGET_CHAIN.id.toString(16)}`;
@@ -68,7 +77,7 @@ async function requestSwitchChain(eth: EthereumProvider): Promise<void> {
 }
 
 /**
- * Forces every connected wallet onto Celo mainnet.
+ * Forces every connected wallet onto Base mainnet.
  *
  * We bypass wagmi's `useSwitchChain` and talk to `window.ethereum`
  * directly. Privy's `WagmiProvider` doesn't reliably propagate
