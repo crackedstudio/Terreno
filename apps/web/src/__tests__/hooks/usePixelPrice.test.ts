@@ -7,7 +7,7 @@ vi.mock('wagmi', () => ({
 }))
 
 vi.mock('@/lib/contract', () => ({
-  MONDETO_ABI: [],
+  TERRENO_ABI: [],
 }))
 
 vi.mock('@/lib/maps/contracts', () => ({

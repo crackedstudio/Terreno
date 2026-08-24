@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {Mondeto} from "../src/Mondeto.sol";
+import {Terreno} from "../src/Terreno.sol";
 
 contract DeployScript is Script {
     function run() external {
@@ -25,11 +25,11 @@ contract DeployScript is Script {
         vm.startBroadcast();
 
         // Deploy implementation
-        Mondeto implementation = new Mondeto(width, height, halvingTime);
+        Terreno implementation = new Terreno(width, height, halvingTime);
         console.log("Implementation deployed at:", address(implementation));
 
         // Deploy proxy with land mask included in initialization
-        bytes memory initData = abi.encodeCall(Mondeto.initialize, (tokens, initialPrice, minPrice, feeRate, landMask));
+        bytes memory initData = abi.encodeCall(Terreno.initialize, (tokens, initialPrice, minPrice, feeRate, landMask));
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
         console.log("Proxy deployed at:", address(proxy));
 

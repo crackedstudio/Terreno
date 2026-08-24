@@ -2,7 +2,7 @@
 
 import { useAccount, useReadContract, useReadContracts } from 'wagmi'
 import { formatUnits } from 'viem'
-import { ERC20_ABI, MONDETO_ABI } from '@/lib/contract'
+import { ERC20_ABI, TERRENO_ABI } from '@/lib/contract'
 import { getContractByMapId, isDeployedAddress } from '@/lib/maps/contracts'
 import { useMaps } from '@/hooks/useMaps'
 
@@ -78,7 +78,7 @@ export function useStablecoinBalance(): StablecoinBalances {
   // Step 1: which tokens does this Mondeto deployment accept?
   const acceptedTokensRead = useReadContract({
     address: contractAddress,
-    abi: MONDETO_ABI,
+    abi: TERRENO_ABI,
     functionName: 'getAcceptedTokens',
     // `!!contractAddress` is NOT sufficient: the undeployed sentinel is the
     // zero address, which is a truthy string, so this dispatched

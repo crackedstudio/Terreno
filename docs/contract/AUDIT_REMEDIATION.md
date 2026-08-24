@@ -5,7 +5,7 @@ finding — the original finding, the decision taken, the exact change (with
 commit / PR references), and how to verify it.
 
 **Date:** 2026-07-03
-**Contract:** `apps/contracts/src/Mondeto.sol` (UUPS upgradeable)
+**Contract:** `apps/contracts/src/Terreno.sol` (UUPS upgradeable)
 
 ## How to review
 
@@ -169,7 +169,7 @@ if (_minPrice > _initialPrice) revert InvalidPrice();
 ```
 
 New errors: `InvalidHalvingTime()`, `InvalidPrice()`. Covering tests added in
-`apps/contracts/test/Mondeto.t.sol`.
+`apps/contracts/test/Terreno.t.sol`.
 
 **Verify.** Constructing with `_halvingTime == 0` reverts `InvalidHalvingTime`;
 initializing with `_minPrice > _initialPrice` reverts `InvalidPrice`.

@@ -39,7 +39,7 @@ Nimiq's native side was never an option for this product regardless: Nimiq has
 no general-purpose smart contracts, only protocol-level vesting and HTLC
 account types, so there is nothing to own a pixel with.
 
-`Mondeto.sol` needed **no Solidity changes** — accepted tokens are initializer
+`Terreno.sol` needed **no Solidity changes** — accepted tokens are initializer
 input, not hardcoded — so this is a redeploy, not a port.
 
 ## What does not carry over

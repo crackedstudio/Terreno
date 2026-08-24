@@ -61,6 +61,19 @@
   },
   {
     "type": "function",
+    "name": "MAX_FEE_RATE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "PRICE_DECIMALS",
     "inputs": [],
     "outputs": [
@@ -883,6 +896,31 @@
   },
   {
     "type": "event",
+    "name": "SellerPaymentRedirected",
+    "inputs": [
+      {
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Upgraded",
     "inputs": [
       {
@@ -902,6 +940,17 @@
         "name": "target",
         "type": "address",
         "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DeadlineExpired",
+    "inputs": [
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ]
   },
@@ -933,34 +982,12 @@
   },
   {
     "type": "error",
-    "name": "DeadlineExpired",
-    "inputs": [
-      {
-        "name": "deadline",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "SlippageExceeded",
-    "inputs": [
-      {
-        "name": "totalCost",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "maxTotalCost",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
     "name": "InvalidFeeRate",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidHalvingTime",
     "inputs": []
   },
   {
@@ -983,6 +1010,11 @@
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidPrice",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1055,6 +1087,22 @@
         "name": "token",
         "type": "address",
         "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SlippageExceeded",
+    "inputs": [
+      {
+        "name": "totalCost",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxTotalCost",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ]
   },

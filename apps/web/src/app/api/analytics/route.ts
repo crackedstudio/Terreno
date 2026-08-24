@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { fallbackReadClient } from '@/lib/chain'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { estimateHistoryFromBlock, scanNormalizedPurchases, toMicrocents } from '@/lib/purchaseLogs'
 import { fetchBatchesSince, fetchMapStats, subgraphConfigured } from '@/lib/subgraph'

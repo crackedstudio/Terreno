@@ -3,12 +3,12 @@ pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {Mondeto} from "../src/Mondeto.sol";
+import {Terreno} from "../src/Terreno.sol";
 import {MockUSDT} from "./mocks/MockUSDT.sol";
 
 /// @notice Gas benchmarks. Run with: forge test --match-contract GasBench --gas-report
 contract GasBench is Test {
-    Mondeto public mondeto;
+    Terreno public terreno;
     MockUSDT public usdt;
     address public alice = address(0xA11CE);
     address public bob = address(0xB0B);
@@ -26,20 +26,20 @@ contract GasBench is Test {
             mask[i] = type(uint256).max;
         }
 
-        Mondeto impl = new Mondeto(300, 200, 14 days);
+        Terreno impl = new Terreno(300, 200, 14 days);
         address[] memory tokens = new address[](1);
         tokens[0] = address(usdt);
         bytes memory initData =
-            abi.encodeCall(Mondeto.initialize, (tokens, INITIAL_PRICE, MIN_PRICE, INITIAL_FEE_RATE, mask));
+            abi.encodeCall(Terreno.initialize, (tokens, INITIAL_PRICE, MIN_PRICE, INITIAL_FEE_RATE, mask));
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
-        mondeto = Mondeto(address(proxy));
+        terreno = Terreno(address(proxy));
 
         usdt.mint(alice, 1_000_000_000e6);
         usdt.mint(bob, 1_000_000_000e6);
         vm.prank(alice);
-        usdt.approve(address(mondeto), type(uint256).max);
+        usdt.approve(address(terreno), type(uint256).max);
         vm.prank(bob);
-        usdt.approve(address(mondeto), type(uint256).max);
+        usdt.approve(address(terreno), type(uint256).max);
     }
 
     // ========== buyPixels ==========
@@ -50,7 +50,7 @@ contract GasBench is Test {
             ids[i] = i;
         }
         vm.prank(alice);
-        mondeto.buyPixels(ids, address(usdt), type(uint256).max, type(uint256).max);
+        terreno.buyPixels(ids, address(usdt), type(uint256).max, type(uint256).max);
     }
 
     function test_buyPixels_1() public {
@@ -81,46 +81,46 @@ contract GasBench is Test {
             ids[i] = i;
         }
         vm.prank(bob);
-        mondeto.buyPixels(ids, address(usdt), type(uint256).max, type(uint256).max);
+        terreno.buyPixels(ids, address(usdt), type(uint256).max, type(uint256).max);
     }
 
     // ========== getPixelBatch ==========
 
     function test_getPixelBatch_10x10() public view {
-        mondeto.getPixelBatch(0, 0, 10, 10);
+        terreno.getPixelBatch(0, 0, 10, 10);
     }
 
     function test_getPixelBatch_50x50() public view {
-        mondeto.getPixelBatch(0, 0, 50, 50);
+        terreno.getPixelBatch(0, 0, 50, 50);
     }
 
     function test_getPixelBatch_100x100() public view {
-        mondeto.getPixelBatch(0, 0, 100, 100);
+        terreno.getPixelBatch(0, 0, 100, 100);
     }
 
     function test_getPixelBatch_300x30() public view {
-        mondeto.getPixelBatch(0, 0, 300, 30);
+        terreno.getPixelBatch(0, 0, 300, 30);
     }
 
     function test_getPixelBatch_300x200() public view {
-        mondeto.getPixelBatch(0, 0, 300, 200);
+        terreno.getPixelBatch(0, 0, 300, 200);
     }
 
     // ========== rectanglePrice ==========
 
     function test_rectanglePrice_10x10() public view {
-        mondeto.rectanglePrice(0, 0, 10, 10);
+        terreno.rectanglePrice(0, 0, 10, 10);
     }
 
     function test_rectanglePrice_50x50() public view {
-        mondeto.rectanglePrice(0, 0, 50, 50);
+        terreno.rectanglePrice(0, 0, 50, 50);
     }
 
     function test_rectanglePrice_100x100() public view {
-        mondeto.rectanglePrice(0, 0, 100, 100);
+        terreno.rectanglePrice(0, 0, 100, 100);
     }
 
     function test_rectanglePrice_300x200() public view {
-        mondeto.rectanglePrice(0, 0, 300, 200);
+        terreno.rectanglePrice(0, 0, 300, 200);
     }
 }

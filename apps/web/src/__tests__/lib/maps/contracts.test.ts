@@ -78,8 +78,15 @@ describe('contracts registry', () => {
 // free and unowned. Each absence-assertion below is paired with a deployed
 // control so it cannot pass against code that simply never ran.
 describe('undeployed maps (Base migration)', () => {
-  it('ships every map on the sentinel until a deployment is wired in', () => {
-    for (const m of getRegistry()) expect(isDeployed(m)).toBe(false)
+  it('has WORLD deployed and every continent still on the sentinel', () => {
+    // WORLD went live on Base 2026-08-24 (proxy 0x8db1…3f79, block 50404393);
+    // the seven continents have not been deployed yet.
+    const byId = (id: number) => getRegistry().find((m) => m.id === id)!
+    expect(isDeployed(byId(0))).toBe(true)
+    expect(byId(0).address).toBe('0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79')
+    for (const m of getRegistry().filter((x) => x.id !== 0)) {
+      expect(isDeployed(m)).toBe(false)
+    }
   })
 
   it('CONTROL: an overridden map counts as deployed', () => {
@@ -89,9 +96,12 @@ describe('undeployed maps (Base migration)', () => {
     expect(world.address).toBe(WORLD_ADDR)
   })
 
-  it('renders no maps at all while nothing is deployed', () => {
+  it('renders only the maps that actually exist, whatever the reveal list says', () => {
+    // The guarantee this pins: revealing 0,1,2 must NOT surface Africa and Asia,
+    // because they have no Base deployment and a zero-address read decodes as a
+    // map that is entirely free and unowned.
     vi.stubEnv('NEXT_PUBLIC_REVEALED_MAP_IDS', '0,1,2')
-    expect(getMapsForChain(base.id)).toHaveLength(0)
+    expect(getMapsForChain(base.id).map((m) => m.slug)).toEqual(['world'])
   })
 
   it('CONTROL: the same reveal list renders once the maps are deployed', () => {
@@ -134,9 +144,9 @@ describe('address override (NEXT_PUBLIC_MAP_ADDRESS_OVERRIDES)', () => {
     expect(africa.slug).toBe('africa')
     expect(africa.width).toBe(127)
     expect(africa.height).toBe(134)
-    // other maps are untouched — still undeployed
+    // other maps are untouched — WORLD keeps its real deployed address
     expect(getRegistry().find((m) => m.id === 0)!.address).toBe(
-      '0x0000000000000000000000000000000000000000',
+      '0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79',
     )
   })
 

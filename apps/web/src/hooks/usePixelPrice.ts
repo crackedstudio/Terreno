@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { usePublicClient } from 'wagmi'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import type { MapId } from '@/lib/maps/types'
 
@@ -32,7 +32,7 @@ export function usePixelPrice(selectedIds: Set<number>, mapId?: MapId) {
         if (publicClient) {
           const price = await publicClient.readContract({
             address: contractAddress,
-            abi: MONDETO_ABI,
+            abi: TERRENO_ABI,
             functionName: 'selectionPrice',
             args: [ids.map(id => BigInt(id))],
           }) as bigint

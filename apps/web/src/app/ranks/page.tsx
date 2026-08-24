@@ -20,7 +20,7 @@ import { track } from '@/lib/analytics'
 import { ShareButton } from '@/components/ShareButton'
 import type { PixelView } from '@/lib/mock'
 import { fetchAllPixelsFromContract } from '@/lib/contractReads'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { getMapContractById } from '@/lib/maps/contracts'
 import { getMaskData } from '@/lib/maps/masks'
 import { ZERO_ADDRESS } from '@/constants/map'
@@ -185,7 +185,7 @@ export default function RanksPage() {
           allowFailure: true,
           contracts: ownerArray.map((addr) => ({
             address: mondetoAddress,
-            abi: MONDETO_ABI,
+            abi: TERRENO_ABI,
             functionName: 'profiles',
             args: [addr as `0x${string}`],
           })),

@@ -32,7 +32,7 @@ uv run map/generate_continents.py
 **State lives in the proxy**, not the implementation. When upgrading:
 - Deploy new implementation
 - Call `upgradeToAndCall(newImpl, "")` from the owner account
-- New implementation must inherit from `Mondeto` and not change existing storage layout (only append new state variables)
+- New implementation must inherit from `Terreno` and not change existing storage layout (only append new state variables)
 
 ## Price Formula — The Most Subtle Part
 
@@ -109,7 +109,7 @@ is the committed template; real `*.env` files are gitignored.
 
 ## Upgrade Checklist
 
-1. New contract must inherit from `Mondeto` (or replicate its storage layout exactly)
+1. New contract must inherit from `Terreno` (or replicate its storage layout exactly)
 2. **Never reorder or remove existing state variables** — only append new ones after the current last state var (`acceptedTokens`)
 3. `WIDTH`, `HEIGHT`, `TOTAL_PIXELS`, `LAND_MASK_LENGTH` are immutable (baked into implementation bytecode) — new implementation must be deployed with the same constructor args
 4. `halvingStartTimestamp` (and the rest of the token/pixel/profile state) is regular storage (not `immutable`) because of the proxy pattern

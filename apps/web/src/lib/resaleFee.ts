@@ -1,5 +1,5 @@
 import { fallbackReadClient } from '@/lib/chain'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { BPS_DENOM } from '@/lib/buyLimits'
 import { logger } from '@/lib/logger'
 import type { MapId } from '@/lib/maps/types'
@@ -32,7 +32,7 @@ export async function readFeeRateBps(
   try {
     const rate = (await fallbackReadClient.readContract({
       address: contractAddress,
-      abi: MONDETO_ABI,
+      abi: TERRENO_ABI,
       functionName: 'feeRate',
     })) as bigint
     return Number(rate)

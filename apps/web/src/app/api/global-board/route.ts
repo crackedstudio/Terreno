@@ -16,7 +16,7 @@ import {
 import { fetchAllPixelsFromContract } from '@/lib/contractReads'
 import { getMapsForChain } from '@/lib/maps/contracts'
 import { readRevealedMapIdsServer } from '@/lib/maps/reveals'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { decodeBytes } from '@/lib/decodeBytes'
 import { uint24ToHex } from '@/lib/colorUtils'
 import { base } from 'viem/chains'
@@ -165,7 +165,7 @@ async function readProfiles(
       batch.map((addr) =>
         fallbackReadClient.readContract({
           address: contract,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'profiles',
           args: [addr as `0x${string}`],
         }),

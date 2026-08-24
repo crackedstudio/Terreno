@@ -9,7 +9,7 @@ import {
   useSwitchChain,
 } from 'wagmi'
 import { base } from 'viem/chains'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { uint24ToHex, hexToUint24, ownerDefaultColor } from '@/lib/colorUtils'
 import { decodeBytes } from '@/lib/decodeBytes'
 import { getAttributionSuffix } from '@/lib/attribution'
@@ -113,7 +113,7 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
   // Read profile from contract
   const { data: profileData } = useReadContract({
     address: contractAddress,
-    abi: MONDETO_ABI,
+    abi: TERRENO_ABI,
     functionName: 'profiles',
     args: [(address ?? '0x0000000000000000000000000000000000000000') as `0x${string}`],
     query: { enabled: !!address },
@@ -188,7 +188,7 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
       try {
         const g = await publicClient.estimateContractGas({
           address: contractAddress,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'updateProfile',
           args,
           account: address as `0x${string}`,
@@ -204,7 +204,7 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
 
       const txHash = await writeContractAsync({
         address: contractAddress,
-        abi: MONDETO_ABI,
+        abi: TERRENO_ABI,
         functionName: 'updateProfile',
         args,
         dataSuffix: getAttributionSuffix(),

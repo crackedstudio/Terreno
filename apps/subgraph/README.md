@@ -1,4 +1,4 @@
-# Mondeto subgraph (Goldsky)
+# Terreno subgraph (Goldsky)
 
 > **Migration.** The committed `subgraph.yaml` still targets Celo — it is the
 > last generated manifest and stays until the Base deployments exist. Regenerate
@@ -6,7 +6,7 @@
 > [`../../docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
 
 A [The Graph](https://thegraph.com)-protocol subgraph, hosted on
-[Goldsky](https://goldsky.com), that indexes the eight Mondeto map contracts.
+[Goldsky](https://goldsky.com), that indexes the eight Terreno map contracts.
 It replaces the old Envio indexer and is the durable source for:
 
 - **earn / spend** per wallet per map (`/api/pnl`),
@@ -35,7 +35,7 @@ prices.
 - `schema.graphql` — the entity model (see the header there for money-unit and id
   conventions).
 - `src/mapping.ts` — the AssemblyScript handlers.
-- `abis/Mondeto.json` — copied from `apps/web/src/lib/contract.ts` (`MONDETO_ABI`).
+- `abis/Terreno.json` — copied from `apps/web/src/lib/contract.ts` (`TERRENO_ABI`).
 
 ## Build
 

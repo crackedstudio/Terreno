@@ -27,7 +27,7 @@ import { useProfile } from '@/hooks/useProfile'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { useMaps } from '@/hooks/useMaps'
 import { useCurrentMapMeta } from '@/hooks/useCurrentMapMeta'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { decodeBytes } from '@/lib/decodeBytes'
 import { uint24ToHex } from '@/lib/colorUtils'
 import { PAINT_SCALE } from '@/constants/map'
@@ -242,7 +242,7 @@ export default function Home() {
           batch.map(addr =>
             publicClient!.readContract({
               address: mondetoAddress,
-              abi: MONDETO_ABI,
+              abi: TERRENO_ABI,
               functionName: 'profiles',
               args: [addr as `0x${string}`],
             })
@@ -431,7 +431,7 @@ export default function Home() {
         [...owners].map(addr =>
           publicClient.readContract({
             address: mondetoAddress,
-            abi: MONDETO_ABI,
+            abi: TERRENO_ABI,
             functionName: 'profiles',
             args: [addr as `0x${string}`],
           })

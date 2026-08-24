@@ -65,9 +65,9 @@ const HANDLERS = [
 ]
 
 let out = ''
-out += `# Goldsky subgraph manifest for the Mondeto pixel maps on ${NETWORK}.\n`
+out += `# Goldsky subgraph manifest for the Terreno pixel maps on ${NETWORK}.\n`
 out += '#\n'
-out += '# All eight maps are separate UUPS proxies of the same Mondeto implementation,\n'
+out += '# All eight maps are separate UUPS proxies of the same Terreno implementation,\n'
 out += '# so every dataSource shares one ABI + one mapping file. The frontend mapId is\n'
 out += '# injected per contract via dataSource.context (read in the mapping with\n'
 out += '# dataSource.context().getI32("mapId")).\n'
@@ -76,19 +76,19 @@ out += '# GENERATED — do not edit. Addresses come from maps.base.json, which m
 out += '# stay in sync with apps/web/src/lib/maps/contracts.ts (source of truth).\n'
 out += '# Regenerate with: node scripts/gen-subgraph-yaml.js\n'
 out += 'specVersion: 1.0.0\n'
-out += `description: Ownership, purchase history, earn/spend and analytics for Mondeto on ${NETWORK}\n`
+out += `description: Ownership, purchase history, earn/spend and analytics for Terreno on ${NETWORK}\n`
 out += 'schema:\n  file: ./schema.graphql\n'
 out += 'dataSources:\n'
 for (const [id, slug, addr, startBlock] of maps) {
   out += `  - kind: ethereum\n`
-  out += `    name: Mondeto${id}\n`
+  out += `    name: Terreno${id}\n`
   out += `    network: ${NETWORK}\n`
   out += `    context:\n      mapId:\n        type: Int\n        data: ${id}\n`
-  out += `    source:\n      address: "${addr}" # ${id} ${slug}\n      abi: Mondeto\n      startBlock: ${startBlock}\n`
+  out += `    source:\n      address: "${addr}" # ${id} ${slug}\n      abi: Terreno\n      startBlock: ${startBlock}\n`
   out += `    mapping:\n      kind: ethereum/events\n      apiVersion: 0.0.9\n      language: wasm/assemblyscript\n      file: ./src/mapping.ts\n`
   out += `      entities:\n`
   for (const e of ENTITIES) out += `        - ${e}\n`
-  out += `      abis:\n        - name: Mondeto\n          file: ./abis/Mondeto.json\n`
+  out += `      abis:\n        - name: Terreno\n          file: ./abis/Terreno.json\n`
   out += `      eventHandlers:\n`
   for (const [ev, h] of HANDLERS) out += `        - event: ${ev}\n          handler: ${h}\n`
 }

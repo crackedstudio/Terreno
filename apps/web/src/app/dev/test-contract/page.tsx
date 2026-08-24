@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { useReadContract, useAccount } from 'wagmi'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { ConnectButton } from '@/components/connect-button'
 
-const MONDETO_ADDRESS = getContractByMapId(0)
-const CONTRACT = { address: MONDETO_ADDRESS, abi: MONDETO_ABI } as const
+const TERRENO_ADDRESS = getContractByMapId(0)
+const CONTRACT = { address: TERRENO_ADDRESS, abi: TERRENO_ABI } as const
 
 export default function TestContractPage() {
   const { address, isConnected, chain } = useAccount()
@@ -106,7 +106,7 @@ export default function TestContractPage() {
     <div style={{ padding: 20, fontFamily: 'monospace', maxWidth: 700, margin: '0 auto' }}>
       <h1 style={{ fontSize: 16, marginBottom: 8 }}>Contract Test Page</h1>
       <p style={{ fontSize: 10, color: '#a09080', marginBottom: 12 }}>
-        Proxy: {MONDETO_ADDRESS}<br />
+        Proxy: {TERRENO_ADDRESS}<br />
         Chain: {chain?.name ?? 'not connected'} (ID: {chain?.id ?? '—'})
       </p>
 

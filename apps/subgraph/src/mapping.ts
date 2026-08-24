@@ -1,7 +1,7 @@
 /**
- * Mondeto subgraph mappings (AssemblyScript / The Graph).
+ * Terreno subgraph mappings (AssemblyScript / The Graph).
  *
- * Ported from the retired Envio handler (apps/indexer/src/handlers/Mondeto.ts).
+ * Ported from the retired Envio handler (apps/indexer/src/handlers/Terreno.ts).
  * Same intent, adapted to graph-ts + the new fields the frontend needs:
  *   - money normalized to 6-decimal microcents via the payment token's decimals
  *     (Token entity, fed by AcceptedTokenAdded) — see `toMicrocents`, which
@@ -23,7 +23,7 @@ import {
   AcceptedTokenAdded,
   AcceptedTokenRemoved,
   FeeRateUpdated,
-} from '../generated/Mondeto0/Mondeto'
+} from '../generated/Terreno0/Terreno'
 import {
   Pixel,
   Owner,

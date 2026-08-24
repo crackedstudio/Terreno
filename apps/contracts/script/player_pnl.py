@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Compute per-player profit & loss from Mondeto pixel trading.
+"""Compute per-player profit & loss from Terreno pixel trading.
 
 Requires: foundry (cast) installed. No Python dependencies beyond stdlib.
 
 Env vars:
-    PROXY_ADDRESS   Mondeto proxy contract address
+    PROXY_ADDRESS   Terreno proxy contract address
     ETH_RPC_URL     RPC endpoint (same env var cast uses)
     DEPLOY_BLOCK    Block to start scanning from. Defaults to "earliest";
                     set to the deploy block hex (e.g. 0x4a1b2c3) for speed.
@@ -172,7 +172,7 @@ def main() -> None:
         return addr[:6] + "..." + addr[-4:]
 
     print()
-    print("=== Mondeto Player P&L (ranked by earnings) ===")
+    print("=== Terreno Player P&L (ranked by earnings) ===")
     print()
     print(f"{'#':>3}  {'Player':<19}  {'Spent (USDT)':>12}  {'Earned (USDT)':>13}  {'Net (USDT)':>10}")
     print(f"{'---':>3}  {'-------------------':<19}  {'------------':>12}  {'-------------':>13}  {'----------':>10}")

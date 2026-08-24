@@ -16,7 +16,7 @@ import { getMapContractById } from '@/lib/maps/contracts'
 import { getMaskData } from '@/lib/maps/masks'
 import { rankGap } from '@/lib/maps/leaderboards'
 import { fetchAreaLeaderboard, fetchOwnedPixelIds, subgraphConfigured } from '@/lib/subgraph'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { useReadClient } from '@/hooks/useReadClient'
 import { fetchAllPixelsFromContract } from '@/lib/contractReads'
@@ -232,7 +232,7 @@ export default function ProfilePage() {
           for (let i = 0; i < ids.length; i += CHUNK) {
             const price = (await read({
               address: map.address,
-              abi: MONDETO_ABI,
+              abi: TERRENO_ABI,
               functionName: 'selectionPrice',
               args: [ids.slice(i, i + CHUNK).map((n) => BigInt(n))],
             })) as bigint

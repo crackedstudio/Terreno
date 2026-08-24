@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useWriteContract, useAccount, usePublicClient, useSwitchChain } from 'wagmi'
 import { base } from 'viem/chains'
-import { MONDETO_ABI, ERC20_ABI } from '@/lib/contract'
+import { TERRENO_ABI, ERC20_ABI } from '@/lib/contract'
 import { getAttributionSuffix } from '@/lib/attribution'
 import { getContractByMapId } from '@/lib/maps/contracts'
 import { classifyBuy, isUserRejectedError } from '@/lib/buyErrors'
@@ -217,13 +217,13 @@ export function useBuyPixels(mapId?: MapId) {
       const [canonicalPrice, priceDecimalsRaw] = await Promise.all([
         publicClient.readContract({
           address: contractAddress,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'selectionPrice',
           args: [bigIds],
         }) as Promise<bigint>,
         publicClient.readContract({
           address: contractAddress,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'PRICE_DECIMALS',
         }) as Promise<number>,
       ])
@@ -252,7 +252,7 @@ export function useBuyPixels(mapId?: MapId) {
       try {
         const g = await publicClient.estimateContractGas({
           address: contractAddress,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'buyPixels',
           args: [bigIds, tokenAddress, maxTotalCost, deadline],
           account: address,
@@ -269,7 +269,7 @@ export function useBuyPixels(mapId?: MapId) {
       }
       const buyHash = await writeContractAsync({
         address: contractAddress,
-        abi: MONDETO_ABI,
+        abi: TERRENO_ABI,
         functionName: 'buyPixels',
         args: [bigIds, tokenAddress, maxTotalCost, deadline],
         dataSuffix,
@@ -288,7 +288,7 @@ export function useBuyPixels(mapId?: MapId) {
         try {
           await publicClient.simulateContract({
             address: contractAddress,
-            abi: MONDETO_ABI,
+            abi: TERRENO_ABI,
             functionName: 'buyPixels',
             args: [bigIds, tokenAddress, maxTotalCost, deadline],
             account: address,
@@ -410,13 +410,13 @@ export function useBuyPixels(mapId?: MapId) {
       const [canonicalPrice, priceDecimalsRaw] = await Promise.all([
         publicClient.readContract({
           address: contractAddress,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'selectionPrice',
           args: [bigIds],
         }) as Promise<bigint>,
         publicClient.readContract({
           address: contractAddress,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'PRICE_DECIMALS',
         }) as Promise<number>,
       ])

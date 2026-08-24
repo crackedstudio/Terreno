@@ -1,6 +1,6 @@
 import { parseAbiItem } from 'viem'
 import { fallbackReadClient } from '@/lib/chain'
-import { MONDETO_ABI } from '@/lib/contract'
+import { TERRENO_ABI } from '@/lib/contract'
 
 /**
  * Shared server-side scanner for `PixelsPurchased` history.
@@ -104,7 +104,7 @@ export async function estimateHistoryFromBlock(
   const [halvingStartTs, head] = await Promise.all([
     fallbackReadClient.readContract({
       address,
-      abi: MONDETO_ABI,
+      abi: TERRENO_ABI,
       functionName: 'halvingStartTimestamp',
     }) as Promise<bigint>,
     fallbackReadClient.getBlock({ blockNumber: currentBlock }),
@@ -150,7 +150,7 @@ export async function scanNormalizedPurchases(
       try {
         const [, dec] = (await fallbackReadClient.readContract({
           address,
-          abi: MONDETO_ABI,
+          abi: TERRENO_ABI,
           functionName: 'tokenConfig',
           args: [token as `0x${string}`],
         })) as readonly [boolean, number]

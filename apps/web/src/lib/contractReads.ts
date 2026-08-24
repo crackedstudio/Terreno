@@ -1,5 +1,5 @@
 import { ZERO_ADDRESS } from '@/constants/map'
-import { MONDETO_ABI } from './contract'
+import { TERRENO_ABI } from './contract'
 import { isLand } from './landMask'
 import { uint24ToHex } from './colorUtils'
 import { pixelPrice, type PriceConfig } from './priceCalc'
@@ -89,7 +89,7 @@ export async function fetchAllPixelsFromContract(
 ): Promise<PixelView[]> {
   const batchData = await readContract({
     address: contractAddress,
-    abi: MONDETO_ABI,
+    abi: TERRENO_ABI,
     functionName: 'getPixelBatch',
     args: [0, 0, width, height],
   }) as `0x${string}`
@@ -107,7 +107,7 @@ export async function fetchAllPixelsFromContract(
   try {
     const cfg = (await readContract({
       address: contractAddress,
-      abi: MONDETO_ABI,
+      abi: TERRENO_ABI,
       functionName: 'config',
       args: [],
     })) as readonly [number, number, bigint, bigint, bigint, bigint, bigint]

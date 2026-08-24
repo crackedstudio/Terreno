@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Compute Mondeto leaderboard winners and optionally pay rewards.
+"""Compute Terreno leaderboard winners and optionally pay rewards.
 
 Requires: foundry (cast) installed. No Python dependencies beyond stdlib.
 
 Env vars:
-    PROXY_ADDRESS   Mondeto proxy contract address
+    PROXY_ADDRESS   Terreno proxy contract address
     ETH_RPC_URL     RPC endpoint (same env var cast uses)
     REWARD_AMOUNT   Per-winner reward in USDT smallest units (6 decimals)
 
@@ -172,7 +172,7 @@ def decode_pixels(
 
 
 # ---------------------------------------------------------------------------
-# Price formula (mirrors Mondeto._price / _discretePrice)
+# Price formula (mirrors Terreno._price / _discretePrice)
 # ---------------------------------------------------------------------------
 
 def discrete_price(sale_count: int, epoch: int, ip: int, mp: int) -> int:

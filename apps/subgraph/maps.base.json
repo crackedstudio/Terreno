@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Base mainnet deployments of the eight Mondeto map proxies.",
+    "Base mainnet deployments of the eight Terreno map proxies.",
     "Fill in `address` and `startBlock` for each map AFTER running",
     "script/Deploy.s.sol against Base, then regenerate the manifest with",
     "`node scripts/gen-subgraph-yaml.js`.",
