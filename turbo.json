@@ -1,10 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": [
+    "**/.env.*local"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -12,29 +20,37 @@
     },
     "lint": {},
     "type-check": {
-      "dependsOn": ["^type-check"]
+      "dependsOn": [
+        "^type-check"
+      ]
     },
     "clean": {
       "cache": false
     },
     "compile": {
-      "dependsOn": ["^compile"],
-      "outputs": ["artifacts/**", "cache/**", "typechain-types/**"]
+      "dependsOn": [
+        "^compile"
+      ],
+      "outputs": [
+        "artifacts/**",
+        "cache/**",
+        "typechain-types/**"
+      ]
     },
     "test": {
-      "dependsOn": ["compile"]
+      "dependsOn": [
+        "compile"
+      ]
     },
     "test:coverage": {
-      "outputs": ["coverage/**"]
+      "outputs": [
+        "coverage/**"
+      ]
     },
     "deploy": {
-      "dependsOn": ["compile"]
-    },
-    "deploy:celo-sepolia": {
-      "dependsOn": ["compile"]
-    },
-    "deploy:celo": {
-      "dependsOn": ["compile"]
+      "dependsOn": [
+        "compile"
+      ]
     }
   }
 }

@@ -56,7 +56,7 @@ body:
     attributes:
       label: Environment
       description: Browser/device, app version or URL, wallet if relevant (e.g. MiniPay).
-      placeholder: "MiniPay on Android 14, mondeto.app production"
+      placeholder: "Nimiq Pay on Android 14, terreno.app production"
     validations:
       required: false
   - type: dropdown

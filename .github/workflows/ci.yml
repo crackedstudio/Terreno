@@ -1,11 +1,14 @@
 name: CI
 
-# Gate merges on lint + type-check + unit tests via the pm-kit shared
-# baseline (celo-org/pm-kit ci-node.yml). Deploys/build are handled by
+# Gate merges on lint + type-check + unit tests. Deploys/build are handled by
 # Vercel; this workflow is the fast correctness check — in particular the
 # regression guards for the silent RPC-data failures (getLogs chunk size,
 # transport failover config). Coverage floors live in
 # apps/web/vitest.config.ts and fail the `test` step on regression.
+#
+# Self-contained on purpose: this used to call a shared reusable workflow from
+# another org, which made every run depend on a repo this project no longer has
+# anything to do with. The steps below are that baseline, inlined.
 on:
   pull_request:
     branches: [main]
@@ -19,7 +22,23 @@ concurrency:
 
 jobs:
   ci:
-    uses: celo-org/pm-kit/.github/workflows/ci-node.yml@main
-    with:
-      node-version: '20'
-      run-build: false # Vercel builds; CI is the correctness gate (matches current behavior)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.10.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      # --frozen-lockfile so a drifted lockfile fails here rather than
+      # silently resolving different versions than a developer ran locally.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run test
