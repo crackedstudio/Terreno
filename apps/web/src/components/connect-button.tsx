@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useContext, useEffect, useState } from "react";
 import { PrivyReadyContext } from "./privy-ready-context";
 import { buttonClassName, buttonStyle } from "./connect-button-styles";
+import { isNimiqPay } from "@/lib/nimiq";
 
 function ConnectButtonPlaceholder() {
   return (
@@ -43,9 +44,9 @@ export function ConnectButton() {
   // SSR + first client render must match: always placeholder.
   if (!mounted) return <ConnectButtonPlaceholder />;
 
-  // MiniPay surfaces an injected wallet straight away; there's no
+  // Nimiq Pay surfaces an injected wallet straight away; there's no
   // manual connect step to expose.
-  if ((window.ethereum as { isMiniPay?: boolean } | undefined)?.isMiniPay) {
+  if (isNimiqPay()) {
     return null;
   }
 

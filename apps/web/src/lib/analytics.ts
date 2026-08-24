@@ -1,6 +1,7 @@
 'use client'
 
 import posthog from 'posthog-js'
+import { isNimiqPay } from '@/lib/nimiq'
 
 /**
  * Thin wrapper around PostHog for the browser.
@@ -92,15 +93,19 @@ export function identifyWallet(address: string): void {
 
 // --- Platform attribution -------------------------------------------------
 
-// Register `isMiniPay` as a super-property so every event (checkout_*,
-// pixel_buy_*, etc.) can be segmented MiniPay vs desktop. MiniPay injects
-// `window.ethereum.isMiniPay` synchronously before the app loads, so this
-// is stable to read once at init. Memory-only persistence keeps it within
-// the privacy policy's no-tracking-storage promise, same as the utm_* set.
+// Register `isNimiqPay` as a super-property so every event (checkout_*,
+// pixel_buy_*, etc.) can be segmented mini-app vs desktop. Nimiq Pay seeds
+// `window.nimiqPay` before the app's page script runs, so this is stable to
+// read once at init. Memory-only persistence keeps it within the privacy
+// policy's no-tracking-storage promise, same as the utm_* set.
+//
+// Renamed from `isMiniPay` with the host swap rather than reused: keeping the
+// old key would have filed Nimiq Pay traffic under a MiniPay segment in every
+// saved funnel, which is silently wrong data rather than a missing series.
+// Dashboards that segment on `isMiniPay` need repointing to `isNimiqPay`.
 export function registerPlatform(): void {
   if (typeof window === 'undefined') return
-  const isMiniPay = !!(window.ethereum as { isMiniPay?: boolean } | undefined)?.isMiniPay
-  withPosthog(() => posthog.register({ isMiniPay }))
+  withPosthog(() => posthog.register({ isNimiqPay: isNimiqPay() }))
 }
 
 // --- Referral attribution -------------------------------------------------

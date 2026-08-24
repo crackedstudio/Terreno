@@ -4,10 +4,10 @@ import path from 'node:path'
 
 /**
  * Guards the module boundary that keeps `@privy-io/*` — and the `x402` /
- * `@solana/kit` subtree it drags with it — out of the chunk MiniPay clients
+ * `@solana/kit` subtree it drags with it — out of the chunk Nimiq Pay clients
  * download.
  *
- * MiniPay renders with the device's Android System WebView, which on the
+ * Nimiq Pay renders with the device's Android System WebView, which on the
  * phones this matters for is a 2018 factory build. Those clients get the
  * injected connector and never mount `PrivyTree`, so they can never use any
  * of that code — but webpack resolves static imports at build time, and one
@@ -38,7 +38,7 @@ function staticImportSources(source: string): string[] {
 }
 
 // Modules reachable from `TopBar` / `navbar` on every page, including the map,
-// which is the MiniPay entry path. None of these may reach Privy.
+// which is the Nimiq Pay entry path. None of these may reach Privy.
 // `wallet-provider.tsx` wraps every page from the root layout and reaches
 // `wallet-provider-privy` only through a dynamic `import()`, which the
 // static-import matcher deliberately ignores.
@@ -49,7 +49,7 @@ const MINIPAY_PATH_MODULES = [
   'wallet-provider.tsx',
 ]
 
-describe('MiniPay bundle isolation', () => {
+describe('Nimiq Pay bundle isolation', () => {
   it.each(MINIPAY_PATH_MODULES)(
     '%s does not statically import @privy-io',
     (file) => {

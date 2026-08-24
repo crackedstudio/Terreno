@@ -4,6 +4,7 @@ import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { useEffect } from 'react'
 import { registerCampaignParams, registerPlatform, track } from '@/lib/analytics'
+import { isNimiqPay } from '@/lib/nimiq'
 
 // Fire `app_opened` at most once per browser session (not per route change)
 // so it works as a top-of-funnel denominator without inflating with every
@@ -18,8 +19,7 @@ function trackSessionOpen() {
     // sessionStorage unavailable (private mode) — fall through and fire once
     // per mount rather than dropping the signal entirely.
   }
-  const isMiniPay = !!(window.ethereum as { isMiniPay?: boolean } | undefined)?.isMiniPay
-  track('app_opened', { isMiniPay })
+  track('app_opened', { isNimiqPay: isNimiqPay() })
 }
 
 /**
@@ -81,8 +81,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     // super-properties (cleared on reload — no cookies/localStorage).
     registerCampaignParams()
 
-    // Attach isMiniPay to every event so the funnel can be segmented
-    // MiniPay vs desktop (the same 104-person top-of-funnel otherwise mixes
+    // Attach isNimiqPay to every event so the funnel can be segmented
+    // mini app vs desktop (the same 104-person top-of-funnel otherwise mixes
     // both surfaces).
     registerPlatform()
 

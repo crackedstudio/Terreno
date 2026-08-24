@@ -2,27 +2,26 @@
 
 import { useEffect, useState } from 'react'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
+import { isNimiqPay } from '@/lib/nimiq'
 
 const SQUID_URL = 'https://www.squidrouter.com/'
 
 /**
- * Browser-only banner pointing users with no Celo stablecoin balance at
- * Squid to bridge in. Hidden inside MiniPay (those users either already
- * hold stables or are guided via MiniPay's own Add Cash flow), and hidden
- * for users who already have a USDm / USDC / USDT balance.
+ * Browser-only banner pointing users with no Base stablecoin balance at
+ * Squid to bridge in. Hidden inside Nimiq Pay (those users are guided by the
+ * host wallet's own funding flow), and hidden for users who already have a
+ * USDC balance.
  *
  * Dismissible — set a sessionStorage flag so it doesn't re-pop while the
  * tab is open.
  */
 export default function BridgeBanner() {
   const { isConnected, isLoading, totalAmount } = useStablecoinBalance()
-  const [isMiniPay, setIsMiniPay] = useState<boolean | null>(null)
+  const [inNimiqPay, setInNimiqPay] = useState<boolean | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    setIsMiniPay(
-      typeof window !== 'undefined' && !!(window.ethereum as any)?.isMiniPay,
-    )
+    setInNimiqPay(isNimiqPay())
     try {
       if (sessionStorage.getItem('mondeto-bridge-dismissed') === '1') {
         setDismissed(true)
@@ -30,7 +29,7 @@ export default function BridgeBanner() {
     } catch {}
   }, [])
 
-  if (isMiniPay !== false) return null
+  if (inNimiqPay !== false) return null
   if (!isConnected || isLoading) return null
   if (totalAmount > 0) return null
   if (dismissed) return null

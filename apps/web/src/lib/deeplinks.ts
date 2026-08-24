@@ -1,8 +1,17 @@
-// MiniPay deeplinks — canonical list:
-// https://docs.minipay.xyz/technical-references/deeplinks.html#available-deeplinks
-// Refetch periodically; MiniPay publishes new deeplinks.
-
-export const MINIPAY_DEPOSIT_URL = 'https://link.minipay.xyz/add_cash' as const
+/**
+ * Host wallet top-up ("add cash") deeplink.
+ *
+ * On MiniPay this was `https://link.minipay.xyz/add_cash`. Nimiq Pay has no
+ * documented equivalent that has been verified, and pointing a Nimiq Pay user
+ * at MiniPay's deeplink would be a dead end — so this is configuration, not a
+ * constant, and it is deliberately UNSET by default.
+ *
+ * `null` is a supported state: the top-up CTA is hidden rather than rendered
+ * pointing somewhere broken. Set NEXT_PUBLIC_TOPUP_URL once Nimiq publishes
+ * (or confirms) the funding deeplink.
+ */
+export const TOPUP_URL: string | null =
+  process.env.NEXT_PUBLIC_TOPUP_URL?.trim() || null
 
 // Support intake — a Google Form (private responses sheet + email
 // notifications). Committed as the default so the in-app SUPPORT button opens

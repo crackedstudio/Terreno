@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { identifyWallet, track } from '@/lib/analytics'
+import { isNimiqPay } from '@/lib/nimiq'
 
 /**
  * Identifies the PostHog person and emits `wallet_connected` once per
@@ -21,7 +22,7 @@ export function WalletAnalytics() {
 
     identifyWallet(addr)
     track('wallet_connected', {
-      isMiniPay: !!(window.ethereum as { isMiniPay?: boolean } | undefined)?.isMiniPay,
+      isNimiqPay: isNimiqPay(),
       chainId,
     })
   }, [isConnected, address, chainId])

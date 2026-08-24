@@ -6,7 +6,7 @@ import type { TxStep } from '@/hooks/useBuyPixels'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { formatUSDT } from '@/lib/colorUtils'
 import { generateUsername } from '@/lib/username'
-import { MINIPAY_DEPOSIT_URL } from '@/lib/deeplinks'
+import { TOPUP_URL } from '@/lib/deeplinks'
 import { isOverSpendCap } from '@/lib/buyLimits'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { useMaps } from '@/hooks/useMaps'
@@ -274,8 +274,9 @@ export default function SelectionDrawer({
               <div style={{ fontSize: 6, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: 1, fontFamily: "'Press Start 2P', monospace", maxWidth: 260, lineHeight: 1.5 }}>
                 one currency per buy — top up {payToken.toLowerCase()} or pick fewer pixels
               </div>
+              {TOPUP_URL && (
               <a
-                href={MINIPAY_DEPOSIT_URL}
+                href={TOPUP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() =>
@@ -290,6 +291,7 @@ export default function SelectionDrawer({
               >
                 TOP UP BALANCE
               </a>
+              )}
             </div>
           )}
           {overCap && !insufficient && (
