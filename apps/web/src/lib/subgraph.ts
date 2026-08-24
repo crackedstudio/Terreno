@@ -19,9 +19,40 @@ import { compareLeaderEntries } from '@/lib/maps/leaderboards'
 
 const ENDPOINT = process.env.NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL
 
-/** True when the subgraph URL is configured; callers fall back otherwise. */
+/**
+ * Guards against the single most damaging misconfiguration of the Base
+ * migration: leaving NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL pointed at the still-live
+ * **Celo** subgraph after the frontend moves to Base.
+ *
+ * Nothing about that failure is loud. The schema is identical, every query
+ * succeeds, and /api/pnl, /api/analytics, /api/activity and the AREA
+ * leaderboard would serve Celo ownership and earnings against a Base map —
+ * wrong balances and wrong payouts, rendered with full confidence.
+ *
+ * So the deployment is identified in the URL and checked here. Goldsky
+ * deployment slugs are operator-chosen, hence the substring convention rather
+ * than a network query: name the Base deployment so it contains "base"
+ * (e.g. `mondeto-base/1.0.0`). Fails CLOSED — an endpoint that does not
+ * identify itself as Base is treated as unconfigured, and callers fall back to
+ * the live log-scan path, which reads from READ_CHAIN and so cannot disagree
+ * with the map.
+ */
+function endpointTargetsBase(url: string): boolean {
+  return /base/i.test(url)
+}
+
+/** True when the subgraph URL is configured AND identifies as a Base deployment. */
 export function subgraphConfigured(): boolean {
-  return typeof ENDPOINT === 'string' && ENDPOINT.length > 0
+  if (typeof ENDPOINT !== 'string' || ENDPOINT.length === 0) return false
+  if (!endpointTargetsBase(ENDPOINT)) {
+    console.warn(
+      '[subgraph] NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL does not identify a Base ' +
+        'deployment; ignoring it and falling back to live reads. Rename the ' +
+        'Goldsky deployment to include "base".',
+    )
+    return false
+  }
+  return true
 }
 
 /** Low-level GraphQL POST. Throws on transport/HTTP/GraphQL errors. */

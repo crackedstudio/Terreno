@@ -44,8 +44,14 @@ export const baseTransport = fallback(
 
 /**
  * Base Sepolia read transport (testnet feature-branch preview deploys).
- * Base Sepolia is also on Nimiq Pay's supported chain list, so a preview
- * deploy can be exercised inside the real Nimiq Pay WebView.
+ *
+ * NOT on Nimiq Pay's supported chain list — an earlier comment here claimed it
+ * was, conflating it with the Sepolia the docs do list, which is **Ethereum**
+ * Sepolia (11155111). Base Sepolia is 84532 and appears nowhere in them. A
+ * preview deploy on this chain is exercisable in a desktop browser, and inside
+ * Nimiq Pay only if the host accepts a `wallet_addEthereumChain` for it.
+ * `ChainGuard` force-switches to Base mainnet regardless, so a preview build
+ * that needs to stay on 84532 has to opt out of the guard.
  */
 export const baseSepoliaTransport = http()
 

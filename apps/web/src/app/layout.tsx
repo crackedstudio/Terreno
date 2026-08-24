@@ -16,7 +16,7 @@ import {
 
 const APP_URL = 'https://www.mondeto.app'
 const TITLE = 'Mondeto — every pixel is up for grabs'
-const DESCRIPTION = 'Own the world, one pixel at a time. Live on MiniPay, built on Celo.'
+const DESCRIPTION = 'Own the world, one pixel at a time. Live on Nimiq Pay, built on Base.'
 // Default share card for links to the app itself; per-share cards come from
 // the /s route's generateMetadata (see app/s/page.tsx).
 const DEFAULT_OG_IMAGE = `${APP_URL}/api/og?k=invite`
@@ -90,12 +90,12 @@ export default async function RootLayout({
   // old-Chrome bucket is essentially all bots and must not reach the figure
   // quoted in #196.
   //
-  // What this deliberately cannot do is isolate MiniPay. That is only
-  // detectable client-side, from `window.ethereum.isMiniPay`, and
+  // What this deliberately cannot do is isolate Nimiq Pay. That is only
+  // detectable client-side, from `window.nimiqPay`, and
   // `isAndroidWebView` matches every embedded WebView — Facebook, Instagram,
   // Opera's in-app browser, assorted crawlers. So the denominator here is all
-  // traffic, not MiniPay traffic, and the resulting percentage must not be
-  // read as a MiniPay figure.
+  // traffic, not Nimiq Pay traffic, and the resulting percentage must not be
+  // read as a Nimiq Pay figure.
   const requestHeaders = await headers()
   const userAgent = requestHeaders.get('user-agent')
   const engine = inspectUserAgent(userAgent)

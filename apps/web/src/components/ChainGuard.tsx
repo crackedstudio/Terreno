@@ -38,13 +38,13 @@ async function readWalletChainId(eth: EthereumProvider): Promise<number | null> 
  * chain isn't known to the wallet (error 4902), falls back to add+switch
  * using viem's chain metadata.
  *
- * Inside Nimiq Pay the add-chain fallback is expected to be a no-op: the host
- * exposes a fixed chain list set by Nimiq's own configuration and a mini app
- * cannot add to it. Base is already on that list, so the plain switch is the
- * path that matters there; the 4902 branch remains for desktop/extension
- * wallets outside the mini app. Nimiq Pay's exact switch semantics are not
- * documented — hence the caller treating a rejection as a warning, not a
- * crash, and the map staying read-only rather than the app breaking.
+ * Base is already on the chain list Nimiq Pay exposes, so the plain switch is
+ * the path that matters inside the mini app. The 4902 add-chain branch serves
+ * desktop/extension wallets — and, contrary to an earlier note here, Nimiq Pay
+ * does support `wallet_addEthereumChain`, so it is not dead code in the mini
+ * app either. Nimiq Pay's exact switch semantics are still undocumented —
+ * hence the caller treating a rejection as a warning, not a crash, and the map
+ * staying read-only rather than the app breaking.
  */
 async function requestSwitchChain(eth: EthereumProvider): Promise<void> {
   const hex = `0x${TARGET_CHAIN.id.toString(16)}`;

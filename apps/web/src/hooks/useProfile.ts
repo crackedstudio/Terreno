@@ -8,7 +8,7 @@ import {
   usePublicClient,
   useSwitchChain,
 } from 'wagmi'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import { MONDETO_ABI } from '@/lib/contract'
 import { uint24ToHex, hexToUint24, ownerDefaultColor } from '@/lib/colorUtils'
 import { decodeBytes } from '@/lib/decodeBytes'
@@ -164,14 +164,14 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
       setError(null)
       setSaveState('saving')
 
-      // The contract lives on Celo. If the wallet is on another chain (common
+      // The contract lives on Base. If the wallet is on another chain (common
       // with a browser wallet defaulting to Ethereum), prompt a switch before
       // sending — otherwise the write silently hangs on the wrong network.
-      if (chainId !== celo.id) {
+      if (chainId !== base.id) {
         try {
-          await switchChainAsync({ chainId: celo.id })
+          await switchChainAsync({ chainId: base.id })
         } catch {
-          setError('Switch your wallet to the Celo network to save.')
+          setError('Switch your wallet to the Base network to save.')
           setSaveState('error')
           return
         }

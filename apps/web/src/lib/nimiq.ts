@@ -10,17 +10,25 @@
  *     Nimiq Pay instead injects a host context object at `window.nimiqPay`,
  *     documented as seeded *before the mini app's page script runs*, so it
  *     is safe to read synchronously during module init / render.
- *   - Chain. Nimiq Pay exposes a fixed EVM chain list (Ethereum, Arbitrum,
- *     Optimism, Base, BNB Smart Chain, Sepolia) chosen by Nimiq's own
- *     configuration — a mini app cannot add one. Celo is not on that list,
- *     which is why the contracts moved to Base.
+ *   - Chain. Nimiq Pay exposes a fixed EVM chain list (Ethereum, Polygon,
+ *     Arbitrum One, Optimism, Base, BNB Smart Chain, Ethereum Sepolia). Base
+ *     was chosen from it. NOTE: `wallet_addEthereumChain` IS supported, so
+ *     "Celo could not be reached" — the original reason given for the move —
+ *     is not established; see docs/BASE_NIMIQ_MIGRATION.md.
  *   - Gas. There is no Celo-style fee abstraction here; gas is paid in the
  *     chain's native asset (ETH on Base). `lib/feeCurrency.ts` is gone.
  *
- * `@nimiq/mini-app-sdk` itself is NIM-native — its provider methods speak
- * Lunas, `NQ…` addresses and staking, none of which this app uses. We pull
- * in only the two host-context helpers (language, device identifier), and
- * we load the module dynamically so it never lands in the shared chunk.
+ * `@nimiq/mini-app-sdk` is NOT imported here, and that is deliberate. Its
+ * provider is NIM-native — Lunas, `NQ…` addresses, staking — none of which
+ * this app uses; everything Mondeto needs is on `window.ethereum` and the
+ * `window.nimiqPay` host object. The two host-context helpers below would be
+ * the only reason to pull it in, and they are three lines each.
+ *
+ * The trade-off, stated because it is a real one: `NimiqPayHostContext` below
+ * is hand-copied from the SDK's `dist/index.d.ts` and can drift from it
+ * silently. Re-check it against the package when bumping the SDK. The package
+ * stays in `dependencies` so that check is possible and so the switch to
+ * importing it is a one-line change.
  */
 
 /** Read-only host context Nimiq Pay injects before the page script runs. */

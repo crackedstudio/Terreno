@@ -27,7 +27,7 @@ const h = vi.hoisted(() => {
     track: vi.fn(),
     livePrice: { micros: 1_000_000n },
     allowance: { value: 10_000_000n },
-    account: { chainId: 42220 }, // celo.id — no switch needed by default
+    account: { chainId: 8453 }, // base.id — no switch needed by default
     preferred: { value: preferredUSDC as typeof preferredUSDC | null },
     preferredUSDC,
   }
@@ -105,7 +105,7 @@ beforeEach(() => {
   h.track.mockReset()
   h.livePrice.micros = 1_000_000n
   h.allowance.value = 10_000_000n
-  h.account.chainId = 42220
+  h.account.chainId = 8453
   h.preferred.value = h.preferredUSDC
 })
 
@@ -183,7 +183,7 @@ function erc20BalanceRevertError() {
 function httpBlipError() {
   const cause = Object.assign(
     new Error(
-      'HTTP request failed.\n\nStatus: 429\nURL: https://forno.celo.org\nRequest body: {"method":"eth_sendRawTransaction"}\n\nVersion: viem@2.21.19',
+      'HTTP request failed.\n\nStatus: 429\nURL: https://mainnet.base.org\nRequest body: {"method":"eth_sendRawTransaction"}\n\nVersion: viem@2.21.19',
     ),
     {
       name: 'HttpRequestError',
@@ -282,6 +282,32 @@ describe('useBuyPixels spend-cap gates', () => {
     expect(result.current.step).toBe('error')
     expect(result.current.error).toBe(PRICE_MOVED_MESSAGE)
     expect(h.writeContractAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('useBuyPixels chain guard', () => {
+  it('switches the wallet to Base — not the chain the contracts used to be on', async () => {
+    // The assertion that would have caught the migration bug: the guard kept
+    // switching to Celo (42220) after the contracts moved to Base. Celo is not
+    // in wagmiConfig.chains, so the switch could never succeed and every buy
+    // died at this guard with "Switch your wallet to the Celo network to buy."
+    h.account.chainId = 1 // any chain that is not Base
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      await result.current.execute([1], 1_000_000n)
+    })
+    expect(h.switchChainAsync).toHaveBeenCalledWith({ chainId: 8453 })
+  })
+
+  it('CONTROL: does not switch when already on Base', async () => {
+    // Pairs with the test above so the "called with 8453" assertion cannot
+    // pass against code that switches unconditionally.
+    h.account.chainId = 8453
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      await result.current.execute([1], 1_000_000n)
+    })
+    expect(h.switchChainAsync).not.toHaveBeenCalled()
   })
 })
 
@@ -429,7 +455,7 @@ describe('useBuyPixels buy flow', () => {
     expect(buyCalls()).toHaveLength(2)
   })
 
-  it('blocks with a clear message when the wallet refuses to switch to Celo', async () => {
+  it('blocks with a clear message when the wallet refuses to switch to Base', async () => {
     h.account.chainId = 1 // wallet parked on Ethereum
     h.switchChainAsync.mockRejectedValue(userRejectedError())
     const { result } = renderHook(() => useBuyPixels(0))
@@ -437,7 +463,7 @@ describe('useBuyPixels buy flow', () => {
       await result.current.execute([1], 1_000_000n)
     })
     expect(result.current.step).toBe('error')
-    expect(result.current.error).toBe('Switch your wallet to the Celo network to buy.')
+    expect(result.current.error).toBe('Switch your wallet to the Base network to buy.')
     expect(h.writeContractAsync).not.toHaveBeenCalled()
     // The guard is released — a retry (with the switch now accepted) proceeds.
     h.switchChainAsync.mockResolvedValue(undefined)

@@ -171,11 +171,12 @@ in #162.
 
 Detail lives in [`README.md`](README.md); what matters when writing code:
 
-- The app targets **Base mainnet** and runs as a **Nimiq Pay mini app**. The
-  Celo/MiniPay build is history — Nimiq Pay exposes a fixed EVM chain list that
-  excludes Celo, so the maps are being redeployed to Base. Until that deploy
-  happens every map sits on an undeployed sentinel and the UI renders none of
-  them; that is the guard working, not a bug.
+- The app targets **Base mainnet** and runs as a **Nimiq Pay mini app**. Base
+  was chosen from the chains Nimiq Pay exposes; Celo is not among them, though
+  `wallet_addEthereumChain` is supported so that choice is not fully settled —
+  see `docs/BASE_NIMIQ_MIGRATION.md`. Until the Base deploy happens every map
+  sits on an undeployed sentinel and the UI renders none of them; that is the
+  guard working, not a bug.
 - One contract per map (world + 7 continents), registered
   in `apps/web/src/lib/maps/contracts.ts`. Adding or changing a map is a
   registry edit plus `pnpm -F web build:masks` — rendering, leaderboards

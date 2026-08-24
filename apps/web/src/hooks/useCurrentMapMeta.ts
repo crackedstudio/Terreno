@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import { useMaps } from '@/hooks/useMaps'
 import { getMapContractById, getMapsForChain, type ChainId, type MapSlug } from '@/lib/maps/contracts'
 import { getMaskData } from '@/lib/maps/masks'
@@ -36,9 +36,9 @@ export function useCurrentMapMeta(): MapMeta {
   // chain") — and because this hook renders on every route (including from the
   // root layout), that throw would take down the whole app. Fall back to the
   // default chain whenever the connected one has no maps.
-  const connected = (chainId ?? celo.id) as ChainId
+  const connected = (chainId ?? base.id) as ChainId
   const effectiveChain: ChainId =
-    getMapsForChain(connected).length > 0 ? connected : (celo.id as ChainId)
+    getMapsForChain(connected).length > 0 ? connected : (base.id as ChainId)
 
   return useMemo<MapMeta>(() => {
     const contract = getMapContractById(currentMapId, effectiveChain)

@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useAccount } from 'wagmi'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import {
   getMapsForChain,
   type ChainId,
@@ -112,7 +112,7 @@ export function CurrentMapProvider({ children }: { children: ReactNode }) {
  */
 export function useMaps(): UseMapsResult {
   const { address, chainId } = useAccount()
-  const effectiveChain = (chainId ?? celo.id) as ChainId
+  const effectiveChain = (chainId ?? base.id) as ChainId
   const revealedIds = useRevealedMapIds()
   const revealedMaps = useMemo(
     () => getMapsForChain(effectiveChain, revealedIds),

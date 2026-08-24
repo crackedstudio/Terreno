@@ -66,8 +66,17 @@ export interface MapContract {
  *
  * Supply real addresses through NEXT_PUBLIC_MAP_ADDRESS_OVERRIDES
  * ("0:0xabc…,1:0xdef…") and flip `revealed` / NEXT_PUBLIC_REVEALED_MAP_IDS
- * once each is live. `assertDeployed()` below turns any leak of this value
- * into a loud throw instead of a call to the zero address.
+ * once each is live.
+ *
+ * Two guards, and it is worth being precise about which one runs where —
+ * an earlier version of this comment claimed `assertDeployed()` caught every
+ * leak of the sentinel, which it did not, because nothing called it:
+ *   - `getMapsForChain()` filters undeployed maps out, so nothing renders.
+ *     This is the one that runs automatically.
+ *   - `assertDeployed()` / `isDeployed()` are opt-in, for callers about to
+ *     dispatch an on-chain call. `getContractByMapId()` deliberately does NOT
+ *     assert: it is called during render by every map component, and throwing
+ *     there would take the whole page down rather than degrade it.
  */
 const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const
 
@@ -189,7 +198,17 @@ function addressOverrides(): Map<number, `0x${string}`> | null {
 
 /** True when `m` points at a real Base deployment rather than the sentinel. */
 export function isDeployed(m: MapContract): boolean {
-  return m.address !== UNDEPLOYED
+  return isDeployedAddress(m.address)
+}
+
+/**
+ * Address-level form of {@link isDeployed}, for callers that hold only an
+ * address. Exists because `!!address` does not work: the sentinel is the zero
+ * address, a truthy string, so truthiness checks let it straight through to an
+ * on-chain call.
+ */
+export function isDeployedAddress(address: string): boolean {
+  return address !== UNDEPLOYED
 }
 
 /**

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAccount, usePublicClient } from 'wagmi'
 import type { PublicClient } from 'viem'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import { fetchAllPixelsFromContract } from '@/lib/contractReads'
 import { getMapsForChain, type ChainId, type MapContract } from '@/lib/maps/contracts'
 import { getMaskData } from '@/lib/maps/masks'
@@ -178,7 +178,7 @@ export function useShouldOpenNextMap(): ShouldOpenNextMapResult {
 
     async function run() {
       const thresholdUsd = readThresholdUsd()
-      const effectiveChain = (chainId ?? celo.id) as ChainId
+      const effectiveChain = (chainId ?? base.id) as ChainId
       const cacheKey = cacheKeyFor(effectiveChain, revealedIds)
 
       try {

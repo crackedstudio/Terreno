@@ -60,7 +60,7 @@ export default function BridgeBanner() {
       }}
     >
       <span style={{ fontSize: 7, letterSpacing: 1, textAlign: 'center' }}>
-        no stables on celo yet —{' '}
+        no stables on base yet —{' '}
         <a
           href={SQUID_URL}
           target="_blank"

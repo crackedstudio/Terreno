@@ -2,7 +2,7 @@
   "name": "subgraph",
   "version": "0.1.0",
   "private": true,
-  "description": "Goldsky subgraph (The Graph protocol) for the Mondeto map contracts on Celo",
+  "description": "Goldsky subgraph (The Graph protocol) for the Mondeto map contracts on Base",
   "scripts": {
     "gen-manifest": "node scripts/gen-subgraph-yaml.js",
     "codegen": "graph codegen",

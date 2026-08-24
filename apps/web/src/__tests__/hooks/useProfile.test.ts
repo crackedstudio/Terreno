@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useProfile } from '@/hooks/useProfile'
 
-// Shared, per-test-configurable mocks. celo.id (42220) is used as the connected
+// Shared, per-test-configurable mocks. base.id (8453) is used as the connected
 // chain so save() skips the chain-switch branch by default.
 const mocks = vi.hoisted(() => ({
   writeContractAsync: vi.fn(),
   estimateContractGas: vi.fn(),
   waitForTransactionReceipt: vi.fn(),
   switchChainAsync: vi.fn(),
-  chainId: 42220,
+  chainId: 8453,
   // Configurable `profiles` read: [color, label, url]. undefined = no data yet.
   profileData: undefined as unknown,
 }))
@@ -30,7 +30,7 @@ const ADDR = '0x1234567890123456789012345678901234567890'
 describe('useProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.chainId = 42220
+    mocks.chainId = 8453
     mocks.profileData = undefined
     mocks.estimateContractGas.mockResolvedValue(100_000n)
     mocks.writeContractAsync.mockResolvedValue('0xtxhash')

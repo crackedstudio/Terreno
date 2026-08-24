@@ -126,7 +126,7 @@ describe('composeShareText', () => {
     const t = composeShareText('reward', { amount: '1.50', mapName: 'WORLD' })
     expect(t).toContain('$1.50')
     expect(t).toContain('on the world map')
-    expect(t).toContain('@mondeto on @minipay')
+    expect(t).toContain('@mondeto on @nimiq')
   })
 
   it('reward: a continent map keeps proper-noun casing ("on the Europe map")', () => {
@@ -143,7 +143,7 @@ describe('composeShareText', () => {
     expect(t).toContain('#3')
     expect(t).toContain('EMPIRE')
     expect(t).toContain('(42 px)')
-    expect(t).toContain('@mondeto on @minipay')
+    expect(t).toContain('@mondeto on @nimiq')
   })
 
   it('positions: ruler copy takes over when ruler + mapName are set', () => {
@@ -173,12 +173,12 @@ describe('channel composers', () => {
   it('composeXText carries the brag with the handles woven in', () => {
     const t = composeXText('rank', params)
     expect(t).toBe(composeShareText('rank', params))
-    expect(t).toContain('@mondeto on @minipay')
+    expect(t).toContain('@mondeto on @nimiq')
   })
 
   it('composeTelegramText carries the brag with the handles woven in', () => {
     const t = composeTelegramText('rank', params)
     expect(t).toBe(composeShareText('rank', params))
-    expect(t).toContain('@minipay')
+    expect(t).toContain('@nimiq')
   })
 })

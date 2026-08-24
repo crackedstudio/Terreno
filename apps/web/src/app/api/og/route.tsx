@@ -242,7 +242,7 @@ export async function GET(req: Request) {
               alignSelf: 'flex-start',
             }}
           >
-            PLAY ON MINIPAY · MONDETO.APP
+            PLAY ON NIMIQ PAY · MONDETO.APP
           </div>
         </div>
 

@@ -68,14 +68,46 @@ const queryClient = new QueryClient();
 
 type PrivyTreeComponent = React.ComponentType<{ children: React.ReactNode }>;
 
+/**
+ * Reconnect silently inside Nimiq Pay — but only when the host has ALREADY
+ * authorized an account.
+ *
+ * `connect()` drives the injected connector's `eth_requestAccounts`, which
+ * Nimiq Pay marks as requiring user confirmation. Firing it from a mount
+ * effect meant a native approval dialog on page load with no user interaction
+ * — a named violation of the mini-app checklist ("The app does not trigger
+ * approval dialogs on page load without user interaction"). It was idiomatic
+ * under MiniPay; it is not here.
+ *
+ * `eth_accounts` is the read-only counterpart: no confirmation, and it returns
+ * a non-empty array only when the user has already granted access. Gating on
+ * it keeps the returning-user experience seamless (no tap, no dialog) while a
+ * first-time visitor gets the connect button and chooses when to be asked.
+ */
 function NimiqPayAutoConnect() {
   const { connect, connectors } = useConnect();
 
   useEffect(() => {
-    const injectedConnector = connectors.find((c) => c.id === "injected");
-    if (injectedConnector) {
-      connect({ connector: injectedConnector });
-    }
+    let cancelled = false;
+    const eth = typeof window !== "undefined" ? window.ethereum : undefined;
+    if (!eth) return;
+
+    eth
+      .request({ method: "eth_accounts" })
+      .then((accounts) => {
+        if (cancelled) return;
+        // Empty means "not yet authorized" — do NOT prompt; wait for a tap.
+        if (!Array.isArray(accounts) || accounts.length === 0) return;
+        const injectedConnector = connectors.find((c) => c.id === "injected");
+        if (injectedConnector) connect({ connector: injectedConnector });
+      })
+      .catch(() => {
+        // A host that will not answer eth_accounts is not one to prompt on.
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [connect, connectors]);
 
   return null;

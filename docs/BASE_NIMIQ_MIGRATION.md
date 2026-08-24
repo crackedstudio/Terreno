@@ -7,14 +7,37 @@ sentinel until the steps below are run.
 ## Why the chain had to move
 
 Nimiq Pay mini apps get a standard `window.ethereum` injected by the host, so
-wagmi/viem/Solidity carry over unchanged. But the EVM chains it exposes are
-fixed by Nimiq's own configuration — **Ethereum, Arbitrum One, Optimism, Base,
-BNB Smart Chain, Sepolia** — and a mini app cannot add one. Celo is not on that
-list, so the Celo deployments are unreachable from inside Nimiq Pay.
+wagmi/viem/Solidity carry over unchanged.
 
-Base was picked from that list. Nimiq's native side was never an option for
-this product: Nimiq has no general-purpose smart contracts, only protocol-level
-vesting and HTLC account types, so there is nothing to own a pixel with.
+Nimiq Pay exposes a fixed set of EVM chains (Ethereum, Polygon, Arbitrum One,
+Optimism, Base, BNB Smart Chain, and Ethereum Sepolia for testing). Base was
+chosen from that set.
+
+**Correction — read this before treating the move as settled.** The original
+justification here was "a mini app cannot add a chain, so Celo is unreachable".
+That is contradicted by Nimiq's own documentation: `wallet_addEthereumChain` is
+listed as a supported provider method, and both `SKILL.md` and
+`references/chains-and-tokens.md` state that custom chains can be added. It is
+therefore *possible* that Mondeto could have stayed on Celo and kept every
+existing pixel, price and treasury balance.
+
+What remains genuinely undetermined: whether an added chain persists, and
+whether Nimiq's RPC proxy must already know a chain for `eth_call` /
+`eth_sendTransaction` to route (the docs describe read-only methods as "routed
+through RPC" — i.e. through the host, not the app's own transport). The
+first-party `evm-mini-wallet` reference implementation hardcodes the seven
+documented chains and never calls `wallet_addEthereumChain`, which is
+suggestive but not decisive.
+
+**This is a ~30 minute device test that could preserve all user state:** open
+Nimiq Pay and call `wallet_addEthereumChain` with Celo's config (chainId
+`0xa4ec`), then try an `eth_call` against a Celo map contract. Do it before
+deploying to Base. Record the result precisely — "added but calls do not route"
+is a different finding from "the host refuses to add it".
+
+Nimiq's native side was never an option for this product regardless: Nimiq has
+no general-purpose smart contracts, only protocol-level vesting and HTLC
+account types, so there is nothing to own a pixel with.
 
 `Mondeto.sol` needed **no Solidity changes** — accepted tokens are initializer
 input, not hardcoded — so this is a redeploy, not a port.
@@ -108,9 +131,21 @@ input, not hardcoded — so this is a redeploy, not a port.
   `isNimiqPay`. The property was renamed rather than reused so Nimiq Pay
   traffic is not filed under a MiniPay segment.
 - **`NEXT_PUBLIC_TOPUP_URL`** — unset, CTA hidden.
+- **Does `wallet_addEthereumChain` work for Celo?** See the correction above.
+  This is the highest-value open question in this document — it decides whether
+  every existing pixel owner keeps their land.
 - **Nimiq Pay chain-switch semantics are undocumented.** `ChainGuard` calls
   `wallet_switchEthereumChain` and treats rejection as a warning; whether the
   host honours it, or always sits on a user-selected chain, needs a real device
   test.
+- **Gas ceilings are uncalibrated.** The approve / buy / profile fallbacks
+  (150k, 300k + 80k per pixel, 200k) are the Celo numbers unchanged. Gas units
+  are EVM-identical so they are plausible, but the per-pixel 80k for a
+  many-distinct-owner resale batch has no measurement behind it. Pin them with
+  an `estimateGas` test against a forked Base deployment.
+- **Base USDT is not in Nimiq Pay's own token list.** The reference token list
+  has USDC, USDbC, DAI and WETH for Base, but no USDT. Mondeto reads balances
+  directly via `eth_call` so it works — but a buyer holding only USDT may not
+  see it in the wallet UI. Consider shipping USDC-only at launch.
 - **Mini-app submission.** `docs/MINIPAY_SUBMISSION.md` describes MiniPay's
   process and does not apply.

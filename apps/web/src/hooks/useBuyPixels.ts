@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { useWriteContract, useAccount, usePublicClient, useSwitchChain } from 'wagmi'
-import { celo } from 'viem/chains'
+import { base } from 'viem/chains'
 import { MONDETO_ABI, ERC20_ABI } from '@/lib/contract'
 import { getAttributionSuffix } from '@/lib/attribution'
 import { getContractByMapId } from '@/lib/maps/contracts'
@@ -334,13 +334,13 @@ export function useBuyPixels(mapId?: MapId) {
       track('pixel_buy_blocked', { ...baseProps, reason })
     }
 
-    // The contracts live on Celo. If the wallet is on another chain (common when
+    // The contracts live on Base. If the wallet is on another chain (common when
     // testing in a browser wallet that defaults to Ethereum), prompt a switch —
-    // which also ADDS Celo to the wallet if it's missing — before touching any
+    // which also ADDS Base to the wallet if it's missing — before touching any
     // funds. Without this the buy tx silently hangs on the wrong network.
-    if (chainId !== celo.id) {
+    if (chainId !== base.id) {
       try {
-        await switchChainAsync({ chainId: celo.id })
+        await switchChainAsync({ chainId: base.id })
       } catch (e) {
         // Split rather than filing everything as a rejection: a wallet that
         // fails `wallet_addEthereumChain` outright is a compatibility problem
@@ -351,7 +351,7 @@ export function useBuyPixels(mapId?: MapId) {
             ? 'chain_switch_rejected'
             : 'chain_switch_failed',
         )
-        setError('Switch your wallet to the Celo network to buy.')
+        setError('Switch your wallet to the Base network to buy.')
         setStep('error')
         inFlight.current = false
         return
@@ -385,9 +385,12 @@ export function useBuyPixels(mapId?: MapId) {
     // goes out — but it is the tell for the MiniPay CIP-64 hazard, so it has to
     // be visible on its own rather than only when the buy later dies.
     // `level: 'ceiling'` is always preceded by `'without_fee_currency'` for the
-    // same stage — the ceiling branch is nested inside the retry's catch — so
-    // count `without_fee_currency` to size the affected buys. `ceiling` is a
-    // strict subset, and summing raw events overstates by roughly 2x.
+    // `ceiling` is now the ONLY level: the Celo build had a middle rung
+    // (`without_fee_currency`) that dropped the CIP-64 fee currency and retried,
+    // and both rungs fired for one stage, so the guidance used to be "count the
+    // middle rung, not the sum". Base has no fee currency, GasFallbackLevel
+    // narrowed to 'ceiling', and one event now means one affected buy — count
+    // them directly.
     track('pixel_buy_started', eventProps)
 
     try {

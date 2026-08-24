@@ -3,12 +3,15 @@
 import { useAccount, useReadContract, useReadContracts } from 'wagmi'
 import { formatUnits } from 'viem'
 import { ERC20_ABI, MONDETO_ABI } from '@/lib/contract'
-import { getContractByMapId } from '@/lib/maps/contracts'
+import { getContractByMapId, isDeployedAddress } from '@/lib/maps/contracts'
 import { useMaps } from '@/hooks/useMaps'
 
-// Well-known Base mainnet stablecoin addresses → display symbol. Used as a
-// label fallback if the on-chain `symbol()` call returns something odd
-// (or the test deployment uses a mock token without `symbol`).
+// Well-known Base mainnet stablecoin addresses → display symbol.
+//
+// This OVERRIDES the on-chain `symbol()` rather than falling back to it (the
+// lookup is checked first below) — deliberate, so a token that reports an odd
+// or spoofed symbol still renders the name players recognise. An earlier
+// comment here described it as a fallback, which the code never did.
 // Both verified on-chain via `eth_call` against Base mainnet.
 const KNOWN_SYMBOLS: Record<string, 'USDC' | 'USDT'> = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 'USDC',
@@ -77,7 +80,12 @@ export function useStablecoinBalance(): StablecoinBalances {
     address: contractAddress,
     abi: MONDETO_ABI,
     functionName: 'getAcceptedTokens',
-    query: { enabled: !!contractAddress },
+    // `!!contractAddress` is NOT sufficient: the undeployed sentinel is the
+    // zero address, which is a truthy string, so this dispatched
+    // getAcceptedTokens at 0x000…0 for every map with no deployment. A read
+    // against a non-contract returns empty data, which decodes as "accepts no
+    // tokens" rather than failing — silently wrong, not loud.
+    query: { enabled: isDeployedAddress(contractAddress) },
   })
 
   const tokens = (acceptedTokensRead.data as readonly `0x${string}`[] | undefined) ?? []

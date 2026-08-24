@@ -42,7 +42,7 @@ function staticImportSources(source: string): string[] {
 // `wallet-provider.tsx` wraps every page from the root layout and reaches
 // `wallet-provider-privy` only through a dynamic `import()`, which the
 // static-import matcher deliberately ignores.
-const MINIPAY_PATH_MODULES = [
+const NIMIQ_PATH_MODULES = [
   'connect-button.tsx',
   'connect-button-styles.ts',
   'privy-ready-context.ts',
@@ -50,7 +50,7 @@ const MINIPAY_PATH_MODULES = [
 ]
 
 describe('Nimiq Pay bundle isolation', () => {
-  it.each(MINIPAY_PATH_MODULES)(
+  it.each(NIMIQ_PATH_MODULES)(
     '%s does not statically import @privy-io',
     (file) => {
       const privy = staticImportSources(read(file)).filter((s) =>
@@ -60,7 +60,7 @@ describe('Nimiq Pay bundle isolation', () => {
     },
   )
 
-  it.each(MINIPAY_PATH_MODULES)(
+  it.each(NIMIQ_PATH_MODULES)(
     '%s does not statically import wallet-provider-privy, which imports Privy',
     (file) => {
       const viaProvider = staticImportSources(read(file)).filter((s) =>

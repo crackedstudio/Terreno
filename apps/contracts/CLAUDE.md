@@ -121,10 +121,11 @@ OZ v5 removed dedicated "Upgradeable" versions of stateless contracts. `Reentran
 
 ## Target Chain
 
-**Base mainnet.** Moved from Celo because Nimiq Pay exposes a fixed EVM chain
-list to mini apps (Ethereum, Arbitrum One, Optimism, Base, BNB Smart Chain,
-Sepolia) that a mini app cannot add to, and Celo is not on it. See
-[`docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
+**Base mainnet.** Chosen from the EVM chains Nimiq Pay exposes to mini apps
+(Ethereum, Polygon, Arbitrum One, Optimism, Base, BNB Smart Chain, Ethereum
+Sepolia). Celo is not among them — but `wallet_addEthereumChain` IS supported,
+so whether Celo was truly unreachable is an open question, not a settled fact.
+See [`docs/BASE_NIMIQ_MIGRATION.md`](../../docs/BASE_NIMIQ_MIGRATION.md).
 
 The contract needed no Solidity change: accepted tokens are `initialize()`
 input, not hardcoded, and each token's decimals are read on-chain. Prices are

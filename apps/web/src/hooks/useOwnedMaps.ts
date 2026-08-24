@@ -67,7 +67,7 @@ function writeCache(key: string, counts: Record<MapId, number>): void {
  * Per-map pixel ownership count for the connected wallet.
  *
  * Scans every registered map on the primary read chain (`READ_CHAIN_ID` —
- * Celo mainnet), counting
+ * Base mainnet), counting
  * pixels owned by the wallet. Used by `useMaps` to drop returning players
  * back on the map where they own the most pixels — the "1 user -> 1 map"
  * UX without a server-side index.

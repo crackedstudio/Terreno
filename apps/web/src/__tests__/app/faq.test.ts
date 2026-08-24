@@ -74,10 +74,24 @@ describe('FAQ facts', () => {
   it('does not claim USDT is the only accepted coin', () => {
     const currency = allItems.find((i) => i.id === 'currency')
     expect(currency).toBeDefined()
-    for (const token of ['USDT', 'USDC', 'USDm']) {
+    // USDm was a Celo stablecoin (cUSD) and has no Base equivalent; the
+    // accepted set on Base is USDC + USDT, both 6-decimal.
+    for (const token of ['USDC', 'USDT']) {
       expect(currency!.a).toContain(token)
     }
+    expect(currency!.a).not.toContain('USDm')
     expect(allCopy).not.toMatch(/USDT only/i)
+  })
+
+  it('states that gas is paid in ETH, not in the stablecoin', () => {
+    // Money-path copy, and the reason it is pinned: on Celo/MiniPay fees were
+    // paid automatically in the stablecoin being spent, and the FAQ said so.
+    // On Base gas is ETH, so a buyer holding only USDC and following the old
+    // answer would be stranded with no way to pay for the transaction.
+    const gas = allItems.find((i) => i.id === 'gas')
+    expect(gas).toBeDefined()
+    expect(gas!.a).toContain('ETH')
+    expect(gas!.a).not.toMatch(/paid automatically in the stablecoin/i)
   })
 
   it('does not promise that a resale pays exactly double', () => {

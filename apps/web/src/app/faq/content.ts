@@ -52,7 +52,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'no-withdrawal',
         q: 'Do I need to withdraw my reward?',
-        a: 'No. There is no claim button and nothing to withdraw. If you win, the USDT is sent straight to the wallet you played with, and it shows up in MiniPay like any other transfer.',
+        a: 'No. There is no claim button and nothing to withdraw. If you win, the USDT is sent straight to the wallet you played with, and it shows up in Nimiq Pay like any other transfer.',
       },
       {
         id: 'payout-timing',
@@ -77,7 +77,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'check-paid',
         q: 'How do I check whether I was paid?',
-        a: 'Open your transaction history in MiniPay and look for an incoming USDT transfer on the day after the campaign. Every payout is an on-chain transfer, so it is permanently recorded and cannot go missing. If there is nothing 24 hours after the campaign ended, contact support.',
+        a: 'Open your transaction history in Nimiq Pay and look for an incoming USDT transfer on the day after the campaign. Every payout is an on-chain transfer, so it is permanently recorded and cannot go missing. If there is nothing 24 hours after the campaign ended, contact support.',
       },
       {
         id: 'campaign-updates',
@@ -94,12 +94,12 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'currency',
         q: 'Which coins can I pay with?',
-        a: 'Mondeto accepts USDT, USDC and USDm on Celo. One buy uses one coin, so if you are short, top up that coin or select fewer pixels.',
+        a: 'Mondeto accepts USDC and USDT on Base. One buy uses one coin, so if you are short, top up that coin or select fewer pixels.',
       },
       {
         id: 'gas',
         q: 'What network fees do I pay?',
-        a: 'Almost nothing. Celo network fees are paid automatically in the stablecoin you are buying with, inside MiniPay — typically a fraction of a cent.',
+        a: 'Base network fees are paid in ETH, so keep a small amount of ETH in your wallet alongside the stablecoin you are buying with. Fees on Base are typically a fraction of a cent.',
       },
       {
         id: 'prices-up',
@@ -135,7 +135,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'what-is',
         q: 'What is Mondeto?',
-        a: 'A pixel-buying game on Celo. The world map is 170 × 100 pixels, and each continent map has its own size. You buy pixels with stablecoins and paint the world your color.',
+        a: 'A pixel-buying game on Base. The world map is 170 × 100 pixels, and each continent map has its own size. You buy pixels with stablecoins and paint the world your color.',
       },
       {
         id: 'map-reset',
@@ -166,7 +166,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'contact',
         q: 'How do I contact support?',
-        a: `Use the SUPPORT button on your profile page — it opens a short form, and a human reads every submission. Include your wallet address (it starts with 0x), which campaign you mean, and the date. Rewards are on-chain, so a player name, phone number or bank account can't be matched to a payment — the wallet address is the only thing we can look up. You can copy yours from MiniPay.`,
+        a: `Use the SUPPORT button on your profile page — it opens a short form, and a human reads every submission. Include your wallet address (it starts with 0x), which campaign you mean, and the date. Rewards are on-chain, so a player name, phone number or bank account can't be matched to a payment — the wallet address is the only thing we can look up. You can copy yours from Nimiq Pay.`,
       },
       {
         id: 'who-runs',

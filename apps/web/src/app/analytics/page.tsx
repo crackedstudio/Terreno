@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
             marginBottom: 12,
           }}
         >
-          mondeto on-chain · celo mainnet
+          mondeto on-chain · base mainnet
         </div>
 
         {a.error && (

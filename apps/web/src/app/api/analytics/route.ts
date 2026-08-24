@@ -27,10 +27,15 @@ import type { MapId } from '@/lib/maps/types'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// Celo mainnet block time is ~1s post-L2. Upper bounds — the 24h/7d cutoffs are
-// by block number, matching the previous client behaviour.
-const BLOCKS_PER_DAY = 86_400n
-const BLOCKS_PER_WEEK = 604_800n
+// Base produces a block every 2s (OP-Stack fixed interval), so a day is 43,200
+// blocks and a week 302,400 — NOT the 86,400/604,800 carried over from Celo's
+// ~1s blocks. Measured, not assumed: blocks 50401276→50402136 on Base mainnet
+// spanned 1720s for 860 blocks, exactly 2.0 s/block. Leaving the Celo numbers
+// made every windowed figure on the public analytics page cover twice its
+// stated period — "24h" volume was really 48h, "7d" really 14d.
+const BASE_BLOCK_SECONDS = 2n
+const BLOCKS_PER_DAY = 86_400n / BASE_BLOCK_SECONDS
+const BLOCKS_PER_WEEK = 604_800n / BASE_BLOCK_SECONDS
 const CACHE_TTL_MS = 60_000
 
 interface AnalyticsResponse {
@@ -212,7 +217,21 @@ async function computeAnalyticsFromLogs(mapId: MapId): Promise<AnalyticsResponse
     const tokenAddr = (log.args.token as string).toLowerCase()
     const ids = log.args.ids as bigint[]
     const totalCost = log.args.totalCost as bigint
-    const normalized = toMicrocents(totalCost, tokenDecimals.get(tokenAddr) ?? 6)
+    // Unknown token decimals => skip the row, never guess. A wrong exponent
+    // here misstates volume by orders of magnitude on a public page, and the
+    // old `?? 6` silently assumed every accepted token is 6-decimal — true of
+    // Base USDC/USDT today, but the contract accepts any ERC-20 and reads its
+    // decimals on-chain, so an added 18-decimal token would have inflated
+    // reported volume by 1e12.
+    const knownDecimals = tokenDecimals.get(tokenAddr)
+    if (knownDecimals === undefined) {
+      logger.warn('analytics skipped a buy with unknown token decimals', {
+        mapId,
+        token: tokenAddr,
+      })
+      continue
+    }
+    const normalized = toMicrocents(totalCost, knownDecimals)
     const block = log.blockNumber ?? 0n
 
     allBuyers.add(buyer)
