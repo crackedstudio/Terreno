@@ -68,7 +68,7 @@ Refs #
 - [ ] Development sidebar links match Closes/Refs above
 - [ ] README / runbook / `.env.example` / examples / error strings updated for the world this creates
 - [ ] Lockfile touched → rebased on current `main`, lockfile regenerated (never hand-resolved)
-- [ ] Wallet/provider tree touched → loaded in a normal browser, not only MiniPay
+- [ ] Wallet/provider tree touched → loaded in a normal browser, not only Nimiq Pay
 - [ ] Money/security path → `money-path-checklist.md` run; payout logic compared against the other side
 - [ ] No secrets in the diff
 - [ ] Questions for the maintainer marked clearly at the end (or "none")
