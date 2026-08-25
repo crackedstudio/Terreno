@@ -15,6 +15,7 @@ import {
   useControls,
 } from 'react-zoom-pan-pinch'
 import { PAINT_SCALE } from '@/constants/map'
+import { PAPER } from '@/constants/mapColors'
 import { idToXY } from '@/lib/pixelMath'
 import { useCurrentMapMeta } from '@/hooks/useCurrentMapMeta'
 import type { PixelView } from '@/lib/mock'
@@ -254,8 +255,8 @@ const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
           ctx.clearRect(x - 0.5, y - 0.5, 2, 2)
         }
         const { x, y } = idToXY(pid, width)
-        ctx.strokeStyle = '#ffffff'
-        ctx.lineWidth = 0.2
+        ctx.strokeStyle = PAPER
+        ctx.lineWidth = 0.24
         ctx.strokeRect(x + 0.05, y + 0.05, 0.9, 0.9)
         inspectRingRef.current = { x, y }
       },

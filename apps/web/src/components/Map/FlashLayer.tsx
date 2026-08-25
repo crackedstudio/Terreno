@@ -1,6 +1,7 @@
 'use client'
 import React, { useRef, useEffect } from 'react'
-import { TILE_GAP, TILE_RADIUS } from '@/constants/map'
+import { TILE_GAP } from '@/constants/map'
+import { FRESH } from '@/constants/mapColors'
 import { idToXY } from '@/lib/pixelMath'
 import { ownerDefaultColor } from '@/lib/colorUtils'
 import { useCurrentMapMeta } from '@/hooks/useCurrentMapMeta'
@@ -12,6 +13,11 @@ interface FlashLayerProps {
 }
 
 const FLASH_DURATION = 1200
+
+// The flash starts at FRESH and resolves to the new holder's colour.
+const FLASH_R = parseInt(FRESH.slice(1, 3), 16)
+const FLASH_G = parseInt(FRESH.slice(3, 5), 16)
+const FLASH_B = parseInt(FRESH.slice(5, 7), 16)
 
 export default function FlashLayer({ changedIds, pixelData }: FlashLayerProps) {
   const { width: WIDTH, height: HEIGHT } = useCurrentMapMeta()
@@ -26,7 +32,6 @@ export default function FlashLayer({ changedIds, pixelData }: FlashLayerProps) {
     if (!ctx) return
 
     const gap = TILE_GAP
-    const rad = TILE_RADIUS
     const startTime = Date.now()
 
     // Collect pixel positions and target colors
@@ -49,17 +54,17 @@ export default function FlashLayer({ changedIds, pixelData }: FlashLayerProps) {
       ctx.clearRect(0, 0, WIDTH, HEIGHT)
 
       for (const { x, y, tr, tg, tb } of targets) {
-        // Interpolate from white to target color
-        const r = Math.round(255 + (tr - 255) * t)
-        const g = Math.round(255 + (tg - 255) * t)
-        const b = Math.round(255 + (tb - 255) * t)
+        // Interpolate from the "just changed hands" yellow down to the new
+        // holder's colour. White read as a glitch on the dark map; the yellow
+        // is the same one the palette uses for a fresh claim.
+        const r = Math.round(FLASH_R + (tr - FLASH_R) * t)
+        const g = Math.round(FLASH_G + (tg - FLASH_G) * t)
+        const b = Math.round(FLASH_B + (tb - FLASH_B) * t)
         // Fade out opacity in the second half
         const alpha = t < 0.5 ? 0.8 : 0.8 * (1 - (t - 0.5) / 0.5)
 
         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`
-        ctx.beginPath()
-        ctx.roundRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap, rad)
-        ctx.fill()
+        ctx.fillRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap)
       }
 
       if (t < 1) {
