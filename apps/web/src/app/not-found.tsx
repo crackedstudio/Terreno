@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
+const MONO = "'Space Mono', monospace"
 
 const FLAVOR = [
   'you dropped in the water. swim back to land.',
@@ -25,7 +25,7 @@ export default function NotFound() {
         justifyContent: 'center',
         padding: 24,
         textAlign: 'center',
-        gap: 18,
+        gap: 16,
       }}
     >
       <img
@@ -36,46 +36,30 @@ export default function NotFound() {
         style={{ display: 'block', imageRendering: 'pixelated' }}
       />
 
-      <div
-        style={{
-          fontSize: 48,
-          fontFamily: PIXEL_FONT,
-          letterSpacing: 4,
-          color: 'var(--text)',
-        }}
-      >
+      <div className="font-display" style={{ fontSize: 96, lineHeight: 0.85, color: 'var(--rot)' }}>
         404
       </div>
 
       <div
         style={{
-          fontSize: 9,
-          fontFamily: PIXEL_FONT,
-          letterSpacing: 2,
-          color: 'var(--text-muted)',
-          maxWidth: 360,
-          lineHeight: 1.6,
+          fontFamily: MONO,
+          fontSize: 13,
+          lineHeight: 1.7,
+          color: 'var(--free)',
+          maxWidth: 340,
         }}
       >
-        far, far away —<br />
+        Not on any map we hold.
+        <br />
         {line}
       </div>
 
       <Link
         href="/"
-        style={{
-          marginTop: 10,
-          background: 'var(--button-bg)',
-          color: 'var(--button-text)',
-          fontSize: 9,
-          fontFamily: PIXEL_FONT,
-          letterSpacing: 2,
-          padding: '12px 22px',
-          borderRadius: 11,
-          textDecoration: 'none',
-        }}
+        className="pixel-btn pixel-btn-filled"
+        style={{ marginTop: 6, fontSize: 12, padding: '14px 24px', textDecoration: 'none' }}
       >
-        [ BACK TO LAND ]
+        BACK TO LAND
       </Link>
     </div>
   )

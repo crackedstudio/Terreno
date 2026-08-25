@@ -9,7 +9,7 @@ import { getMaskData } from '@/lib/maps/masks'
 import type { MapContract } from '@/lib/maps/contracts'
 import type { MapId } from '@/lib/maps/types'
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
+const MONO = "'Space Mono', monospace"
 
 interface RowProps {
   map: MapContract
@@ -32,39 +32,38 @@ function AtlasRow({ map, fillPct, landCount, isHome, isCurrent, onPick }: RowPro
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 10,
-        padding: '14px 14px',
-        background: isCurrent ? 'var(--button-bg)' : 'var(--card-bg)',
-        color: isCurrent ? 'var(--button-text)' : 'var(--text)',
-        border: '1px solid var(--text-muted)',
-        borderRadius: 'var(--radius-md)',
-        fontFamily: PIXEL_FONT,
+        padding: '14px 13px',
+        background: isCurrent ? 'var(--held)' : 'transparent',
+        color: 'var(--paper)',
+        border: `3px solid ${isCurrent ? 'var(--held)' : 'var(--line-on-ink-2)'}`,
+        fontFamily: MONO,
+        fontWeight: 700,
         cursor: 'pointer',
         textAlign: 'left',
       }}
     >
       <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 10, letterSpacing: 2 }}>{map.displayName}</span>
+          <span style={{ fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase' }}>{map.displayName}</span>
           {isHome && (
             <span
               style={{
-                fontSize: 6,
-                letterSpacing: 1,
+                fontSize: 8,
+                letterSpacing: '0.14em',
                 padding: '2px 5px',
-                borderRadius: 4,
-                border: '1px solid currentColor',
+                border: '2px solid currentColor',
               }}
             >
               HOME
             </span>
           )}
         </span>
-        <span style={{ fontSize: 6, letterSpacing: 1, opacity: 0.7 }}>
-          {map.width}×{map.height} • {landCount} land pixels
+        <span style={{ fontSize: 9, letterSpacing: '0.12em', opacity: 0.7 }}>
+          {map.width}×{map.height} · {landCount} PLOTS ON LAND
         </span>
       </span>
-      <span style={{ fontSize: 8, letterSpacing: 1, opacity: 0.85 }}>
-        {fillPct === null ? '?' : `${Math.round(fillPct)}%`}
+      <span className="font-display" style={{ fontSize: 22, lineHeight: 1 }}>
+        {fillPct === null ? '—' : `${Math.round(fillPct)}%`}
       </span>
     </button>
   )
@@ -74,11 +73,12 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        fontSize: 8,
-        fontFamily: PIXEL_FONT,
-        letterSpacing: 3,
-        color: 'var(--text-muted)',
-        padding: '20px 4px 8px',
+        fontFamily: MONO,
+        fontWeight: 700,
+        fontSize: 9,
+        letterSpacing: '0.2em',
+        color: 'var(--mute-on-ink)',
+        padding: '22px 0 9px',
       }}
     >
       {children}
@@ -106,44 +106,40 @@ export default function AtlasPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 60 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 56 }}>
       <TopBar title="TERRENO" />
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
           background: 'var(--bg)',
-          padding: '16px 16px 72px',
+          padding: '18px 16px 72px',
           color: 'var(--text)',
         }}
       >
-        <div
-          style={{
-            fontSize: 14,
-            fontFamily: PIXEL_FONT,
-            letterSpacing: 4,
-            marginBottom: 4,
-          }}
-        >
-          ATLAS
+        <div className="font-display" style={{ fontSize: 40, lineHeight: 0.92 }}>
+          EVERY MAP
+          <br />
+          IN THE REGISTRY
         </div>
         <div
           style={{
-            fontSize: 7,
-            fontFamily: PIXEL_FONT,
-            letterSpacing: 1.5,
-            color: 'var(--text-muted)',
-            marginBottom: 12,
+            fontFamily: MONO,
+            fontWeight: 700,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: 'var(--mute-on-ink)',
+            marginTop: 9,
           }}
         >
-          pick a map to claim
+          THE FIGURE IS HOW MUCH OF IT IS ALREADY TAKEN.
         </div>
 
         {loading && (
           <div
             style={{
               fontSize: 6,
-              fontFamily: PIXEL_FONT,
+              fontFamily: MONO,
               letterSpacing: 1,
               color: 'var(--text-muted)',
               padding: '4px 0 12px',
@@ -194,14 +190,14 @@ export default function AtlasPage() {
         <SectionHeading>COUNTRIES</SectionHeading>
         <div
           style={{
-            border: '1px dashed var(--text-muted)',
-            borderRadius: 'var(--radius-md)',
-            padding: '20px 12px',
+            border: '3px solid var(--line-on-ink-2)',
+            padding: '22px 12px',
             textAlign: 'center',
-            fontSize: 7,
-            fontFamily: PIXEL_FONT,
-            letterSpacing: 2,
-            color: 'var(--text-muted)',
+            fontFamily: MONO,
+            fontWeight: 700,
+            fontSize: 10,
+            letterSpacing: '0.2em',
+            color: 'var(--mute-on-ink)',
           }}
         >
           COMING SOON
