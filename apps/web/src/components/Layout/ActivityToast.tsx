@@ -36,6 +36,7 @@ export default function ActivityToast({ mapId }: ActivityToastProps) {
       onMouseLeave={resume}
       role="status"
       aria-live="polite"
+      className="surface-ink"
       style={{
         position: 'absolute',
         bottom: 64,
@@ -43,16 +44,18 @@ export default function ActivityToast({ mapId }: ActivityToastProps) {
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        maxWidth: 220,
-        background: 'var(--card-bg)',
-        border: '1px solid var(--border)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        maxWidth: 240,
+        background: 'var(--surface-2)',
+        border: '2px solid var(--line-on-ink-2)',
+        // Fat yellow spine on the leading edge — the "just changed hands"
+        // colour, so a claim toast is recognisable before it's read.
+        borderLeft: '4px solid var(--fresh)',
         color: 'var(--text)',
+        fontFamily: "'Space Mono', monospace",
+        fontWeight: 700,
         fontSize: 9,
-        letterSpacing: 0.5,
-        borderRadius: 10,
-        padding: '7px 10px',
+        letterSpacing: '0.1em',
+        padding: '8px 11px',
         zIndex: 13,
         cursor: 'pointer',
         animation: 'activityIn 250ms ease',
@@ -62,11 +65,9 @@ export default function ActivityToast({ mapId }: ActivityToastProps) {
         aria-hidden
         style={{
           flex: '0 0 auto',
-          width: 8,
-          height: 8,
-          borderRadius: 2,
+          width: 9,
+          height: 9,
           background: current.color,
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.35)',
         }}
       />
       <span
@@ -76,10 +77,10 @@ export default function ActivityToast({ mapId }: ActivityToastProps) {
           textOverflow: 'ellipsis',
         }}
       >
-        <span style={{ fontWeight: 500 }}>{current.name}</span>
-        <span style={{ color: 'var(--text-muted)' }}>
-          {'  +'}
-          {current.pixelCount} px · ${current.amount}
+        <span style={{ textTransform: 'uppercase' }}>{current.name}</span>
+        <span style={{ color: 'var(--mute-on-ink)' }}>
+          {'  TOOK '}
+          {current.pixelCount} · ${current.amount}
         </span>
       </span>
     </div>

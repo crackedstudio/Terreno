@@ -6,18 +6,21 @@ interface BottomNavProps {
   activeRoute: string
 }
 
-// Two-asset swap: white SVG for inactive, pre-colored brand-green SVG for
-// active. Both files live in /apps/web/public/brand/icons/.
+// Two-letter plates instead of icons. The registry labels things; a glyph
+// would be the only unlabelled control in the app, and at 24px the old pixel
+// icons were unreadable on the ink bar anyway. `code` is the plate, `label`
+// is the word under it — both are always shown, so nothing depends on
+// recognising a shape.
 const navItems = [
-  { label: 'RANKS',   href: '/ranks',   icon: '/brand/icons/trophy.svg', iconActive: '/brand/icons/trophy_green.svg' },
-  { label: 'MAP',     href: '/',        icon: '/brand/icons/globe.svg',  iconActive: '/brand/icons/globe_green.svg'  },
-  { label: 'PROFILE', href: '/profile', icon: '/brand/icons/users.svg',  iconActive: '/brand/icons/users_green.svg'  },
+  { code: 'LG', label: 'LEDGER', href: '/ranks' },
+  { code: 'MP', label: 'ATLAS', href: '/' },
+  { code: 'DE', label: 'DEED', href: '/profile' },
 ]
 
 export default function BottomNav({ activeRoute }: BottomNavProps) {
   return (
     <nav
-      className="theme-bar-bottom"
+      className="theme-bar-bottom surface-ink"
       style={{
         position: 'fixed',
         bottom: 0,
@@ -25,13 +28,14 @@ export default function BottomNav({ activeRoute }: BottomNavProps) {
         right: 0,
         height: 56,
         zIndex: 40,
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'stretch',
+        display: 'grid',
+        gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
+        alignItems: 'center',
       }}
     >
       {navItems.map((item) => {
         const isActive = activeRoute === item.href
+        const color = isActive ? 'var(--held)' : 'var(--mute-on-ink)'
         return (
           <Link
             key={item.href}
@@ -39,23 +43,41 @@ export default function BottomNav({ activeRoute }: BottomNavProps) {
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
             style={{
-              flex: 1,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 5,
               textDecoration: 'none',
             }}
           >
-            <img
-              src={isActive ? item.iconActive : item.icon}
-              alt={item.label}
-              width={28}
-              height={28}
+            <span
+              aria-hidden
               style={{
-                imageRendering: 'pixelated' as const,
-                opacity: isActive ? 1 : 0.7,
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: `2px solid ${isActive ? 'var(--held)' : 'var(--dim-on-ink)'}`,
+                fontFamily: "'Space Mono', monospace",
+                fontWeight: 700,
+                fontSize: 9,
+                color,
               }}
-            />
+            >
+              {item.code}
+            </span>
+            <span
+              style={{
+                fontFamily: "'Space Mono', monospace",
+                fontWeight: 700,
+                fontSize: 8,
+                letterSpacing: '0.14em',
+                color,
+              }}
+            >
+              {item.label}
+            </span>
           </Link>
         )
       })}

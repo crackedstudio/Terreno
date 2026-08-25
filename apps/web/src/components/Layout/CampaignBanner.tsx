@@ -72,8 +72,9 @@ export default function CampaignBanner() {
         left: 0,
         right: 0,
         zIndex: 14,
-        height: 20,
-        background: '#A7FF05',
+        height: 26,
+        background: 'var(--held)',
+        borderTop: '2px solid var(--ink)',
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
@@ -85,10 +86,12 @@ export default function CampaignBanner() {
           display: 'flex',
           whiteSpace: 'nowrap',
           animation: 'marquee 18s linear infinite',
-          fontSize: 7,
-          fontFamily: "'Press Start 2P', monospace",
-          letterSpacing: 1,
-          color: '#000000',
+          fontFamily: "'Space Mono', monospace",
+          fontWeight: 700,
+          fontSize: 9,
+          letterSpacing: '0.14em',
+          color: 'var(--paper)',
+          textTransform: 'uppercase',
         }}
       >
         <span style={{ paddingRight: 80 }}>{line}</span>
@@ -100,16 +103,17 @@ export default function CampaignBanner() {
         style={{
           position: 'absolute',
           right: 4,
-          background: '#A7FF05',
+          background: 'var(--held)',
           border: 'none',
-          color: '#000000',
-          fontSize: 8,
+          color: 'var(--paper)',
+          fontFamily: "'Space Mono', monospace",
+          fontWeight: 700,
+          fontSize: 10,
           cursor: 'pointer',
-          padding: '0 4px',
-          fontFamily: "'Press Start 2P', monospace",
+          padding: '0 6px',
         }}
       >
-        x
+        ✕
       </button>
     </div>
   )

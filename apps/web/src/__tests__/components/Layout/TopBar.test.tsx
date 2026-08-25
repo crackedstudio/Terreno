@@ -14,9 +14,12 @@ vi.mock('@/components/Layout/MapSwitcher', () => ({
 }))
 
 describe('TopBar', () => {
-  it('renders the wordmark with the title as alt', () => {
+  it('renders the wordmark as text, labelled with the title', () => {
     render(<TopBar title="TERRENO" />)
-    expect(screen.getByAltText('TERRENO')).toBeInTheDocument()
+    // The mark and wordmark are drawn, not loaded — so the accessible name
+    // has to come from the link's aria-label, not from an image's alt.
+    expect(screen.getByLabelText('TERRENO')).toBeInTheDocument()
+    expect(screen.getByText('TERRENO')).toBeInTheDocument()
   })
 
   it('renders ConnectButton', () => {

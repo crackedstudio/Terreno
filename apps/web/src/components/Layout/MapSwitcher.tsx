@@ -55,7 +55,7 @@ export default function MapSwitcher() {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.55)',
+        background: 'rgba(13,13,13,0.7)',
         zIndex: 50,
         display: 'flex',
         alignItems: 'flex-end',
@@ -64,28 +64,25 @@ export default function MapSwitcher() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="surface-ink"
         style={{
           width: '100%',
           maxWidth: 420,
-          background: 'var(--card-bg)',
-          borderTop: '1px solid var(--border)',
-          borderTopLeftRadius: 'var(--radius-xl)',
-          borderTopRightRadius: 'var(--radius-xl)',
-          padding: '16px 14px 24px',
+          borderTop: '3px solid var(--paper)',
+          padding: '18px 16px 26px',
           maxHeight: '70vh',
           overflowY: 'auto',
-          color: 'var(--text)',
+          color: 'var(--paper)',
         }}
       >
         <div
           style={{
-            fontSize: 9,
-            fontFamily: "'Press Start 2P', monospace",
-            letterSpacing: 2,
-            marginBottom: 14,
-            textAlign: 'center',
-            color: 'var(--text)',
+            fontSize: 26,
+            lineHeight: 1,
+            marginBottom: 16,
+            color: 'var(--paper)',
           }}
+          className="font-display"
         >
           PICK A MAP
         </div>
@@ -105,33 +102,32 @@ export default function MapSwitcher() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 10,
-                    padding: '12px 12px',
-                    background: isCurrent ? 'var(--button-bg)' : 'transparent',
-                    color: isCurrent ? 'var(--button-text)' : 'var(--text)',
-                    border: '1px solid var(--text-muted)',
-                    borderRadius: 'var(--radius-md)',
-                    fontFamily: "'Press Start 2P', monospace",
+                    padding: '13px 12px',
+                    background: isCurrent ? 'var(--held)' : 'transparent',
+                    color: isCurrent ? 'var(--paper)' : 'var(--paper)',
+                    border: `3px solid ${isCurrent ? 'var(--held)' : 'var(--line-on-ink-2)'}`,
+                    fontFamily: "'Space Mono', monospace",
+                    fontWeight: 700,
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 9, letterSpacing: 2 }}>{m.displayName}</span>
+                    <span style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase' }}>{m.displayName}</span>
                     {isHome && (
                       <span
                         style={{
-                          fontSize: 6,
-                          letterSpacing: 1,
+                          fontSize: 8,
+                          letterSpacing: '0.14em',
                           padding: '2px 5px',
-                          borderRadius: 4,
-                          border: '1px solid currentColor',
+                          border: '2px solid currentColor',
                         }}
                       >
                         HOME
                       </span>
                     )}
                   </span>
-                  <span style={{ fontSize: 7, letterSpacing: 1, opacity: 0.85 }}>{fillFor(m.id)}</span>
+                  <span style={{ fontSize: 9, letterSpacing: '0.12em', opacity: 0.85, textTransform: 'uppercase' }}>{fillFor(m.id)}</span>
                 </button>
               </li>
             )
@@ -142,16 +138,16 @@ export default function MapSwitcher() {
           onClick={() => setOpen(false)}
           style={{
             display: 'block',
-            marginTop: 14,
+            marginTop: 16,
             width: '100%',
-            padding: '10px',
+            padding: '12px',
             background: 'transparent',
-            color: 'var(--text)',
-            border: '1px solid var(--text)',
-            borderRadius: 'var(--radius-md)',
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            letterSpacing: 2,
+            color: 'var(--paper)',
+            border: '3px solid var(--paper)',
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: 10,
+            letterSpacing: '0.18em',
             textAlign: 'center',
             textDecoration: 'none',
           }}
@@ -164,14 +160,14 @@ export default function MapSwitcher() {
           style={{
             marginTop: 8,
             width: '100%',
-            padding: '10px',
+            padding: '12px',
             background: 'transparent',
-            color: 'var(--text-muted)',
-            border: '1px dashed var(--text-muted)',
-            borderRadius: 'var(--radius-md)',
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            letterSpacing: 2,
+            color: 'var(--mute-on-ink)',
+            border: '2px solid var(--line-on-ink-2)',
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: 10,
+            letterSpacing: '0.18em',
             cursor: 'pointer',
           }}
         >
@@ -188,14 +184,14 @@ export default function MapSwitcher() {
         onClick={() => setOpen(true)}
         aria-label="Switch map"
         style={{
-          fontSize: 7,
-          fontFamily: "'Press Start 2P', monospace",
-          letterSpacing: 1,
-          borderRadius: 999,
-          padding: '4px 9px',
+          fontFamily: "'Space Mono', monospace",
+          fontWeight: 700,
+          fontSize: 9,
+          letterSpacing: '0.12em',
+          padding: '6px 9px',
           background: 'transparent',
-          color: 'var(--text)',
-          border: '1px solid var(--text-muted)',
+          color: 'var(--paper)',
+          border: '2px solid var(--dim-on-ink)',
           cursor: 'pointer',
           whiteSpace: 'nowrap',
         }}
