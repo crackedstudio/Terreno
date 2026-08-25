@@ -2,6 +2,7 @@
 
 import type { LeaderboardScope, LeaderboardTab } from '@/hooks/useLeaderboard'
 import { BOARD_LABELS } from '@/lib/maps/leaderboards'
+import { BOARD_ACCENT, BOARD_ACCENT_TEXT } from './boardAccents'
 
 interface LeaderboardTabsProps {
   activeTab: LeaderboardTab
@@ -9,8 +10,7 @@ interface LeaderboardTabsProps {
   scope?: LeaderboardScope
 }
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
-const BRAND_LIME = '#A7FF05'
+const MONO = "'Space Mono', monospace"
 
 // Labels come from BOARD_LABELS so the tabs, the FAQ and the drift test can
 // never disagree on what a board is called.
@@ -23,23 +23,28 @@ const tabConfig: {
   {
     key: 'AREA',
     label: BOARD_LABELS.AREA,
-    description: 'Who owns the most pixels on the map.',
-    globalDescription: 'Most land owned across all maps (share of each board).',
+    description: 'WHO HOLDS THE MOST PLOTS.',
+    globalDescription: 'MOST LAND HELD ACROSS ALL MAPS (SHARE OF EACH BOARD).',
   },
   {
     key: 'EMPIRE',
     label: BOARD_LABELS.EMPIRE,
-    description: 'Biggest connected empire.',
-    globalDescription: 'Biggest connected empire on any single map.',
+    description: 'BIGGEST BLOCK OF TOUCHING PLOTS.',
+    globalDescription: 'BIGGEST BLOCK OF TOUCHING PLOTS ON ANY SINGLE MAP.',
   },
   {
     key: 'TYCOONS',
     label: BOARD_LABELS.TYCOONS,
-    description: 'Who holds the single most valuable pixel.',
-    globalDescription: 'Single most valuable pixel held anywhere.',
+    description: 'WHO HOLDS THE SINGLE DEAREST PLOT.',
+    globalDescription: 'SINGLE DEAREST PLOT HELD ANYWHERE.',
   },
 ]
 
+/**
+ * The ledger's three tabs. Each board owns an accent, so which crown you're
+ * looking at is legible from colour alone — and the description underneath is
+ * set in the display face, because on this screen it is a heading, not a hint.
+ */
 export default function LeaderboardTabs({ activeTab, onTabChange, scope = 'local' }: LeaderboardTabsProps) {
   const active = tabConfig.find(t => t.key === activeTab)
   const activeDescription =
@@ -49,13 +54,13 @@ export default function LeaderboardTabs({ activeTab, onTabChange, scope = 'local
     <div>
       <div
         style={{
-          height: 38,
-          background: 'var(--card-bg)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          display: 'flex',
+          height: 46,
+          display: 'grid',
+          gridTemplateColumns: `repeat(${tabConfig.length}, 1fr)`,
+          borderBottom: '3px solid var(--ink)',
         }}
       >
-        {tabConfig.map((tab) => {
+        {tabConfig.map((tab, i) => {
           const isActive = tab.key === activeTab
           return (
             <button
@@ -63,19 +68,15 @@ export default function LeaderboardTabs({ activeTab, onTabChange, scope = 'local
               onClick={() => onTabChange(tab.key)}
               aria-current={isActive ? 'page' : undefined}
               style={{
-                flex: 1,
-                textAlign: 'center',
-                fontSize: 9,
-                fontFamily: PIXEL_FONT,
-                letterSpacing: 2,
-                lineHeight: '38px',
+                fontFamily: MONO,
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.16em',
                 cursor: 'pointer',
-                color: isActive ? BRAND_LIME : 'rgba(255,255,255,0.55)',
-                background: 'none',
+                background: isActive ? BOARD_ACCENT[tab.key] : 'var(--paper)',
+                color: isActive ? BOARD_ACCENT_TEXT[tab.key] : 'var(--mute-on-paper)',
                 border: 'none',
-                borderBottomWidth: 2,
-                borderBottomStyle: 'solid',
-                borderBottomColor: isActive ? BRAND_LIME : 'transparent',
+                borderRight: i < tabConfig.length - 1 ? '3px solid var(--ink)' : undefined,
                 padding: 0,
               }}
             >
@@ -85,19 +86,14 @@ export default function LeaderboardTabs({ activeTab, onTabChange, scope = 'local
         })}
       </div>
       {activeDescription && (
-        <div
-          style={{
-            padding: '12px 14px',
-            fontSize: 9,
-            color: 'var(--brand-orange)',
-            fontFamily: PIXEL_FONT,
-            letterSpacing: 1.5,
-            lineHeight: 1.5,
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            background: 'var(--card-bg)',
-          }}
-        >
-          {activeDescription}
+        <div style={{ padding: '14px 16px 0' }}>
+          <div
+            className="font-display"
+            style={{ fontSize: 22, lineHeight: 1.05, color: 'var(--ink)' }}
+          >
+            {activeDescription}
+          </div>
+          <div className="punch" style={{ marginTop: 12 }} />
         </div>
       )}
     </div>

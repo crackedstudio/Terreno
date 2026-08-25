@@ -1,61 +1,54 @@
 'use client'
 
-import type { LeaderboardEntry } from '@/hooks/useLeaderboard'
+import type { LeaderboardEntry, LeaderboardTab } from '@/hooks/useLeaderboard'
 import { generateUsername } from '@/lib/username'
+import { BOARD_ACCENT, BOARD_ACCENT_SUBTEXT, BOARD_ACCENT_TEXT } from './boardAccents'
 
 interface LeaderboardRowProps {
   entry: LeaderboardEntry
+  /** Which board this row belongs to — picks the accent used for the
+   *  player's own filled row and its drop shadow. */
+  board?: LeaderboardTab
   /** Render a RULER badge on this row — the parent sets it for the rank-1
    *  holder of a map's LAND board (the reigning "Ruler of <map>"). */
   isRuler?: boolean
   /** Optional per-map breakdown chip (global board), e.g. "W·AF·EU". */
   breakdown?: string
-  /** This row is the connected player — lime frame + YOU tag. */
+  /** This row is the connected player — filled in the board's accent. */
   isYou?: boolean
   /** Rank-proximity nudge under the name, e.g. "12 PX FROM #3". */
   gapText?: string
 }
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
-const BRAND_ORANGE = '#FF4C00'
-const BRAND_PURPLE = '#B430FF'
-const BRAND_LIME = '#A7FF05'
+const MONO = "'Space Mono', monospace"
 
-// Top-5 highlight: 1-3 in brand orange (podium), 4-5 in brand purple
-// (runners-up). Everything below 5 falls back to the muted defaults.
-function rankAccentColor(rank: number): string | null {
-  if (rank <= 3) return BRAND_ORANGE
-  if (rank <= 5) return BRAND_PURPLE
-  return null
+// The top three carry a coloured drop shadow so the podium is visible while
+// scrolling past at speed; everything below sits on the plain ink shadow.
+const PODIUM_SHADOW: Record<number, string> = {
+  1: 'var(--fresh)',
+  2: 'var(--held)',
+  3: 'var(--yours)',
 }
 
-function rankSuffix(rank: number): string {
-  if (rank === 1) return '1ST'
-  if (rank === 2) return '2ND'
-  if (rank === 3) return '3RD'
-  return `${rank}TH`
-}
-
-// Every row uses the same name/score/padding. Only the rank label on the
-// #1 row is bumped up so the leader visibly pops without making the whole
-// row taller than the rest. The rank column width is the same on every
-// row so the right edges of "1ST" / "2ND" / "3RD" all line up and the
-// name column starts at a single x — otherwise the bigger 1st-place
-// label bleeds into the name column.
-const ROW_NAME_FS = 9
-const ROW_SCORE_FS = 10
-const ROW_PAD_Y = 10
-const DEFAULT_RANK_FS = 9
-const FIRST_RANK_FS = 16
-const RANK_WIDTH = 60
-
-export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapText }: LeaderboardRowProps) {
+/**
+ * One entry in the ledger: a hard-edged block with the rank set large in the
+ * display face, the holder's name, and the score. The player's own row is
+ * filled in the board's accent rather than merely outlined, so it is findable
+ * without reading a single word.
+ */
+export default function LeaderboardRow({
+  entry,
+  board = 'AREA',
+  isRuler,
+  breakdown,
+  isYou,
+  gapText,
+}: LeaderboardRowProps) {
   // URL field hidden — unverified user-entered URLs are an injection /
   // phishing vector. Re-enable once URL verification is in place.
-  const isFirst = entry.rank === 1
-  const accent = rankAccentColor(entry.rank)
-  const rankColor = accent ?? 'rgba(255,255,255,0.55)'
-  const rankFs = isFirst ? FIRST_RANK_FS : DEFAULT_RANK_FS
+  const accent = BOARD_ACCENT[board]
+  const fg = isYou ? BOARD_ACCENT_TEXT[board] : 'var(--ink)'
+  const subFg = isYou ? BOARD_ACCENT_SUBTEXT[board] : 'var(--mute-on-paper)'
 
   return (
     <div
@@ -63,31 +56,28 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        padding: `${ROW_PAD_Y}px 16px`,
-        // The player's own row gets a full lime frame; everyone else keeps
-        // the plain divider.
-        border: isYou ? `1px solid ${BRAND_LIME}` : undefined,
-        borderBottom: isYou ? `1px solid ${BRAND_LIME}` : '1px solid rgba(255,255,255,0.08)',
-        background: isYou ? 'rgba(167,255,5,0.08)' : undefined,
+        padding: '11px 12px',
+        background: isYou ? accent : 'var(--paper)',
+        border: '3px solid var(--ink)',
+        boxShadow: `4px 4px 0 ${PODIUM_SHADOW[entry.rank] ?? 'var(--ink)'}`,
         maxWidth: 500,
-        margin: '0 auto',
+        margin: '0 auto 10px',
         width: '100%',
       }}
     >
-      {/* Rank */}
+      {/* Rank — the figure, not an ordinal string. Archivo Black at 30px is
+          the loudest thing on the row, which is what a leaderboard is for. */}
       <span
+        className="font-display"
         style={{
-          fontSize: rankFs,
-          fontWeight: 700,
-          width: RANK_WIDTH,
-          textAlign: 'right',
-          color: rankColor,
+          fontSize: 30,
+          lineHeight: 0.9,
+          minWidth: 38,
+          color: fg,
           flexShrink: 0,
-          fontFamily: PIXEL_FONT,
-          letterSpacing: 2,
         }}
       >
-        {rankSuffix(entry.rank)}
+        {entry.rank}
       </span>
 
       {/* Name */}
@@ -97,10 +87,12 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            fontSize: ROW_NAME_FS,
-            fontFamily: PIXEL_FONT,
-            letterSpacing: 2,
-            color: '#FFFFFF',
+            fontFamily: MONO,
+            fontWeight: 700,
+            fontSize: 12,
+            letterSpacing: '0.06em',
+            color: fg,
+            textTransform: 'uppercase',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
           }}
@@ -112,12 +104,11 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
             <span
               style={{
                 flexShrink: 0,
-                fontSize: 6,
-                letterSpacing: 1,
+                fontSize: 8,
+                letterSpacing: '0.14em',
                 padding: '2px 5px',
-                borderRadius: 4,
-                color: BRAND_LIME,
-                border: `1px solid ${BRAND_LIME}`,
+                color: fg,
+                border: `2px solid ${fg}`,
               }}
             >
               RULER
@@ -127,13 +118,11 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
             <span
               style={{
                 flexShrink: 0,
-                fontSize: 6,
-                letterSpacing: 1,
+                fontSize: 8,
+                letterSpacing: '0.14em',
                 padding: '2px 5px',
-                borderRadius: 4,
-                color: '#0A0A0A',
-                background: BRAND_LIME,
-                fontWeight: 700,
+                color: accent,
+                background: fg,
               }}
             >
               YOU
@@ -144,10 +133,11 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
           <div
             style={{
               marginTop: 3,
-              fontSize: 6,
-              letterSpacing: 1,
-              color: BRAND_LIME,
-              fontFamily: PIXEL_FONT,
+              fontFamily: MONO,
+              fontWeight: 700,
+              fontSize: 9,
+              letterSpacing: '0.12em',
+              color: isYou ? subFg : 'var(--rot)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -160,10 +150,11 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
           <div
             style={{
               marginTop: 3,
-              fontSize: 6,
-              letterSpacing: 1,
-              color: 'rgba(255,255,255,0.4)',
-              fontFamily: PIXEL_FONT,
+              fontFamily: MONO,
+              fontWeight: 700,
+              fontSize: 9,
+              letterSpacing: '0.12em',
+              color: subFg,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -175,30 +166,23 @@ export default function LeaderboardRow({ entry, isRuler, breakdown, isYou, gapTe
       </div>
 
       {/* Score */}
-      <span
-        style={{
-          fontSize: ROW_SCORE_FS,
-          letterSpacing: 2,
-          color: accent ?? '#FFFFFF',
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-          fontFamily: PIXEL_FONT,
-        }}
-      >
-        {entry.value}
-      </span>
-
-      {/* Unit */}
-      <span
-        style={{
-          fontSize: 7,
-          color: 'rgba(255,255,255,0.45)',
-          flexShrink: 0,
-          fontFamily: PIXEL_FONT,
-        }}
-      >
-        {entry.unit}
-      </span>
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <div className="font-display" style={{ fontSize: 22, lineHeight: 1, color: fg }}>
+          {entry.value}
+        </div>
+        <div
+          style={{
+            fontFamily: MONO,
+            fontWeight: 700,
+            fontSize: 8,
+            letterSpacing: '0.14em',
+            color: subFg,
+            textTransform: 'uppercase',
+          }}
+        >
+          {entry.unit}
+        </div>
+      </div>
     </div>
   )
 }

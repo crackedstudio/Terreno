@@ -11,8 +11,7 @@ interface BoardSelectorProps {
   onChange: (key: string) => void
 }
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
-const BRAND_LIME = '#A7FF05'
+const MONO = "'Space Mono', monospace"
 
 /**
  * Horizontal selector for which map's leaderboard to show — one chip per map.
@@ -25,10 +24,9 @@ export default function BoardSelector({ options, value, onChange }: BoardSelecto
     <div
       style={{
         display: 'flex',
-        gap: 6,
-        padding: '10px 14px',
-        background: 'var(--card-bg)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        gap: 8,
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--free)',
         overflowX: 'auto',
         scrollbarWidth: 'none',
       }}
@@ -42,17 +40,18 @@ export default function BoardSelector({ options, value, onChange }: BoardSelecto
             onClick={() => onChange(o.key)}
             aria-current={isActive ? 'true' : undefined}
             style={{
-              fontFamily: PIXEL_FONT,
-              fontSize: 8,
-              letterSpacing: 2,
-              padding: '7px 14px',
-              borderRadius: 999,
+              fontFamily: MONO,
+              fontWeight: 700,
+              fontSize: 9,
+              letterSpacing: '0.14em',
+              padding: '6px 11px',
               cursor: 'pointer',
-              background: isActive ? BRAND_LIME : 'transparent',
-              color: isActive ? '#0a0a0a' : 'rgba(255,255,255,0.6)',
-              border: `1px solid ${isActive ? BRAND_LIME : 'rgba(255,255,255,0.25)'}`,
+              background: isActive ? 'var(--ink)' : 'transparent',
+              color: isActive ? 'var(--paper)' : 'var(--mute-on-paper)',
+              border: `2px solid ${isActive ? 'var(--ink)' : 'var(--free)'}`,
               whiteSpace: 'nowrap',
               flexShrink: 0,
+              textTransform: 'uppercase',
             }}
           >
             {o.label}
