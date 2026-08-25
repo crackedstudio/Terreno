@@ -6,6 +6,7 @@ import { formatUSDT, ownerDefaultColor } from '@/lib/colorUtils'
 import { dailyFallPct, dealDepth } from '@/lib/decay'
 import { generateUsername } from '@/lib/username'
 import { ZERO_ADDRESS } from '@/constants/map'
+import { FREE_LAND } from '@/constants/mapColors'
 import { track } from '@/lib/analytics'
 
 interface PixelInfoPanelProps {
@@ -22,9 +23,28 @@ interface PixelInfoPanelProps {
 }
 
 function truncateAddress(addr: string): string {
-  return addr.slice(0, 6) + '...' + addr.slice(-4)
+  return addr.slice(0, 6) + '…' + addr.slice(-4)
 }
 
+/** Space Mono, bold, tracked — labels and data on the paper record. */
+const LABEL: React.CSSProperties = {
+  fontFamily: "'Space Mono', monospace",
+  fontWeight: 700,
+  fontSize: 11,
+  letterSpacing: '0.14em',
+}
+
+const LABEL_MUTED: React.CSSProperties = {
+  ...LABEL,
+  fontSize: 9,
+  color: 'var(--mute-on-paper)',
+}
+
+/**
+ * The single-plot record, opened by long-pressing a plot on the map. Same
+ * paper stock as the claim form — it is the deed page for one plot, and the
+ * buy button on it files a one-line claim.
+ */
 export default function PixelInfoPanel({
   visible,
   pixel,
@@ -56,195 +76,160 @@ export default function PixelInfoPanel({
       ? Math.round(dealDepth(pixel.currentPrice, initialPrice) * 100)
       : 0
 
-  const firstLetter = pixel.label ? pixel.label[0].toUpperCase() : '?'
-  const firstLetterColor = pixel.label ? 'white' : 'var(--text-muted)'
   const prevPrice = pixel.currentPrice / 2n
   const ownerDisplay = pixel.label || generateUsername(pixel.owner)
   const isOwned = pixel.owner !== ZERO_ADDRESS
-  // Owned pixels show the owner's color (on-chain, or the deterministic
-  // per-address fallback when unset); truly unowned land stays cream.
-  const avatarColor = isOwned
+  // Owned plots show the holder's colour (on-chain, or the deterministic
+  // per-address fallback when unset); unclaimed land stays the stone tone the
+  // map draws it in.
+  const holderColor = isOwned
     ? pixel.color || ownerDefaultColor(pixel.owner)
-    : '#e0d8ce'
+    : FREE_LAND
+
+  const stats: { label: string; value: string; unit: string }[] = [
+    { label: 'ASKING', value: formatUSDT(pixel.currentPrice), unit: 'USD' },
+    { label: 'LAST PAID', value: formatUSDT(prevPrice), unit: 'USD' },
+    { label: 'CHANGED HANDS', value: String(pixel.saleCount), unit: '×' },
+  ]
 
   return (
     <div
+      className="surface-paper"
       style={{
         position: 'fixed',
         bottom: 56,
         left: 0,
         right: 0,
         zIndex: 50,
-        background: 'var(--card-bg)',
-        borderRadius: '18px 18px 0 0',
+        borderTop: '3px solid var(--ink)',
         transform: visible ? 'translateY(0)' : 'translateY(100%)',
-        transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
+        transition: 'transform var(--transition-drawer)',
       }}
     >
-      {/* Drag handle */}
+      {/* Masthead — plot id on the left, dismiss on the right. */}
       <div
         style={{
-          width: 32,
-          height: 3,
-          borderRadius: 2,
-          background: '#c0b8ae',
-          margin: '10px auto 0',
-        }}
-      />
-
-      {/* Owner row */}
-      <div
-        style={{
-          padding: '8px 14px 10px',
-          borderBottom: '1px solid var(--border)',
+          height: 40,
+          background: 'var(--ink)',
           display: 'flex',
-          flexDirection: 'row',
           alignItems: 'center',
-          gap: 10,
+          justifyContent: 'space-between',
+          padding: '0 14px',
         }}
       >
-        {/* Avatar — owner color stays as-is */}
-        <div
+        <span style={{ ...LABEL, color: 'var(--paper)', letterSpacing: '0.2em' }}>
+          PLOT {String(pixelId).padStart(6, '0')}
+        </span>
+        <button
+          onClick={onDismiss}
+          aria-label="Close"
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 11,
-            background: avatarColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            ...LABEL,
+            fontSize: 13,
+            color: 'var(--mute-on-ink)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0 0 0 10px',
           }}
         >
-          <span style={{ fontSize: 16, fontWeight: 500, color: firstLetterColor }}>
-            {firstLetter}
-          </span>
-        </div>
+          ✕
+        </button>
+      </div>
+      <div className="punch" />
 
-        {/* Middle */}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text)' }}>{ownerDisplay}</div>
-          <div style={{ fontSize: 7, color: 'var(--text-muted)', letterSpacing: 0.5 }}>
-            {truncateAddress(pixel.owner)}
+      {/* Holder */}
+      <div style={{ padding: '14px 16px 0', display: 'flex', gap: 12, alignItems: 'center' }}>
+        <span
+          aria-hidden
+          style={{
+            width: 44,
+            height: 44,
+            flex: '0 0 auto',
+            background: holderColor,
+            border: '3px solid var(--ink)',
+            boxShadow: '3px 3px 0 var(--ink)',
+          }}
+        />
+        <div style={{ minWidth: 0 }}>
+          <div style={LABEL_MUTED}>{isOwned ? 'HELD BY' : 'HELD BY'}</div>
+          <div
+            className="font-display"
+            style={{
+              fontSize: 20,
+              lineHeight: 1.05,
+              color: 'var(--ink)',
+              marginTop: 3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isOwned ? ownerDisplay.toUpperCase() : 'NOBODY — VIRGIN LAND'}
           </div>
-        </div>
-
-        {/* Sale count */}
-        <div>
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 0.5 }}>SALE #</div>
-          <div style={{ fontSize: 8, color: 'var(--text)' }}>{pixel.saleCount}</div>
+          {isOwned && (
+            <div style={{ ...LABEL_MUTED, marginTop: 3 }}>{truncateAddress(pixel.owner)}</div>
+          )}
         </div>
       </div>
 
-      {/* Label field */}
-      <div style={{ padding: '7px 14px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 1 }}>LABEL</div>
-        <div style={{ fontSize: 9, color: 'var(--text)' }}>{pixel.label || '—'}</div>
-      </div>
-
-      {/* URL field removed — unverified user-entered URLs are an injection /
-          phishing vector. Re-add once URL verification is in place. */}
-
-      {/* Price cards row */}
-      <div style={{ padding: '8px 14px', display: 'flex', gap: 8 }}>
-        {/* BUY PRICE */}
-        <div
-          style={{
-            flex: 1,
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: '6px 8px',
-          }}
-        >
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 2 }}>
-            BUY PRICE
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>
-            {formatUSDT(pixel.currentPrice)}
-          </div>
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', marginTop: 1 }}>USDT</div>
-        </div>
-
-        {/* PREV SALE */}
-        <div
-          style={{
-            flex: 1,
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: '6px 8px',
-          }}
-        >
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 2 }}>
-            PREV SALE
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>
-            {formatUSDT(prevPrice)}
-          </div>
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', marginTop: 1 }}>USDT</div>
-        </div>
-
-        {/* SOLD */}
-        <div
-          style={{
-            flex: 1,
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: '6px 8px',
-          }}
-        >
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 2 }}>
-            SOLD
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>
-            {pixel.saleCount}
-          </div>
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', marginTop: 1 }}>×</div>
+      {/* Figures — one bordered grid, the way the deed prints its stats. */}
+      <div style={{ padding: '14px 16px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '3px solid var(--ink)' }}>
+          {stats.map((s, i) => (
+            <div
+              key={s.label}
+              style={{
+                padding: '10px 9px',
+                borderRight: i < stats.length - 1 ? '3px solid var(--ink)' : undefined,
+              }}
+            >
+              <div className="font-display" style={{ fontSize: 22, lineHeight: 1, color: 'var(--ink)' }}>
+                {s.value}
+              </div>
+              <div style={{ ...LABEL_MUTED, fontSize: 8, marginTop: 3 }}>
+                {s.label} · {s.unit}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Falling price — continuous decay while unsold, map-global rate */}
+      {/* Decay — continuous while unsold, at the map-global rate. */}
       {fallPct !== null && (
-        <div style={{ padding: '0 14px 4px' }}>
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 1 }}>
-            UNSOLD PRICE FALLS ~{fallPct.toFixed(1)}%/DAY
+        <div style={{ padding: '12px 16px 0' }}>
+          <div style={{ ...LABEL_MUTED, lineHeight: 1.6 }}>
+            UNSOLD, THIS PLOT LOSES ~{fallPct.toFixed(1)}% OF ITS PRICE EVERY DAY.
           </div>
           {depthPct > 0 && (
-            <div style={{ fontSize: 6, color: 'var(--brand-lime)', letterSpacing: 1, marginTop: 3 }}>
-              NOW {depthPct}% UNDER ENTRY PRICE — SOMEONE WILL NOTICE
+            <div style={{ ...LABEL, fontSize: 10, color: 'var(--rot)', marginTop: 5, lineHeight: 1.6 }}>
+              NOW {depthPct}% UNDER ENTRY PRICE — SOMEONE WILL NOTICE.
             </div>
           )}
         </div>
       )}
 
-      {/* Buy button */}
-      <div style={{ padding: '4px 14px 0' }}>
+      {/* Claim */}
+      <div style={{ padding: '14px 16px 16px' }}>
         <button
           onClick={() => onBuyThisPixel(pixelId)}
           className="pixel-btn pixel-btn-filled font-display"
           style={{
             width: '100%',
-            fontSize: 10,
-            letterSpacing: 2,
-            padding: 12,
+            fontSize: 15,
+            letterSpacing: '0.08em',
+            padding: '15px 12px',
+            textTransform: 'none',
+            cursor: 'pointer',
           }}
         >
-          BUY THIS PIXEL
+          TAKE IT · {formatUSDT(pixel.currentPrice)}
         </button>
-      </div>
-
-      {/* Note */}
-      <div
-        style={{
-          fontSize: 7,
-          color: 'var(--text-muted)',
-          textAlign: 'center',
-          marginTop: 5,
-          paddingBottom: 14,
-        }}
-      >
-        previous owner gets {formatUSDT(pixel.currentPrice)} USDT instantly
+        <div style={{ ...LABEL_MUTED, textAlign: 'center', marginTop: 8, lineHeight: 1.6 }}>
+          {isOwned
+            ? `THE OLD HOLDER IS PAID ${formatUSDT(pixel.currentPrice)} IN FULL, INSTANTLY.`
+            : 'NOBODY HAS EVER HELD THIS PLOT.'}
+        </div>
       </div>
     </div>
   )

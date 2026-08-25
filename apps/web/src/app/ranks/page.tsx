@@ -28,8 +28,7 @@ import { useReadClient } from '@/hooks/useReadClient'
 import { uint24ToHex } from '@/lib/colorUtils'
 import { decodeBytes } from '@/lib/decodeBytes'
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
-const BRAND_LIME = '#A7FF05'
+const MONO = "'Space Mono', monospace"
 
 // Owner profiles (custom label/color) are cosmetic decoration, so cache the
 // resolved set per map for 30s — matching the global board's snapshot TTL — so
@@ -75,7 +74,7 @@ function gapCopy(tab: LeaderboardTab, you: YouStanding): string {
   const target = `#${you.entry.rank - 1}`
   if (you.gapValue === null) return ''
   if (tab === 'TYCOONS') return `$${you.gapValue} FROM ${target}`
-  return `${you.gapValue} PX FROM ${target}`
+  return `${you.gapValue} PLOTS FROM ${target}`
 }
 
 export default function RanksPage() {
@@ -266,7 +265,10 @@ export default function RanksPage() {
   const isLoading = loading || boardsLoading
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 60 }}>
+    <div
+      className="surface-paper"
+      style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 56 }}
+    >
       <TopBar title="TERRENO" />
       {showSelector && (
         <BoardSelector
@@ -279,45 +281,22 @@ export default function RanksPage() {
         />
       )}
       <LeaderboardTabs activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
-      {/* Flex the player's BEST standing across the three boards (with its board
-          name). Shown whenever they're ranked on any board — the shared card +
-          link recruit challengers. */}
-      {bestBoard && (
-        <div style={{ maxWidth: 500, width: '100%', margin: '0 auto', padding: '8px 16px 0' }}>
-          <ShareButton
-            kind="rank"
-            label="SHARE MY RANK"
-            params={{
-              name: bestBoard.s.entry.label,
-              rank: bestBoard.s.entry.rank,
-              value: bestBoard.s.entry.value,
-              unit: bestBoard.s.entry.unit,
-              board: bestBoard.board,
-              mapId: selectedMapId,
-              mapName: terrenoContract.displayName,
-              ref: address?.toLowerCase(),
-              color: bestBoard.s.entry.color?.replace('#', ''),
-            }}
-          />
-        </div>
-      )}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
-          background: 'var(--bg)',
-          padding: '8px 0',
-          paddingBottom: 56,
+          padding: '14px 16px',
+          // Clear the fixed bottom nav only when the broadcast strip isn't
+          // there to do it — otherwise the list ends in 70px of nothing.
+          paddingBottom: bestBoard ? 14 : 70,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'flex-start',
         }}
       >
         {isLoading || !hasOwned ? (
-          // Loading and empty states share one centered layout so the
-          // GIF lands at the exact same spot in both — the caption slot
-          // below is always reserved (rendered empty while loading) so
-          // the GIF doesn't jump up when the "no claims yet" text appears.
+          // Loading and empty share one centred layout so the mark lands at
+          // the same spot in both; the caption slot below is always reserved
+          // (rendered empty while loading) so nothing jumps when it fills.
           <div
             style={{
               flex: 1,
@@ -325,7 +304,7 @@ export default function RanksPage() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
+              gap: 14,
             }}
           >
             <img
@@ -341,13 +320,18 @@ export default function RanksPage() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 8,
-                minHeight: 32,
+                minHeight: 48,
+                textAlign: 'center',
               }}
             >
               {!isLoading && (
                 <>
-                  <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>no claims yet</span>
-                  <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>be the first to own the world</span>
+                  <span className="font-display" style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.05 }}>
+                    NO CLAIMS YET
+                  </span>
+                  <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 9, letterSpacing: '0.16em', color: 'var(--mute-on-paper)' }}>
+                    BE THE FIRST TO TAKE SOMETHING
+                  </span>
                 </>
               )}
             </div>
@@ -360,6 +344,7 @@ export default function RanksPage() {
                 <LeaderboardRow
                   key={entry.owner}
                   entry={entry}
+                  board={activeTab}
                   // The reigning "Ruler of <map>" is rank-1 of a map's LAND board.
                   isRuler={activeTab === 'AREA' && entry.rank === 1}
                   isYou={isYou}
@@ -370,19 +355,13 @@ export default function RanksPage() {
             {!showAll && currentData.length > 20 && (
               <button
                 onClick={() => setShowAll(true)}
+                className="pixel-btn"
                 style={{
-                  display: 'block',
-                  margin: '12px auto',
-                  fontSize: 8,
-                  fontFamily: PIXEL_FONT,
-                  color: '#A7FF05',
-                  background: 'none',
-                  border: '1px solid #A7FF05',
-                  borderRadius: 0,
-                  padding: '8px 16px',
+                  alignSelf: 'center',
+                  margin: '6px auto 4px',
+                  fontSize: 10,
+                  padding: '10px 20px',
                   cursor: 'pointer',
-                  letterSpacing: 2,
-                  textTransform: 'uppercase',
                 }}
               >
                 SHOW MORE
@@ -395,46 +374,80 @@ export default function RanksPage() {
               <div
                 style={{
                   position: 'sticky',
-                  bottom: 56,
+                  bottom: 0,
                   zIndex: 5,
-                  background: 'var(--bg)',
+                  paddingTop: 8,
+                  background: 'var(--paper)',
                 }}
               >
-                <LeaderboardRow entry={youStanding.entry} isYou gapText={youText} />
+                <LeaderboardRow entry={youStanding.entry} board={activeTab} isYou gapText={youText} />
               </div>
             )}
             {addrLower && !youStanding && (
-              // Connected but owning nothing on this board — slim nudge row.
+              // Connected but holding nothing on this board — nudge block.
               <div
                 style={{
                   position: 'sticky',
-                  bottom: 56,
+                  bottom: 0,
                   zIndex: 5,
-                  background: 'var(--bg)',
+                  paddingTop: 8,
+                  background: 'var(--paper)',
                 }}
               >
                 <div
                   style={{
                     maxWidth: 500,
                     margin: '0 auto',
-                    padding: '10px 16px',
-                    border: `1px solid ${BRAND_LIME}`,
-                    background: 'rgba(167,255,5,0.08)',
-                    fontSize: 7,
-                    fontFamily: PIXEL_FONT,
-                    letterSpacing: 1.5,
-                    lineHeight: 1.6,
-                    color: BRAND_LIME,
-                    textAlign: 'center',
+                    padding: '12px 14px',
+                    border: '3px solid var(--ink)',
+                    boxShadow: '4px 4px 0 var(--rot)',
                   }}
                 >
-                  {"YOU'RE UNRANKED — CLAIM A PIXEL"}
+                  <div className="font-display" style={{ fontSize: 17, color: 'var(--ink)', lineHeight: 1.1 }}>
+                    {"YOU ARE NOT ON THIS LEDGER."}
+                  </div>
+                  <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 9, letterSpacing: '0.14em', color: 'var(--mute-on-paper)', marginTop: 5 }}>
+                    TAKE ONE PLOT AND THAT CHANGES.
+                  </div>
                 </div>
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Flex the player's BEST standing across the three boards (with its
+          board name). Pinned above the nav rather than floated in the middle
+          of the list, so it can't be scrolled past and lost. */}
+      {bestBoard && (
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '10px 16px',
+            borderTop: '3px solid var(--ink)',
+            background: 'var(--paper)',
+            marginBottom: 56,
+          }}
+        >
+          <div style={{ maxWidth: 500, width: '100%', margin: '0 auto' }}>
+            <ShareButton
+              kind="rank"
+              label="BROADCAST MY RANK"
+              params={{
+                name: bestBoard.s.entry.label,
+                rank: bestBoard.s.entry.rank,
+                value: bestBoard.s.entry.value,
+                unit: bestBoard.s.entry.unit,
+                board: bestBoard.board,
+                mapId: selectedMapId,
+                mapName: terrenoContract.displayName,
+                ref: address?.toLowerCase(),
+                color: bestBoard.s.entry.color?.replace('#', ''),
+              }}
+            />
+          </div>
+        </div>
+      )}
       <BottomNav activeRoute="/ranks" />
     </div>
   )

@@ -31,11 +31,80 @@ import { TERRENO_ABI } from '@/lib/contract'
 import { decodeBytes } from '@/lib/decodeBytes'
 import { uint24ToHex } from '@/lib/colorUtils'
 import { PAINT_SCALE } from '@/constants/map'
+import { LENS_BAR_BOTTOM } from '@/constants/layout'
 import { useReadClient } from '@/hooks/useReadClient'
 import { geoToPixel, pixelId as pixelIdFn } from '@/lib/pixelMath'
 import { isLand } from '@/lib/landMask'
 import { storeReferrer, track } from '@/lib/analytics'
 import type { MapId } from '@/lib/maps/types'
+
+/** The four ways of reading the same map, in bar order. */
+const MAP_LENSES = [
+  { view: 'normal', label: 'ATLAS' },
+  { view: 'heatmap', label: 'HEAT' },
+  { view: 'deals', label: 'ROT' },
+  { view: 'myland', label: 'MINE' },
+] as const
+
+type MapLens = (typeof MAP_LENSES)[number]['view']
+
+/** Each lens owns an accent; the rule under the bar takes the active one. */
+const LENS_ACCENT: Record<MapLens, string> = {
+  normal: 'var(--held)',
+  heatmap: 'var(--fresh)',
+  deals: 'var(--rot)',
+  myland: 'var(--yours)',
+}
+
+/** Yellow and orange need ink on top of them; blue and purple need paper. */
+const LENS_LABEL_ON_ACCENT: Record<MapLens, string> = {
+  normal: 'var(--paper)',
+  heatmap: 'var(--ink)',
+  deals: 'var(--ink)',
+  myland: 'var(--paper)',
+}
+
+/**
+ * A square control that sits on the map: paper plate, ink border, blue offset
+ * shadow. Used for zoom in / recentre / zoom out.
+ */
+function MapPlateButton({
+  label,
+  glyph,
+  small,
+  onClick,
+}: {
+  label: string
+  glyph: string
+  small?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      style={{
+        width: 38,
+        height: 38,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--paper)',
+        color: 'var(--ink)',
+        border: '3px solid var(--ink)',
+        boxShadow: '3px 3px 0 var(--held)',
+        cursor: 'pointer',
+        padding: 0,
+        fontFamily: small ? "'Space Mono', monospace" : "'Archivo Black', sans-serif",
+        fontWeight: small ? 700 : 400,
+        fontSize: small ? 10 : 20,
+        lineHeight: 1,
+      }}
+    >
+      {glyph}
+    </button>
+  )
+}
 
 export default function Home() {
   // Dark is the only theme now; downstream map components still take the flag
@@ -469,72 +538,68 @@ export default function Home() {
       {/* Top bar */}
       <TopBar title="TERRENO" />
 
-      {/* HEATMAP / MY LAND / DEALS toggle — sits under the TopBar on the lime band */}
+      {/* Lens bar. Four segments, one per way of reading the same map, each
+          with its own accent so the active lens is legible from the colour of
+          the rule under it as well as from the fill. ATLAS is the plain view;
+          tapping the active lens does NOT return to it (the segment is a
+          radio, not a toggle) — ATLAS is its own segment now. */}
       <div
         style={{
           position: 'absolute',
           top: 56,
           left: 0,
           right: 0,
-          height: 26,
+          height: 40,
           zIndex: 9,
-          background: 'var(--brand-lime)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          padding: '0 14px',
-          gap: 6,
+          display: 'grid',
+          gridTemplateColumns: `repeat(${MAP_LENSES.length}, 1fr)`,
+          background: 'var(--ink)',
+          borderBottom: `3px solid ${LENS_ACCENT[mapView]}`,
         }}
       >
         {/* analytics: deals_view_opened lands with the analytics baseline */}
-        {(['heatmap', 'myland', 'deals'] as const).map((v, i) => {
-          const active = mapView === v
+        {MAP_LENSES.map(({ view, label }) => {
+          const active = mapView === view
           return (
-            <React.Fragment key={v}>
-              {i > 0 && (
-                <span
-                  className="font-display"
-                  style={{ fontSize: 10, color: 'var(--brand-black)', letterSpacing: 2 }}
-                >
-                  /
-                </span>
-              )}
-              <button
-                onClick={() => {
-                  const next = mapView === v ? 'normal' : v
-                  setMapView(next)
-                  track('map_view_toggled', { view: next })
-                }}
-                className="font-display"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: 2,
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--brand-black)',
-                  opacity: active ? 1 : 0.5,
-                  cursor: 'pointer',
-                  padding: 0,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {v === 'myland' ? 'MY LAND' : v === 'deals' ? 'DEALS' : 'HEATMAP'}
-              </button>
-            </React.Fragment>
+            <button
+              key={view}
+              onClick={() => {
+                setMapView(view)
+                track('map_view_toggled', { view })
+              }}
+              aria-current={active ? 'true' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Space Mono', monospace",
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.16em',
+                background: active ? LENS_ACCENT[view] : 'transparent',
+                color: active ? LENS_LABEL_ON_ACCENT[view] : 'var(--mute-on-ink)',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              {label}
+            </button>
           )
         })}
       </div>
 
-      {/* WorldCanvas — blue ocean is the wrapper background; land pixels are
-          drawn by PixelLayer on top. */}
+      {/* WorldCanvas — the locked-ocean fill is the wrapper background; land
+          plots are drawn by PixelLayer on top. 99 = 56 top bar + 40 lens bar +
+          its 3px rule; see LENS_BAR_BOTTOM in constants/layout.ts. */}
       <div
         style={{
           position: 'absolute',
-          top: 82,
+          top: LENS_BAR_BOTTOM,
           bottom: 56,
           left: 0,
           right: 0,
-          background: 'var(--brand-blue)',
+          background: 'var(--water)',
         }}
       >
         <WorldCanvas
@@ -556,11 +621,12 @@ export default function Home() {
         />
       </div>
 
-      {/* Zoom controls \u2014 brand pixel icons */}
+      {/* Zoom controls — paper plates with a blue offset shadow, so they read
+          as objects sitting on the map rather than as chrome painted into it. */}
       <div
         style={{
           position: 'absolute',
-          right: 10,
+          right: 12,
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 12,
@@ -569,27 +635,14 @@ export default function Home() {
           gap: 8,
         }}
       >
-        <button
-          onClick={() => canvasRef.current?.zoomIn()}
-          aria-label="Zoom in"
-          style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-        >
-          <img src="/brand/icons/zoom-in.svg" alt="" width={36} height={36} style={{ imageRendering: 'pixelated' }} />
-        </button>
-        <button
+        <MapPlateButton label="Zoom in" glyph="+" onClick={() => canvasRef.current?.zoomIn()} />
+        <MapPlateButton
+          label="Recenter"
+          glyph={`${Math.max(1, Math.round(currentScale))}×`}
+          small
           onClick={() => canvasRef.current?.recenter()}
-          aria-label="Recenter"
-          style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-        >
-          <img src="/brand/icons/centre.svg" alt="" width={36} height={36} style={{ imageRendering: 'pixelated' }} />
-        </button>
-        <button
-          onClick={() => canvasRef.current?.zoomOut()}
-          aria-label="Zoom out"
-          style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-        >
-          <img src="/brand/icons/zoom-out.svg" alt="" width={36} height={36} style={{ imageRendering: 'pixelated' }} />
-        </button>
+        />
+        <MapPlateButton label="Zoom out" glyph="–" onClick={() => canvasRef.current?.zoomOut()} />
       </div>
 
       {/* Paint mode banner */}
@@ -625,20 +678,20 @@ export default function Home() {
             bottom: 92,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--brand-lime)',
-            color: 'var(--text)',
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            letterSpacing: 1,
-            borderRadius: 12,
-            padding: '8px 14px',
+            background: 'var(--surface-2)',
+            border: '2px solid var(--rot)',
+            color: 'var(--rot)',
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: 9,
+            letterSpacing: '0.14em',
+            padding: '9px 14px',
             zIndex: 16,
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
           }}
         >
-          ZOOM IN TO SELECT A PIXEL
+          ZOOM IN TO SELECT A PLOT
         </div>
       )}
       <CampaignBanner />
@@ -654,20 +707,20 @@ export default function Home() {
       {pixelCount > 0 && activeOverlay === 'none' && isConnected && (
         <button
           onClick={handleOpenDrawer}
-          className="pixel-btn pixel-btn-filled font-display"
+          className="pixel-btn pixel-btn-filled"
           style={{
             position: 'absolute',
             bottom: 90,
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 15,
-            fontSize: 10,
-            letterSpacing: 2,
-            padding: '10px 24px',
+            fontSize: 12,
+            letterSpacing: '0.18em',
+            padding: '12px 24px',
             whiteSpace: 'nowrap',
           }}
         >
-          REVIEW {pixelCount} PIXELS
+          REVIEW {pixelCount} {pixelCount === 1 ? 'PLOT' : 'PLOTS'} →
         </button>
       )}
       {pixelCount > 0 && activeOverlay === 'none' && !isConnected && (
@@ -678,18 +731,19 @@ export default function Home() {
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 15,
-            fontSize: 9,
-            fontFamily: "'Press Start 2P', monospace",
-            letterSpacing: 2,
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border)',
+            fontSize: 10,
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            letterSpacing: '0.16em',
+            background: 'var(--surface-2)',
+            border: '2px solid var(--hairline)',
             color: 'var(--text)',
-            padding: '10px 18px',
+            padding: '11px 18px',
             textAlign: 'center',
             maxWidth: 320,
           }}
         >
-          connect your wallet to buy
+          THE REGISTRY NEEDS A SIGNATURE
         </div>
       )}
 

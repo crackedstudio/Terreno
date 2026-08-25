@@ -93,11 +93,11 @@ export function ShareButton({
       <button
         onClick={onShare}
         aria-label={compact ? label : undefined}
-        className={`pixel-btn font-display${filled ? ' pixel-btn-filled' : ''}`}
+        className={`pixel-btn${filled ? ' pixel-btn-filled' : ''}`}
         style={
           compact
-            ? { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', fontSize: 9, letterSpacing: 1.5, padding: '11px 8px', cursor: 'pointer' }
-            : { display: 'block', width: '100%', fontSize: 10, letterSpacing: 2, padding: 12, cursor: 'pointer' }
+            ? { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', fontSize: 10, padding: '11px 8px', cursor: 'pointer' }
+            : { display: 'flex', width: '100%', fontSize: 12, padding: 13, cursor: 'pointer' }
         }
       >
         {icon ? <span style={{ display: 'flex', width: 14, height: 14 }}>{icon}</span> : null}
@@ -113,9 +113,9 @@ export function ShareButton({
             left: 0,
             right: 0,
             zIndex: 50,
-            background: 'var(--card-bg)',
-            border: '2px solid var(--brand-lime)',
-            borderRadius: 8,
+            background: 'var(--surface)',
+            border: '3px solid var(--edge)',
+            boxShadow: '4px 4px 0 var(--edge)',
             padding: 6,
             display: 'flex',
             flexDirection: 'column',
@@ -144,19 +144,18 @@ function TargetRow({ icon, label, onClick }: { icon: React.ReactNode; label: str
         gap: 10,
         width: '100%',
         padding: '9px 10px',
-        fontSize: 9,
+        fontSize: 10,
         letterSpacing: 1.5,
         color: 'var(--text)',
         background: 'transparent',
         border: 'none',
-        borderRadius: 6,
         cursor: 'pointer',
         textAlign: 'left',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(167,255,5,0.12)')}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(31,59,232,0.14)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
-      <span style={{ display: 'flex', width: 16, height: 16, color: 'var(--brand-lime)' }}>{icon}</span>
+      <span style={{ display: 'flex', width: 16, height: 16, color: 'var(--held)' }}>{icon}</span>
       {label.toUpperCase()}
     </button>
   )

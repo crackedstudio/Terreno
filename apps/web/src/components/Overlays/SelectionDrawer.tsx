@@ -10,6 +10,7 @@ import { TOPUP_URL } from '@/lib/deeplinks'
 import { isOverSpendCap } from '@/lib/buyLimits'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { useMaps } from '@/hooks/useMaps'
+import { getMapContractById } from '@/lib/maps/contracts'
 import { track } from '@/lib/analytics'
 import TxProgress from './TxProgress'
 import SuccessState from './SuccessState'
@@ -190,254 +191,343 @@ export default function SelectionDrawer({
 
   const ownerCount = groups.filter(g => g.owner !== ZERO_ADDRESS).length
 
+
+  const mapName = getMapContractById(currentMapId).displayName
+  // Every sale doubles the plot's price, so what the next buyer would pay for
+  // this same set is exactly twice the total on the form. Derived, not
+  // guessed — the doubling is the contract's own rule.
+  const nextBuyerPays = totalPrice * 2n
+  const blocked = insufficient || overCap || priceLoading
+
   return (
     <div
+      className="surface-paper"
       style={{
         position: 'fixed',
         bottom: 56,
         left: 0,
         right: 0,
         zIndex: 50,
-        background: 'var(--card-bg)',
-        borderRadius: '18px 18px 0 0',
+        borderTop: '3px solid var(--ink)',
         transform: visible ? 'translateY(0)' : 'translateY(100%)',
-        transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
-        maxHeight: '55vh',
-        paddingBottom: 14,
+        transition: 'transform var(--transition-drawer)',
+        maxHeight: '72vh',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* Drag handle */}
-      <div style={{ width: 32, height: 3, borderRadius: 2, background: '#c0b8ae', margin: '10px auto 8px', flexShrink: 0 }} />
+      {/* Form masthead + punch-card perforation. Present in every state so the
+          drawer keeps its identity through the whole signing flow. */}
+      <div
+        style={{
+          flexShrink: 0,
+          height: 40,
+          background: 'var(--ink)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 14px',
+        }}
+      >
+        <span style={{ ...LABEL, color: 'var(--paper)', letterSpacing: '0.2em' }}>
+          FORM 03-B · CLAIM
+        </span>
+        <span style={{ ...LABEL, color: 'var(--mute-on-ink)' }}>{mapName.toUpperCase()}</span>
+      </div>
+      <div className="punch" style={{ flexShrink: 0 }} />
 
       {/* Success state */}
       {txStep === 'success' && txHash && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '18px 0' }}>
           <SuccessState pixelCount={pixelCount} totalPaid={`${formatUSDT(totalPrice)} ${payToken}`} txHash={txHash} onDone={onDone} />
         </div>
       )}
 
       {/* TX in progress */}
       {isTxActive && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 20px', maxWidth: 500, margin: '0 auto', width: '100%' }}>
-          <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <div style={{ fontSize: 7, fontFamily: "'Press Start 2P', monospace", color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>THE DAMAGE</div>
-            <div style={{ fontSize: 18, fontFamily: "'Press Start 2P', monospace", color: 'var(--text)' }}>{formatUSDT(totalPrice)} <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{payToken}</span></div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 16px 16px', maxWidth: 500, margin: '0 auto', width: '100%' }}>
+          <div style={LABEL_MUTED}>FILING</div>
+          <div className="font-display" style={{ fontSize: 40, lineHeight: 0.95, color: 'var(--ink)' }}>
+            {formatUSDT(totalPrice)}{' '}
+            <span style={{ ...LABEL, fontSize: 12 }}>{payToken}</span>
           </div>
-          <TxProgress step={txStep} />
+          <div style={{ marginTop: 14 }}>
+            <TxProgress step={txStep} />
+          </div>
           {awaitingConfirm && (
-            <div
-              style={{
-                fontSize: 6,
-                fontFamily: "'Press Start 2P', monospace",
-                color: 'var(--text-muted)',
-                letterSpacing: 1,
-                lineHeight: 1.6,
-                textAlign: 'center',
-                marginTop: 8,
-              }}
-            >
-              one more tap to buy — your wallet will ask again
+            <div style={{ ...LABEL_MUTED, marginTop: 10, lineHeight: 1.6 }}>
+              ONE MORE TAP TO SIGN — YOUR WALLET WILL ASK AGAIN
             </div>
           )}
-          <div style={{ flex: 1 }} />
+          <div style={{ flex: 1, minHeight: 12 }} />
           {awaitingConfirm ? (
             <button
               onClick={onConfirmPurchase}
-              className="pixel-btn pixel-btn-filled font-display"
-              style={{
-                width: '100%',
-                fontSize: 10,
-                letterSpacing: 2,
-                padding: 12,
-                cursor: 'pointer',
-              }}
+              className="pixel-btn pixel-btn-filled"
+              style={{ width: '100%', fontSize: 12, padding: 14, cursor: 'pointer' }}
             >
-              CONFIRM PURCHASE
+              SIGN · {formatUSDT(totalPrice)} {payToken}
             </button>
           ) : (
-          <button
-            disabled
-            className="pixel-btn pixel-btn-filled font-display"
-            style={{ width: '100%', fontSize: 10, letterSpacing: 2, padding: 12, opacity: 0.5, pointerEvents: 'none' }}
-          >
-            MAKING MOVES…
-          </button>
+            <button
+              disabled
+              className="pixel-btn pixel-btn-filled"
+              style={{ width: '100%', fontSize: 12, padding: 14, opacity: 0.5, pointerEvents: 'none' }}
+            >
+              WAITING ON CHAIN…
+            </button>
           )}
         </div>
       )}
 
-      {/* Idle / error — full buy view with breakdown */}
+      {/* Idle / error — the form itself */}
       {(txStep === 'idle' || txStep === 'error') && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 20px', overflow: 'hidden', maxWidth: 500, margin: '0 auto', width: '100%' }}>
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: 8, flexShrink: 0 }}>
-            <div style={{ fontSize: 7, fontFamily: "'Press Start 2P', monospace", color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>THE DAMAGE</div>
-            <div style={{ fontSize: 18, fontFamily: "'Press Start 2P', monospace", color: 'var(--text)' }}>
-              {priceLoading ? '...' : `${formatUSDT(totalPrice)}`} <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{payToken}</span>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxWidth: 500, margin: '0 auto', width: '100%', position: 'relative' }}>
+          {/* An unsigned form is stamped as such. Rotated and bleeding off the
+              right edge so it reads as applied to the paper, not printed on it. */}
+          <span
+            aria-hidden
+            className="stamp"
+            style={{ position: 'absolute', right: -8, top: 10, zIndex: 2 }}
+          >
+            UNSTAMPED
+          </span>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
+            <div className="font-display" style={{ fontSize: 32, lineHeight: 0.94, color: 'var(--ink)' }}>
+              {pixelCount} {pixelCount === 1 ? 'PLOT' : 'PLOTS'}
+              <br />
+              ENTERED
             </div>
-            <div style={{ fontSize: 7, fontFamily: "'Press Start 2P', monospace", color: 'var(--text-muted)', marginTop: 6, letterSpacing: 1 }}>
-              {pixelCount} spots · {ownerCount > 0 ? `${ownerCount} player${ownerCount > 1 ? 's' : ''} to outbid` : 'free real estate'}
+            <div style={{ ...LABEL_MUTED, marginTop: 8 }}>
+              {ownerCount > 0
+                ? `${ownerCount} ${ownerCount > 1 ? 'HOLDERS' : 'HOLDER'} TO OUTBID`
+                : 'NOBODY HOLDS ANY OF IT'}
             </div>
+
+            {/* Holder table */}
+            <div style={{ marginTop: 18 }}>
+              <div style={{ ...ROW_GRID, ...LABEL_MUTED, borderBottom: '3px solid var(--ink)', paddingBottom: 6 }}>
+                <span>CURRENT HOLDER</span>
+                <span>PLOTS</span>
+                <span style={{ textAlign: 'right' }}>{payToken}</span>
+                <span />
+              </div>
+              {groups.map((group, i) => {
+                const isUnowned = group.owner === ZERO_ADDRESS
+                const prof = profilesMap?.get(group.owner.toLowerCase())
+                const name = prof?.label || group.label ||
+                  (isUnowned ? 'NOBODY — VIRGIN LAND' : generateUsername(group.owner))
+                return (
+                  <div
+                    key={group.owner}
+                    style={{
+                      ...ROW_GRID,
+                      alignItems: 'baseline',
+                      padding: '11px 0',
+                      borderBottom: i === groups.length - 1
+                        ? '3px solid var(--ink)'
+                        : '1px solid var(--free)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        ...LABEL,
+                        fontSize: 11,
+                        letterSpacing: '0.06em',
+                        color: isUnowned ? 'var(--mute-on-paper)' : 'var(--held)',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {name}
+                    </span>
+                    <span style={{ ...LABEL, fontSize: 11, color: 'var(--ink)' }}>{group.count}</span>
+                    <span className="font-display" style={{ fontSize: 16, color: 'var(--ink)', textAlign: 'right' }}>
+                      {formatUSDT(group.price)}
+                    </span>
+                    <button
+                      onClick={() => onRemovePixels(group.pixelIds)}
+                      aria-label={`Remove ${name} from the form`}
+                      style={{
+                        ...LABEL,
+                        fontSize: 11,
+                        color: 'var(--mute-on-paper)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0 0 0 6px',
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Total + balance */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 14 }}>
+              <div>
+                <div style={LABEL_MUTED}>TOTAL DUE</div>
+                <div className="font-display" style={{ fontSize: 42, lineHeight: 0.9, color: 'var(--ink)' }}>
+                  {priceLoading ? '…' : formatUSDT(totalPrice)}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={LABEL_MUTED}>YOUR BALANCE</div>
+                <div style={{ ...LABEL, fontSize: 14, color: 'var(--ink)' }}>
+                  {formatUSDT(userBalance)} {payToken}
+                </div>
+                {!priceLoading && !insufficient && totalPrice > 0n && (
+                  <div style={{ ...LABEL_MUTED, color: 'var(--held)', marginTop: 3 }}>
+                    ENOUGH — SIGN AWAY
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Warnings. Each is its own bordered block so a form with two
+                problems reads as two problems, not one paragraph. */}
+            {insufficient && (
+              <div style={{ ...NOTICE, borderColor: 'var(--rot)', marginTop: 12 }}>
+                <div className="font-display" style={{ fontSize: 15, lineHeight: 1.15, color: 'var(--ink)' }}>
+                  SHORT BY {formatUSDT(totalPrice - userBalance)} {payToken}.
+                </div>
+                <div style={{ ...LABEL_MUTED, marginTop: 5, lineHeight: 1.6 }}>
+                  ONE CURRENCY PER CLAIM — TOP UP {payToken} OR ENTER FEWER PLOTS.
+                </div>
+                {TOPUP_URL && (
+                  <a
+                    href={TOPUP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      track('topup_clicked', {
+                        mapId: currentMapId,
+                        shortfallUsd: Number(totalPrice - userBalance) / 1_000_000,
+                        token: payToken,
+                      })
+                    }
+                    className="pixel-btn pixel-btn-sm"
+                    style={{ marginTop: 10, fontSize: 10, textDecoration: 'none' }}
+                  >
+                    TOP UP BALANCE
+                  </a>
+                )}
+              </div>
+            )}
+            {overCap && !insufficient && (
+              <div style={{ ...NOTICE, borderColor: 'var(--rot)', marginTop: 12 }}>
+                <div className="font-display" style={{ fontSize: 15, lineHeight: 1.15, color: 'var(--ink)' }}>
+                  OVER THE $10 CAP.
+                </div>
+                <div style={{ ...LABEL_MUTED, marginTop: 5, lineHeight: 1.6 }}>
+                  EVERY CLAIM IS CAPPED AT $10 TO KEEP YOUR WALLET SAFE. TRIM THE FORM.
+                </div>
+              </div>
+            )}
+            {userAddress && groups.some(g => g.owner.toLowerCase() === userAddress.toLowerCase()) && (
+              <div style={{ ...NOTICE, borderColor: 'var(--fresh)', marginTop: 12 }}>
+                <div style={{ ...LABEL_MUTED, lineHeight: 1.6, color: 'var(--ink)' }}>
+                  YOU ALREADY HOLD SOME OF THESE. CLAIMING AGAIN DOUBLES THEIR PRICE TOO.
+                </div>
+              </div>
+            )}
+
+            {/* The doubling rule, stated as the consequence of signing rather
+                than as a fact about the contract. */}
+            {totalPrice > 0n && (
+              <div style={{ background: 'var(--rot)', border: '3px solid var(--ink)', padding: '11px 13px', marginTop: 12 }}>
+                <div className="font-display" style={{ fontSize: 15, lineHeight: 1.15, color: 'var(--ink)' }}>
+                  SIGNING DOUBLES EVERY PRICE ON THIS FORM.
+                </div>
+                <div style={{ ...LABEL, fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink)', marginTop: 5 }}>
+                  THE NEXT BUYER PAYS {formatUSDT(nextBuyerPays)}. THAT BUYER MIGHT BE NOBODY.
+                </div>
+              </div>
+            )}
+
+            {/* Error — the short, human-readable reason from the buy flow.
+                Fall back to a generic line only when the error string is empty. */}
+            {txStep === 'error' && (
+              <div style={{ ...NOTICE, borderColor: 'var(--rot)', marginTop: 12 }}>
+                <div style={{ ...LABEL, fontSize: 10, color: 'var(--rot)', lineHeight: 1.6, wordBreak: 'break-word', textTransform: 'none' }}>
+                  {txError && txError.trim().length > 0 ? txError : "That didn't work. Try again?"}
+                </div>
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, flexShrink: 0 }}>
+
+          {/* Sign / discard. Pinned below the scroll area so the primary
+              action never scrolls out of reach on a long form. */}
+          <div style={{ flexShrink: 0, padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9, borderTop: '3px solid var(--ink)', background: 'var(--paper)' }}>
+            <div style={{ ...LABEL_MUTED, textAlign: 'center' }}>THE REGISTRY DOES NOT FORGET</div>
             <button
-              onClick={onClear}
-              className="font-display"
+              onClick={onBuy}
+              disabled={blocked}
+              className="pixel-btn pixel-btn-filled font-display"
               style={{
-                fontSize: 9,
-                letterSpacing: 2,
-                color: 'var(--brand-orange)',
-                border: '1px solid var(--brand-orange)',
-                padding: '6px 16px',
-                cursor: 'pointer',
-                background: 'transparent',
-                textTransform: 'uppercase',
+                width: '100%',
+                fontSize: 17,
+                letterSpacing: '0.08em',
+                padding: '16px 12px',
+                textTransform: 'none',
+                opacity: blocked ? 0.45 : 1,
+                cursor: blocked ? 'default' : 'pointer',
+                pointerEvents: blocked ? 'none' : 'auto',
               }}
             >
-              CLEAR
+              {priceLoading
+                ? 'CHECKING PRICES…'
+                : insufficient
+                  ? 'NOT ENOUGH FUNDS'
+                  : overCap
+                    ? 'TRIM TO $10'
+                    : `SIGN · ${formatUSDT(totalPrice)} ${payToken}`}
+            </button>
+            <button
+              onClick={onClear}
+              className="pixel-btn"
+              style={{ width: '100%', fontSize: 11, padding: '11px 12px', boxShadow: 'none', cursor: 'pointer' }}
+            >
+              DISCARD FORM
             </button>
           </div>
-
-          {/* Balance + warnings. Each buy is settled in a single stablecoin —
-              the user's preferred (highest-balance) one — so the balance and
-              the deficit are reported in THAT currency. The one-currency
-              rule is stated inline so the user understands why they can't
-              just spend their other balances. */}
-          <div style={{ fontSize: 7, fontFamily: "'Press Start 2P', monospace", color: 'var(--text-muted)', marginBottom: 4, flexShrink: 0, textAlign: 'center', letterSpacing: 1 }}>
-            balance: {formatUSDT(userBalance)} {payToken}
-          </div>
-          {insufficient && (
-            <div style={{ marginBottom: 6, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
-              <div style={{ fontSize: 7, color: 'var(--error)', textAlign: 'center', letterSpacing: 1, fontFamily: "'Press Start 2P', monospace" }}>
-                need {formatUSDT(totalPrice - userBalance)} more {payToken}
-              </div>
-              <div style={{ fontSize: 6, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: 1, fontFamily: "'Press Start 2P', monospace", maxWidth: 260, lineHeight: 1.5 }}>
-                one currency per buy — top up {payToken.toLowerCase()} or pick fewer pixels
-              </div>
-              {TOPUP_URL && (
-              <a
-                href={TOPUP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() =>
-                  track('topup_clicked', {
-                    mapId: currentMapId,
-                    shortfallUsd: Number(totalPrice - userBalance) / 1_000_000,
-                    token: payToken,
-                  })
-                }
-                className="pixel-btn pixel-btn-sm font-display"
-                style={{ fontSize: 8, letterSpacing: 2, textDecoration: 'none' }}
-              >
-                TOP UP BALANCE
-              </a>
-              )}
-            </div>
-          )}
-          {overCap && !insufficient && (
-            <div style={{ marginBottom: 6, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-              <div style={{ fontSize: 7, color: 'var(--error)', textAlign: 'center', letterSpacing: 1, fontFamily: "'Press Start 2P', monospace" }}>
-                over the $10 cap
-              </div>
-              <div style={{ fontSize: 6, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: 1, fontFamily: "'Press Start 2P', monospace", maxWidth: 260, lineHeight: 1.5 }}>
-                each buy is capped at $10 to keep your wallet safe — trim your pick to lock it in
-              </div>
-            </div>
-          )}
-          {userAddress && groups.some(g => g.owner.toLowerCase() === userAddress.toLowerCase()) && (
-            <div style={{ fontSize: 7, color: '#e6a817', marginBottom: 2, flexShrink: 0 }}>
-              ⚠ you already own some of these pixels — buying again will increase their price
-            </div>
-          )}
-
-          {/* Breakdown list */}
-          <div style={{ fontSize: 6, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 4, flexShrink: 0 }}>THE LOWDOWN</div>
-          <div style={{ flex: 1, overflowY: 'auto', marginBottom: 8 }}>
-            {groups.map((group) => {
-              const isUnowned = group.owner === ZERO_ADDRESS
-              return (
-                <div
-                  key={group.owner}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    padding: '5px 0',
-                    borderBottom: '1px solid var(--border)',
-                  }}
-                >
-                  {/* Color dot — owner colors stay as-is */}
-                  {isUnowned ? (
-                    <div style={{ width: 12, height: 12, borderRadius: 3, border: '0.5px dashed #c0b8ae', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 12, height: 12, borderRadius: 3, background: group.color || '#888', flexShrink: 0 }} />
-                  )}
-
-                  {/* Name — URL hidden, unverified user URLs are an XSS / phishing risk */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {(() => {
-                      const prof = profilesMap?.get(group.owner.toLowerCase())
-                      const name = prof?.label || group.label || (isUnowned ? 'unowned' : generateUsername(group.owner))
-                      return (
-                        <div style={{ fontSize: 8, color: isUnowned ? 'var(--text-muted)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase' }}>
-                          {name}
-                        </div>
-                      )
-                    })()}
-                  </div>
-
-                  {/* Count + price */}
-                  <span style={{ fontSize: 7, color: 'var(--text-muted)', flexShrink: 0, textTransform: 'uppercase' }}>{group.count} px</span>
-                  <span style={{ fontSize: 8, fontWeight: 500, color: 'var(--text)', flexShrink: 0 }}>{formatUSDT(group.price)}</span>
-
-                  {/* Remove button */}
-                  <button
-                    onClick={() => onRemovePixels(group.pixelIds)}
-                    style={{ fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Error — the short, human-readable reason from the buy flow.
-              Fall back to a generic line only when the error string is empty. */}
-          {txStep === 'error' && (
-            <div style={{ fontSize: 7, color: 'var(--error)', marginBottom: 4, flexShrink: 0, lineHeight: 1.5, wordBreak: 'break-word' }}>
-              {txError && txError.trim().length > 0 ? txError : "That didn't work. Try again?"}
-            </div>
-          )}
-
-          {/* Buy button */}
-          <button
-            onClick={onBuy}
-            disabled={insufficient || overCap || priceLoading}
-            className="pixel-btn pixel-btn-filled font-display"
-            style={{
-              width: '100%',
-              fontSize: 10,
-              letterSpacing: 2,
-              padding: 12,
-              opacity: insufficient || overCap || priceLoading ? 0.5 : 1,
-              cursor: insufficient || overCap || priceLoading ? 'default' : 'pointer',
-              pointerEvents: insufficient || overCap || priceLoading ? 'none' : 'auto',
-              flexShrink: 0,
-            }}
-          >
-            {priceLoading
-              ? 'CHECKING PRICES…'
-              : insufficient
-                ? 'NOT ENOUGH FUNDS'
-                : overCap
-                  ? 'TRIM TO $10'
-                  : `LOCK IT IN — ${formatUSDT(totalPrice)} ${payToken}`}
-          </button>
         </div>
       )}
     </div>
   )
+}
+
+/** Space Mono, bold, tracked — every label and data value on the form. */
+const LABEL: React.CSSProperties = {
+  fontFamily: "'Space Mono', monospace",
+  fontWeight: 700,
+  fontSize: 11,
+  letterSpacing: '0.16em',
+}
+
+/** The same, in the muted grey, for field captions. */
+const LABEL_MUTED: React.CSSProperties = {
+  ...LABEL,
+  fontSize: 9,
+  color: 'var(--mute-on-paper)',
+}
+
+/** Holder / plots / amount / remove — one grid so the columns line up
+ *  between the header row and every body row. */
+const ROW_GRID: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr auto auto auto',
+  gap: 10,
+}
+
+/** A bordered warning block on paper. The border colour carries the severity. */
+const NOTICE: React.CSSProperties = {
+  border: '3px solid var(--ink)',
+  padding: '11px 13px',
+  background: 'var(--paper)',
 }

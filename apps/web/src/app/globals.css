@@ -1,22 +1,7 @@
-/* Retro Computer is the display face (wordmark / headlines / buttons / nav).
-   IBM Plex Mono stays as the body/data face, loaded from Google Fonts in layout.tsx.
-   The 'Press Start 2P' alias points at the same Retro Computer TTF so all
-   existing components — which use `fontFamily: "'Press Start 2P', monospace"`
-   inline — pick up the new face without a thousand-file rewrite. */
-@font-face {
-  font-family: 'Retro Computer';
-  src: url('/brand/font/retro_computer_personal_use.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Press Start 2P';
-  src: url('/brand/font/retro_computer_personal_use.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* Terreno — "Mercury" registry design.
+   Two faces: Archivo Black carries figures and headlines, Space Mono carries
+   labels, data and body. Both are loaded from Google Fonts in layout.tsx;
+   nothing here should reference the old local pixel TTF. */
 
 @tailwind base;
 @tailwind components;
@@ -24,58 +9,80 @@
 
 @layer base {
   :root {
-    /* Brand palette (image-v6) — single source of truth */
-    --brand-white:  #FFFFFF;
-    --brand-black:  #1B1B1B;
-    --brand-lime:   #A7FF05;
-    --brand-orange: #FF4C00;
-    --brand-purple: #B430FF;
-    --brand-cream:  #F0E7D6;
-    --brand-blue:   #71BBFF;
+    /* ---- Mercury palette — the single source of truth --------------------
+       Named for what they mean in the registry, not for their hue, so the
+       meaning survives a future recolor. */
+    --ink:    #0D0D0D; /* the black everything is printed in            */
+    --paper:  #E8E6E1; /* the light card / document surface             */
+    --stone:  #C9C5BC; /* the grey the documents sit on                 */
+    --held:   #1F3BE8; /* land somebody holds — and the primary action  */
+    --rot:    #FF4A0F; /* decay, warnings, the thing you should look at */
+    --yours:  #B430FF; /* the connected wallet's own land               */
+    --fresh:  #F2E20A; /* just changed hands                            */
+    --free:   #B8B4AC; /* unclaimed land                                */
+    --water:  #1A1916; /* locked ocean                                  */
 
-    /* Theme aliases — dark is the only mode now */
-    --bg:          var(--brand-black);
-    --text:        var(--brand-white);
-    --text-muted:  #A0A0A0;
-    --border:      var(--brand-lime);
-    --card-bg:     #111111;
-    --button-bg:   var(--brand-lime);
-    --button-text: var(--brand-black);
-    --accent:      var(--brand-lime);
-    --error:       var(--brand-orange);
+    /* Greys, split by which surface they sit on. Reaching for the wrong one
+       is the single easiest way to make text unreadable here. */
+    --mute-on-paper: #5A564E;
+    --mute-on-ink:   #7C776E;
+    --dim-on-ink:    #4A4740;
+    --line-on-ink:   #2A2823;
+    --line-on-ink-2: #33312B;
 
-    /* Map / pixel painting (kept available for canvas use) */
-    --cream-50:  #fdf9f4;
-    --cream-100: #faf7f2;
-    --cream-200: #f5f1ea;
-    --cream-300: #ede8df;
-    --cream-400: #e0d8ce;
-    --cream-500: #c0b8ae;
-    --cream-600: #a09080;
-    --cream-700: #6a5f54;
-    --cream-800: #2d2520;
+    /* ---- Surface contract ------------------------------------------------
+       Ink is the default surface (map, intake, wallet). Screens that are
+       printed documents — the ledger, the deed, the claim form — opt into
+       paper by carrying `.surface-paper`.
 
-    --ocean:      var(--brand-blue);
-    --land-green: #c5d9a8;
-    --land-tan:   #d4c0a0;
+       `--edge` is the load-bearing one: every hard border and every offset
+       drop-shadow draws in it, so a block keeps its edge whichever surface it
+       lands on. On ink that edge is paper; on paper it is ink. */
+    --surface:    var(--ink);
+    --surface-2:  #141310;
+    --on-surface: var(--paper);
+    --muted:      var(--mute-on-ink);
+    --hairline:   var(--line-on-ink);
+    --edge:       var(--paper);
 
-    --selected:      var(--brand-lime);
-    --selected-ring: var(--brand-black);
+    /* Legacy semantic aliases. Older components style against these; they are
+       re-declared verbatim in `.surface-paper` below because a custom property
+       whose value is a `var()` resolves where it is *declared*, not where it
+       is used — so aliasing once on :root would not follow the surface flip. */
+    --bg:          var(--surface);
+    --text:        var(--on-surface);
+    --text-muted:  var(--muted);
+    --card-bg:     var(--surface-2);
+    --button-bg:   var(--held);
+    --button-text: var(--paper);
+    --accent:      var(--held);
+    --error:       var(--rot);
+    --success:     var(--held);
+    --link:        var(--held);
 
-    /* Heatmap — 8-stop orange ramp (cold dark → hot orange → max white) */
-    --heat-bg:    var(--brand-black);
-    --heat-cheap: #3A1E0A;
-    --heat-low:   #6B2F0E;
-    --heat-mid1:  #A14310;
-    --heat-mid2:  #D85614;
-    --heat-high1: var(--brand-orange);
-    --heat-high2: #FF8A4C;
-    --heat-hot:   #FFC499;
-    --heat-max:   var(--brand-white);
+    /* Map / canvas fills. The renderer reads these names through
+       `constants/mapColors.ts`, not through CSS, but they are declared here so
+       the legends and the canvas cannot drift apart. */
+    --ocean:      var(--water);
+    --selected:   var(--rot);
+    --selected-ring: var(--paper);
 
-    --success:    var(--brand-lime);
-    --tx-pending: #6a5f54;
-    --link:       var(--brand-blue);
+    /* Rot ramp — fresh/expensive (dim) → rotten/cheap (bright). Mirrors
+       `interpolateRotGradient` in Map/PixelLayer.tsx. */
+    --rot-0: #4A4740;
+    --rot-1: #8A6A52;
+    --rot-2: #FF7A3C;
+    --rot-3: var(--rot);
+    --rot-4: var(--fresh);
+
+    /* Heat ramp — cold (dim) → most-traded (yellow). Mirrors
+       `interpolateHeatGradient` in Map/PixelLayer.tsx. */
+    --heat-0: #241F1A;
+    --heat-1: #4A2A12;
+    --heat-2: #8A3A12;
+    --heat-3: var(--rot);
+    --heat-4: #FF9A5C;
+    --heat-5: var(--fresh);
 
     --space-1: 4px;
     --space-2: 6px;
@@ -85,51 +92,98 @@
     --space-6: 14px;
     --space-8: 20px;
 
-    --radius-sm:   3px;
-    --radius-md:   8px;
-    --radius-lg:   10px;
-    --radius-xl:   18px;
+    /* The registry does not do rounded corners. These stay declared because
+       a handful of pill-shaped controls (map switcher, ruler chips) still
+       reference them; everything structural is square. */
+    --radius-sm:   0px;
+    --radius-md:   0px;
+    --radius-lg:   0px;
+    --radius-xl:   0px;
     --radius-full: 9999px;
 
-    --transition-fast:   150ms ease;
-    --transition-base:   250ms ease;
+    --transition-fast:   120ms ease;
+    --transition-base:   200ms ease;
     --transition-slow:   400ms ease;
     --transition-drawer: 300ms cubic-bezier(0.32, 0.72, 0, 1);
 
-    --text-2xs:  7px;
-    --text-xs:   8px;
-    --text-sm:   9px;
-    --text-base: 10px;
-    --text-md:   11px;
-    --text-lg:   13px;
+    --text-2xs:  8px;
+    --text-xs:   9px;
+    --text-sm:   10px;
+    --text-base: 11px;
+    --text-md:   12px;
+    --text-lg:   14px;
     --text-xl:   18px;
 
-    --tracking-wide:   1px;
-    --tracking-wider:  2px;
-    --tracking-widest: 3px;
-    --tracking-button: 1.5px;
+    --tracking-wide:   0.10em;
+    --tracking-wider:  0.14em;
+    --tracking-widest: 0.20em;
+    --tracking-button: 0.18em;
 
-    /* shadcn compatibility (kept so existing ui/ components don't break) */
-    --background: 0 0% 11%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 74 100% 51%;
-    --primary-foreground: 0 0% 11%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 63%;
-    --accent: 74 100% 51%;
-    --accent-foreground: 0 0% 11%;
-    --destructive: 15 100% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 74 100% 51%;
-    --radius: 0.5rem;
+    /* shadcn compatibility. `--border` MUST stay an HSL triplet — Tailwind's
+       `border-border` wraps it in `hsl()`. Inline styles want `--hairline`. */
+    --background: 0 0% 5%;
+    --foreground: 40 9% 90%;
+    --card: 30 8% 7%;
+    --card-foreground: 40 9% 90%;
+    --popover: 30 8% 7%;
+    --popover-foreground: 40 9% 90%;
+    --primary: 230 82% 51%;
+    --primary-foreground: 40 9% 90%;
+    --secondary: 40 5% 15%;
+    --secondary-foreground: 40 9% 90%;
+    --muted-hsl: 40 5% 20%;
+    --muted-foreground: 40 5% 46%;
+    --accent-hsl: 230 82% 51%;
+    --accent-foreground: 40 9% 90%;
+    --destructive: 16 100% 53%;
+    --destructive-foreground: 0 0% 5%;
+    --border: 40 5% 15%;
+    --input: 40 5% 15%;
+    --ring: 230 82% 51%;
+    --radius: 0;
+  }
+
+  /* Printed-document surface. Everything inside flips: fills, text, muted
+     grey, hairlines, and the hard edge blocks draw with. */
+  .surface-paper {
+    --surface:    var(--paper);
+    --surface-2:  var(--paper);
+    --on-surface: var(--ink);
+    --muted:      var(--mute-on-paper);
+    --hairline:   var(--free);
+    --edge:       var(--ink);
+
+    --bg:          var(--surface);
+    --text:        var(--on-surface);
+    --text-muted:  var(--muted);
+    --card-bg:     var(--surface-2);
+    --button-text: var(--paper);
+
+    background-color: var(--paper);
+    color: var(--ink);
+  }
+
+  /* The inverse, and NOT redundant with :root — any ink-filled region nested
+     inside a paper page (the connect dialog on the deed, a callout in the
+     rules) inherits paper's `--edge: var(--ink)` and would draw ink borders on
+     an ink fill: an invisible button. Painting a region ink means declaring it
+     ink, not just setting a background. */
+  .surface-ink {
+    --surface:    var(--ink);
+    --surface-2:  #141310;
+    --on-surface: var(--paper);
+    --muted:      var(--mute-on-ink);
+    --hairline:   var(--line-on-ink);
+    --edge:       var(--paper);
+
+    --bg:          var(--surface);
+    --text:        var(--on-surface);
+    --text-muted:  var(--muted);
+    --card-bg:     var(--surface-2);
+    --button-text: var(--paper);
+
+    background-color: var(--ink);
+    color: var(--paper);
   }
 
   * {
@@ -139,72 +193,155 @@
   body {
     background-color: var(--bg);
     color: var(--text);
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-family: 'Space Mono', 'Courier New', monospace;
   }
 
-  /* Display face — use on the wordmark, headings, button labels, nav labels */
+  /* Display face — figures, headlines, the wordmark. Archivo Black has one
+     weight; asking for 700 synthesises a bolder one and smears at small
+     sizes, so every rule that uses it pins `font-weight: 400`. */
   .font-display {
-    font-family: 'Retro Computer', 'Press Start 2P', monospace;
-    letter-spacing: 0;
+    font-family: 'Archivo Black', 'Arial Black', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Structural parts
+   ------------------------------------------------------------------------- */
+
+/* Chrome bars. Flat and opaque — the old translucent blur reads as soft, and
+   nothing in this design is soft. */
 .theme-bar {
-  background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--surface);
 }
 
 .theme-bar-top {
-  background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  background: var(--ink);
+  border-bottom: 2px solid var(--line-on-ink);
 }
 
 .theme-bar-bottom {
-  background: var(--card-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
+  background: var(--ink);
+  border-top: 3px solid var(--held);
 }
 
-/* Pixel-bordered button — used for START, CONNECT and other CTAs.
-   The border is drawn as a stepped outline via two box-shadows so corners
-   stay crisp at any size. Pair with .font-display on the label. */
+/* A hard-edged block: 3px border plus an offset solid shadow, both in
+   `--edge`. This is the shape the whole design is built from. */
+.brut {
+  border: 3px solid var(--edge);
+}
+
+.brut-shadow {
+  box-shadow: 6px 6px 0 var(--edge);
+}
+
+.brut-card {
+  background: var(--surface);
+  border: 3px solid var(--edge);
+  box-shadow: 6px 6px 0 var(--edge);
+}
+
+/* Thin variant for rows and chips that repeat down a list, where the full
+   3px/6px block would bury the content. */
+.brut-thin {
+  border: 2px solid var(--edge);
+}
+
+/* Punch-card perforation. Separates a form's header from its body. */
+.punch {
+  height: 10px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--edge) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+/* A rubber stamp — rotated, outlined, deliberately off-grid. */
+.stamp {
+  display: inline-block;
+  border: 3px solid var(--rot);
+  color: var(--rot);
+  background: var(--surface);
+  padding: 6px 11px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  transform: rotate(-7deg);
+  white-space: nowrap;
+}
+
+/* A small outlined label — sector codes, board names, statuses. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid currentColor;
+  padding: 4px 8px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+
+   `.pixel-btn` keeps its name because ~20 call sites use it; what it draws is
+   now the hard-shadow block. Pressing it moves the block onto its own shadow,
+   which is the whole interaction language of this design.
+   ------------------------------------------------------------------------- */
 .pixel-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 12px 20px;
   background: transparent;
-  color: var(--brand-lime);
-  font-family: 'Retro Computer', 'Press Start 2P', monospace;
-  border: 2px solid var(--brand-lime);
-  box-shadow:
-    0 0 0 2px var(--brand-black),
-    0 0 0 4px var(--brand-lime);
+  color: var(--on-surface);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  letter-spacing: var(--tracking-button);
   text-transform: uppercase;
-  transition: transform var(--transition-fast);
+  border: 3px solid var(--edge);
+  box-shadow: 5px 5px 0 var(--edge);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
-.pixel-btn:hover { transform: translateY(-1px); }
-.pixel-btn:active { transform: translateY(1px); }
+.pixel-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 var(--edge);
+}
 
 .pixel-btn-filled {
-  background: var(--brand-lime);
-  color: var(--brand-black);
+  background: var(--held);
+  color: var(--paper);
 }
 
-/* Compact pixel-button — used in TopBar where the START-sized chrome is too
-   tall. Thinner border ring and tighter padding. */
+/* Compact variant — top bar and inline actions, where the full block is too
+   tall. Keeps the offset shadow, just smaller. */
 .pixel-btn-sm {
-  padding: 6px 12px;
-  border-width: 1px;
-  box-shadow:
-    0 0 0 1px var(--brand-black),
-    0 0 0 2px var(--brand-lime);
+  padding: 7px 12px;
+  border-width: 2px;
+  box-shadow: 3px 3px 0 var(--edge);
 }
+.pixel-btn-sm:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--edge);
+}
+
+/* Destructive / attention variant — the take-the-rot and discard actions. */
+.pixel-btn-rot {
+  background: var(--rot);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Motion. Sparing: a ticker, a caret, a shake, a spinner.
+   ------------------------------------------------------------------------- */
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -212,8 +349,6 @@
 }
 .animate-spin-slow { animation: spin 0.8s linear infinite; }
 
-/* Slow rotation used for the watermark splash. ~14s feels mechanical without
-   being distracting; tune if it competes with the LOADING blink. */
 @keyframes spin-slow-rev {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -239,11 +374,12 @@
   100% { transform: translateX(-50%); }
 }
 
+/* Hard on/off blink — a terminal caret, not a fade. */
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
 }
-.animate-blink { animation: blink 1s steps(1) infinite; }
+.animate-blink { animation: blink 1.2s steps(1) infinite; }
 
 /* Entrance for the live activity toast: rises + fades in from the corner. */
 @keyframes activityIn {

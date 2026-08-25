@@ -33,10 +33,11 @@ export default function ShareRedirect({
         justifyContent: 'center',
         height: '100vh',
         background: 'var(--bg)',
-        color: 'var(--text-muted)',
-        fontFamily: "'Press Start 2P', monospace",
-        fontSize: 9,
-        letterSpacing: 2,
+        color: 'var(--mute-on-ink)',
+        fontFamily: "'Space Mono', monospace",
+        fontWeight: 700,
+        fontSize: 10,
+        letterSpacing: '0.16em',
       }}
     >
       ENTERING TERRENO&hellip;

@@ -26,19 +26,19 @@ export default function ZoomHintToast({ hasZoomedPast4x }: ZoomHintToastProps) {
         bottom: 68,
         left: '50%',
         transform: 'translateX(-50%)',
-        background: 'var(--card-bg)',
-        border: '1px solid var(--border)',
-        backdropFilter: 'blur(8px)',
-        color: 'var(--text)',
-        fontSize: 7,
-        letterSpacing: 0.5,
-        borderRadius: 12,
-        padding: '5px 12px',
+        background: 'var(--surface-2)',
+        border: '2px solid var(--hairline)',
+        color: 'var(--mute-on-ink)',
+        fontFamily: "'Space Mono', monospace",
+        fontWeight: 700,
+        fontSize: 9,
+        letterSpacing: '0.14em',
+        padding: '7px 12px',
         zIndex: 5,
         whiteSpace: 'nowrap',
       }}
     >
-      pinch to zoom + paint
+      PINCH TO ZOOM · TAP TO CLAIM
     </div>
   )
 }

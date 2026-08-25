@@ -23,7 +23,7 @@ export default function AwayFromHomeIndicator() {
       aria-live="polite"
       style={{
         position: 'absolute',
-        top: 60,
+        top: 56,
         left: 0,
         right: 0,
         zIndex: 9,
@@ -31,13 +31,14 @@ export default function AwayFromHomeIndicator() {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        padding: '4px 10px',
-        fontFamily: "'Press Start 2P', monospace",
-        fontSize: 6,
-        letterSpacing: 1,
-        color: 'var(--text-muted)',
-        background: 'var(--card-bg)',
-        borderBottom: '1px solid var(--border)',
+        padding: '5px 10px',
+        fontFamily: "'Space Mono', monospace",
+        fontWeight: 700,
+        fontSize: 8,
+        letterSpacing: '0.14em',
+        color: 'var(--mute-on-ink)',
+        background: 'var(--surface-2)',
+        borderBottom: '2px solid var(--line-on-ink)',
       }}
     >
       <span>YOU&apos;RE ON MAP {currentMapId}</span>
@@ -45,10 +46,11 @@ export default function AwayFromHomeIndicator() {
         type="button"
         onClick={() => setCurrentMapId(homeMapId)}
         style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: 6,
-          letterSpacing: 1,
-          color: 'var(--text)',
+          fontFamily: "'Space Mono', monospace",
+          fontWeight: 700,
+          fontSize: 8,
+          letterSpacing: '0.14em',
+          color: 'var(--fresh)',
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',

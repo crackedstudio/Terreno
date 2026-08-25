@@ -171,28 +171,39 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
 
 export default function TermsPage() {
   return (
-    <article style={{ maxWidth: 720, margin: '0 auto', padding: '20px 20px 32px', fontFamily: "'IBM Plex Mono', monospace", color: 'var(--text)', lineHeight: 1.6 }}>
+    <article
+      className="surface-paper"
+      style={{
+        minHeight: '100vh',
+        maxWidth: 720,
+        margin: '0 auto',
+        padding: '20px 20px 40px',
+        fontFamily: "'Space Mono', monospace",
+        color: 'var(--ink)',
+        lineHeight: 1.65,
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
         <Link
           href="/profile"
           aria-label="Close"
           style={{
-            fontSize: 16,
-            fontFamily: "'Press Start 2P', monospace",
-            color: 'var(--text-muted)',
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: 14,
+            color: 'var(--ink)',
             textDecoration: 'none',
-            padding: '4px 10px',
-            border: '1px solid var(--border)',
-            borderRadius: 6,
+            padding: '5px 10px',
+            border: '2px solid var(--ink)',
             lineHeight: 1,
           }}
         >
           ✕
         </Link>
       </div>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Celo Mini Apps Terms and Conditions</h1>
+      <h1 className="font-display" style={{ fontSize: 30, lineHeight: 1.05, margin: '0 0 8px' }}>Celo Mini Apps Terms and Conditions</h1>
       <p style={{ fontSize: 13, marginBottom: 4 }}>Terreno T&amp;C&rsquo;s</p>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 24 }}>
+      <p style={{ fontSize: 12, color: 'var(--mute-on-paper)', marginBottom: 24 }}>
         Effective Date: June 8, 2026
       </p>
 
@@ -215,7 +226,7 @@ export default function TermsPage() {
         .
       </p>
 
-      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 32 }}>
+      <p style={{ fontSize: 11, color: 'var(--mute-on-paper)', marginTop: 32 }}>
         <Link href="/" style={{ color: 'var(--accent)' }}>← Back to Terreno</Link>
       </p>
     </article>

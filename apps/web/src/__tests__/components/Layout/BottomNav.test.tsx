@@ -7,20 +7,21 @@ vi.mock('next/link', () => ({
 }))
 
 describe('BottomNav', () => {
-  it('renders three icon-only nav links', () => {
+  it('renders three labelled nav links', () => {
     render(<BottomNav activeRoute="/" />)
     const links = screen.getAllByRole('link')
     expect(links).toHaveLength(3)
-    expect(screen.queryByText('RANKS')).toBeNull()
-    expect(screen.queryByText('MAP')).toBeNull()
-    expect(screen.queryByText('PROFILE')).toBeNull()
+    // Every destination is named in visible text, not left to a glyph.
+    expect(screen.getByText('LEDGER')).toBeInTheDocument()
+    expect(screen.getByText('ATLAS')).toBeInTheDocument()
+    expect(screen.getByText('DEED')).toBeInTheDocument()
   })
 
   it('aria-labels remain so screen readers can name each route', () => {
     render(<BottomNav activeRoute="/" />)
-    expect(screen.getByLabelText('RANKS')).toBeInTheDocument()
-    expect(screen.getByLabelText('MAP')).toBeInTheDocument()
-    expect(screen.getByLabelText('PROFILE')).toBeInTheDocument()
+    expect(screen.getByLabelText('LEDGER')).toBeInTheDocument()
+    expect(screen.getByLabelText('ATLAS')).toBeInTheDocument()
+    expect(screen.getByLabelText('DEED')).toBeInTheDocument()
   })
 
   it('links point to correct routes', () => {
@@ -32,22 +33,23 @@ describe('BottomNav', () => {
     expect(hrefs).toContain('/profile')
   })
 
-  it('active route swaps to the *_green.svg icon variant; inactive icons keep the default white asset and dim', () => {
+  it('marks only the active route, and colours its plate and label together', () => {
     render(<BottomNav activeRoute="/ranks" />)
     const links = screen.getAllByRole('link')
 
     const activeLink = links[0]
     expect(activeLink).toHaveAttribute('aria-current', 'page')
-    const activeImg = activeLink.querySelector('img')
-    expect(activeImg).not.toBeNull()
-    expect(activeImg!.getAttribute('src')).toBe('/brand/icons/trophy_green.svg')
-    expect(activeImg!.style.opacity).toBe('1')
+    // Plate and label must agree — a plate that highlights while the word
+    // stays grey reads as two different states on one control.
+    const [activePlate, activeLabel] = Array.from(activeLink.querySelectorAll('span'))
+    expect(activePlate.style.color).toBe('var(--held)')
+    expect(activeLabel.style.color).toBe('var(--held)')
 
     const inactiveLink = links[1]
     expect(inactiveLink).not.toHaveAttribute('aria-current')
-    const inactiveImg = inactiveLink.querySelector('img')
-    expect(inactiveImg!.getAttribute('src')).toBe('/brand/icons/globe.svg')
-    expect(parseFloat(inactiveImg!.style.opacity)).toBeLessThan(1)
+    const [inactivePlate, inactiveLabel] = Array.from(inactiveLink.querySelectorAll('span'))
+    expect(inactivePlate.style.color).toBe('var(--mute-on-ink)')
+    expect(inactiveLabel.style.color).toBe('var(--mute-on-ink)')
   })
 
   it('active route does not paint a background tint or border on its tile', () => {

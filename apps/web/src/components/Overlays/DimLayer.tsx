@@ -19,7 +19,7 @@ export default function DimLayer({ visible, locked, onDismiss }: DimLayerProps) 
         right: 0,
         bottom: 56,
         zIndex: 45,
-        background: 'rgba(45,37,32,0.28)',
+        background: 'rgba(13,13,13,0.6)',
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',
         transition: 'opacity 250ms ease',

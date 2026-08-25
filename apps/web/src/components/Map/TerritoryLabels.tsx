@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import { computeEmpires, idToXY } from '@/lib/pixelMath'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { ownerDefaultColor } from '@/lib/colorUtils'
+import { INK, PAPER } from '@/constants/mapColors'
 import { useCurrentMapMeta } from '@/hooks/useCurrentMapMeta'
 import type { PixelView } from '@/lib/mock'
 
@@ -117,15 +118,14 @@ export default function TerritoryLabels({ pixelData, scale, profilesMap }: Terri
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
             fontSize: 10,
-            fontWeight: 600,
-            fontFamily: "'IBM Plex Mono', monospace",
-            letterSpacing: 0.5,
-            color: '#ffffff',
-            textShadow: '0 0 3px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.6)',
-            background: `${l.color}88`,
-            padding: '1px 4px',
-            borderRadius: 3,
-            border: `1px solid ${l.color}`,
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: PAPER,
+            background: INK,
+            padding: '2px 5px',
+            border: `2px solid ${l.color}`,
           }}
         >
           {l.label}

@@ -15,14 +15,18 @@ import { decodeShareParams, type ShareKind, type ShareParams } from '@/lib/share
  */
 export const runtime = 'edge'
 
+// The Mercury palette, restated because an edge route can't read the app's
+// CSS custom properties. Same names and meanings as `constants/mapColors.ts`.
 const BRAND = {
-  black: '#1B1B1B',
-  card: '#111111',
-  lime: '#A7FF05',
-  orange: '#FF4C00',
-  purple: '#B430FF',
-  white: '#FFFFFF',
-  muted: '#A0A0A0',
+  ink: '#0D0D0D',
+  paper: '#E8E6E1',
+  held: '#1F3BE8',
+  rot: '#FF4A0F',
+  yours: '#B430FF',
+  fresh: '#F2E20A',
+  free: '#B8B4AC',
+  water: '#1A1916',
+  muted: '#7C776E',
 } as const
 
 // Clamp untrusted text so a crafted URL can't blow out the layout.
@@ -31,17 +35,22 @@ function clamp(value: string | undefined, max: number): string {
   return value.replace(/[\u0000-\u001f]/g, "").slice(0, max)
 }
 
-// Validate `c` to a 6-digit hex; fall back to lime so we never inject a bad
+// Validate `c` to a 6-digit hex; fall back to the held blue so we never inject a bad
 // CSS color into the render.
 function safeColor(hex: string | undefined): string {
   if (hex && /^[0-9a-fA-F]{6}$/.test(hex)) return `#${hex}`
-  return BRAND.lime
+  return BRAND.held
 }
 
 function accentFor(kind: ShareKind): string {
-  if (kind === 'reward') return BRAND.lime
-  if (kind === 'rank') return BRAND.purple
-  return BRAND.lime
+  if (kind === 'reward') return BRAND.fresh
+  if (kind === 'rank') return BRAND.yours
+  return BRAND.held
+}
+
+/** Yellow needs ink on top of it; blue and purple need paper. */
+function onAccent(kind: ShareKind): string {
+  return kind === 'reward' ? BRAND.ink : BRAND.paper
 }
 
 // The big headline value each card leads with.
@@ -104,8 +113,7 @@ function PixelGrid({ color }: { color: string }) {
         style={{
           width: 44,
           height: 44,
-          background: lit ? color : '#222222',
-          borderRadius: 6,
+          background: lit ? color : BRAND.water,
         }}
       />,
     )
@@ -124,11 +132,28 @@ function PixelGrid({ color }: { color: string }) {
   )
 }
 
-async function loadFont(origin: string): Promise<ArrayBuffer | null> {
+/**
+ * Satori can't use a webfont stack — it needs the actual font bytes. Both
+ * faces are fetched from Google's static host; `css2` is asked for them with a
+ * legacy UA so it answers with a plain TTF rather than woff2, which Satori
+ * cannot parse.
+ *
+ * Every failure path returns null and the card renders in Satori's built-in
+ * fallback face. That is a worse-looking card, never a broken one — and this
+ * route is on the share flywheel, so degrading beats 500ing.
+ */
+async function loadGoogleFont(family: string): Promise<ArrayBuffer | null> {
   try {
-    const res = await fetch(`${origin}/brand/font/retro_computer_personal_use.ttf`)
-    if (!res.ok) return null
-    return await res.arrayBuffer()
+    const css = await fetch(
+      `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}`,
+      { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1)' } },
+    )
+    if (!css.ok) return null
+    const match = /src:\s*url\((https:[^)]+\.ttf)\)/.exec(await css.text())
+    if (!match) return null
+    const font = await fetch(match[1])
+    if (!font.ok) return null
+    return await font.arrayBuffer()
   } catch {
     return null
   }
@@ -140,11 +165,19 @@ export async function GET(req: Request) {
   const accent = accentFor(kind)
   const playerColor = safeColor(params.color)
 
-  const font = await loadFont(url.origin)
-  const fonts = font
-    ? [{ name: 'Retro', data: font, weight: 400 as const, style: 'normal' as const }]
-    : undefined
-  const fontFamily = font ? 'Retro' : 'monospace'
+  // Both faces in parallel — the card is on a share path and two serial
+  // round-trips at the edge is a visible delay on first render.
+  const [display, mono] = await Promise.all([
+    loadGoogleFont('Archivo Black'),
+    loadGoogleFont('Space Mono:wght@700'),
+  ])
+  const fonts = [
+    display && { name: 'Display', data: display, weight: 400 as const, style: 'normal' as const },
+    mono && { name: 'Mono', data: mono, weight: 700 as const, style: 'normal' as const },
+  ].filter(Boolean) as { name: string; data: ArrayBuffer; weight: 400 | 700; style: 'normal' }[]
+
+  const displayFamily = display ? 'Display' : 'monospace'
+  const monoFamily = mono ? 'Mono' : 'monospace'
 
   const head = headline(kind, params)
   const sub = subline(kind, params)
@@ -157,8 +190,8 @@ export async function GET(req: Request) {
           width: '1200px',
           height: '630px',
           display: 'flex',
-          background: BRAND.black,
-          fontFamily,
+          background: BRAND.ink,
+          fontFamily: monoFamily,
           padding: '64px',
           position: 'relative',
         }}
@@ -171,8 +204,7 @@ export async function GET(req: Request) {
             left: 24,
             right: 24,
             bottom: 24,
-            border: `4px solid ${accent}`,
-            borderRadius: 16,
+            border: `6px solid ${accent}`,
           }}
         />
 
@@ -189,10 +221,11 @@ export async function GET(req: Request) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div
               style={{
-                color: BRAND.muted,
-                fontSize: 22,
-                letterSpacing: 4,
-                marginBottom: 24,
+                color: BRAND.paper,
+                fontFamily: displayFamily,
+                fontSize: 30,
+                letterSpacing: 8,
+                marginBottom: 28,
               }}
             >
               TERRENO
@@ -200,19 +233,19 @@ export async function GET(req: Request) {
             <div
               style={{
                 color: accent,
-                fontSize: head.length > 6 ? 96 : 128,
-                lineHeight: 1,
-                letterSpacing: 2,
+                fontFamily: displayFamily,
+                fontSize: head.length > 6 ? 104 : 140,
+                lineHeight: 0.9,
               }}
             >
               {head}
             </div>
             <div
               style={{
-                color: BRAND.white,
-                fontSize: 34,
-                letterSpacing: 3,
-                marginTop: 24,
+                color: BRAND.paper,
+                fontFamily: displayFamily,
+                fontSize: 36,
+                marginTop: 26,
               }}
             >
               {sub}
@@ -222,8 +255,8 @@ export async function GET(req: Request) {
                 style={{
                   color: BRAND.muted,
                   fontSize: 22,
-                  letterSpacing: 2,
-                  marginTop: 20,
+                  letterSpacing: 3,
+                  marginTop: 22,
                 }}
               >
                 {stat}
@@ -233,12 +266,11 @@ export async function GET(req: Request) {
 
           <div
             style={{
-              color: BRAND.black,
+              color: onAccent(kind),
               background: accent,
               fontSize: 20,
-              letterSpacing: 2,
-              padding: '14px 22px',
-              borderRadius: 8,
+              letterSpacing: 3,
+              padding: '16px 24px',
               alignSelf: 'flex-start',
             }}
           >

@@ -5,12 +5,17 @@ import PaintModeBanner from '@/components/Map/PaintModeBanner'
 describe('PaintModeBanner', () => {
   it('renders when visible=true', () => {
     render(<PaintModeBanner visible={true} scale={5} pixelCount={12} />)
-    expect(screen.getByText(/GAME ON/)).toBeInTheDocument()
+    expect(screen.getByText('PAINT MODE')).toBeInTheDocument()
   })
 
   it('shows pixel count out of max', () => {
     render(<PaintModeBanner visible={true} scale={5} pixelCount={12} />)
     expect(screen.getByText(/12 \/ 100/)).toBeInTheDocument()
+  })
+
+  it('reports the current zoom, so paint mode explains why it opened', () => {
+    render(<PaintModeBanner visible={true} scale={5} pixelCount={12} />)
+    expect(screen.getByText(/5× ZOOM/)).toBeInTheDocument()
   })
 
   it('returns null when visible=false', () => {

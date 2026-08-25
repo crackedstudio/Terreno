@@ -9,7 +9,7 @@ import { useAnalytics } from '@/hooks/useAnalytics'
 import { useShouldOpenNextMap } from '@/hooks/useShouldOpenNextMap'
 import { formatUSDT } from '@/lib/colorUtils'
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
+const MONO = "'Space Mono', monospace"
 
 function Stat({
   label,
@@ -25,10 +25,9 @@ function Stat({
   return (
     <div
       style={{
-        background: 'var(--card-bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 10,
-        padding: '14px 12px',
+        background: 'var(--surface-2)',
+        border: '3px solid var(--line-on-ink-2)',
+        padding: '13px 12px',
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
@@ -36,22 +35,19 @@ function Stat({
     >
       <div
         style={{
-          fontSize: 6,
-          fontFamily: PIXEL_FONT,
-          color: 'var(--text-muted)',
-          letterSpacing: 2,
+          fontFamily: MONO,
+          fontWeight: 700,
+          fontSize: 9,
+          color: 'var(--mute-on-ink)',
+          letterSpacing: '0.16em',
         }}
       >
         {label}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
         <span
-          style={{
-            fontSize: 18,
-            fontFamily: PIXEL_FONT,
-            color: 'var(--text)',
-            letterSpacing: 1,
-          }}
+          className="font-display"
+          style={{ fontSize: 26, lineHeight: 1, color: 'var(--paper)' }}
         >
           {loading ? '…' : value}
         </span>
@@ -59,7 +55,7 @@ function Stat({
           <span
             style={{
               fontSize: 8,
-              fontFamily: PIXEL_FONT,
+              fontFamily: MONO,
               color: 'var(--text-muted)',
               letterSpacing: 1,
             }}
@@ -76,12 +72,13 @@ function SectionHeader({ children }: { children: string }) {
   return (
     <div
       style={{
-        fontSize: 7,
-        fontFamily: PIXEL_FONT,
-        color: 'var(--text-muted)',
-        letterSpacing: 3,
-        marginTop: 18,
-        marginBottom: 8,
+        fontFamily: MONO,
+        fontWeight: 700,
+        fontSize: 9,
+        color: 'var(--mute-on-ink)',
+        letterSpacing: '0.2em',
+        marginTop: 22,
+        marginBottom: 9,
       }}
     >
       {children}
@@ -103,7 +100,7 @@ function AdvisoryPanel() {
       ? 'OPEN NEXT MAP'
       : 'HEALTHY'
   // Color and emoji match the existing pixel-card style.
-  const pillColor = isOpen ? 'var(--warning, #f1c40f)' : 'var(--success, #2ecc71)'
+  const pillColor = isOpen ? 'var(--fresh)' : 'var(--held)'
   const pillEmoji = isOpen ? '\u{1F7E1}' : '\u{1F7E2}'
 
   const freshestId = decision?.freshestOpenMapId
@@ -114,10 +111,9 @@ function AdvisoryPanel() {
       <SectionHeader>OPERATOR ADVISORY</SectionHeader>
       <div
         style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: '14px 12px',
+          background: 'var(--surface-2)',
+          border: '3px solid var(--line-on-ink-2)',
+          padding: '13px 12px',
           display: 'flex',
           flexDirection: 'column',
           gap: 8,
@@ -126,7 +122,7 @@ function AdvisoryPanel() {
         <div
           style={{
             fontSize: 6,
-            fontFamily: PIXEL_FONT,
+            fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 2,
           }}
@@ -137,7 +133,7 @@ function AdvisoryPanel() {
           <span
             style={{
               fontSize: 18,
-              fontFamily: PIXEL_FONT,
+              fontFamily: MONO,
               color: pillColor,
               letterSpacing: 1,
             }}
@@ -148,7 +144,7 @@ function AdvisoryPanel() {
         <div
           style={{
             fontSize: 7,
-            fontFamily: PIXEL_FONT,
+            fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 1,
             lineHeight: 1.7,
@@ -192,7 +188,7 @@ function AdvisoryPanel() {
       <div
         style={{
           background: 'var(--card-bg)',
-          border: '1px solid var(--border)',
+          border: '1px solid var(--hairline)',
           borderRadius: 10,
           padding: '10px 8px',
           overflowX: 'auto',
@@ -202,7 +198,7 @@ function AdvisoryPanel() {
           style={{
             width: '100%',
             borderCollapse: 'collapse',
-            fontFamily: PIXEL_FONT,
+            fontFamily: MONO,
             fontSize: 7,
             letterSpacing: 1,
             color: 'var(--text)',
@@ -264,7 +260,7 @@ function AdvisoryPanel() {
             {advisory.perMap.map((m) => (
               <tr
                 key={m.mapId}
-                style={{ borderTop: '1px solid var(--border)' }}
+                style={{ borderTop: '1px solid var(--hairline)' }}
               >
                 <td style={{ padding: '6px 8px' }}>MAP {m.mapId}</td>
                 <td style={{ padding: '6px 8px', textAlign: 'right' }}>
@@ -316,7 +312,7 @@ export default function AnalyticsPage() {
         <div
           style={{
             fontSize: 11,
-            fontFamily: PIXEL_FONT,
+            fontFamily: MONO,
             letterSpacing: 3,
             color: 'var(--text)',
             marginBottom: 6,
@@ -327,7 +323,7 @@ export default function AnalyticsPage() {
         <div
           style={{
             fontSize: 7,
-            fontFamily: PIXEL_FONT,
+            fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 1,
             marginBottom: 12,
@@ -345,7 +341,7 @@ export default function AnalyticsPage() {
               borderRadius: 8,
               padding: 10,
               marginBottom: 12,
-              fontFamily: PIXEL_FONT,
+              fontFamily: MONO,
               letterSpacing: 1,
             }}
           >
@@ -423,7 +419,7 @@ export default function AnalyticsPage() {
         <div
           style={{
             fontSize: 6,
-            fontFamily: PIXEL_FONT,
+            fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 1,
             marginTop: 18,

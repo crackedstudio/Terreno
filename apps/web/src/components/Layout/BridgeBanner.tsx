@@ -49,25 +49,26 @@ export default function BridgeBanner() {
         left: 0,
         right: 0,
         zIndex: 14,
-        minHeight: 28,
-        background: '#A7FF05',
-        color: '#000000',
+        minHeight: 30,
+        background: 'var(--rot)',
+        borderTop: '2px solid var(--ink)',
+        color: 'var(--ink)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '4px 32px',
-        fontFamily: "'Press Start 2P', monospace",
+        fontFamily: "'Space Mono', monospace",
       }}
     >
-      <span style={{ fontSize: 7, letterSpacing: 1, textAlign: 'center' }}>
-        no stables on base yet —{' '}
+      <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: '0.12em', textAlign: 'center' }}>
+        NO STABLES ON BASE YET —{' '}
         <a
           href={SQUID_URL}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#000', textDecoration: 'underline' }}
+          style={{ color: 'var(--ink)', textDecoration: 'underline' }}
         >
-          bridge with squid
+          BRIDGE WITH SQUID
         </a>
       </span>
       <button
@@ -80,15 +81,15 @@ export default function BridgeBanner() {
           transform: 'translateY(-50%)',
           background: 'transparent',
           border: 'none',
-          color: '#000',
-          fontSize: 9,
-          letterSpacing: 1,
+          color: 'var(--ink)',
+          fontFamily: "'Space Mono', monospace",
+          fontWeight: 700,
+          fontSize: 10,
           cursor: 'pointer',
-          padding: '0 4px',
-          fontFamily: "'Press Start 2P', monospace",
+          padding: '0 6px',
         }}
       >
-        x
+        ✕
       </button>
     </div>
   )

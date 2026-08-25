@@ -18,8 +18,8 @@ const config = {
       },
     },
     screens: {
-      // MiniPay's minimum supported viewport is 360x640 — keep this in sync
-      // with the submission checklist in docs/MINIPAY_SUBMISSION.md.
+      // The mini-app host's minimum supported viewport is 360x640 — keep this
+      // in sync with the submission checklist in docs/MINIPAY_SUBMISSION.md.
       xs: "360px",
       sm: "640px",
       md: "768px",
@@ -29,8 +29,8 @@ const config = {
     },
     extend: {
       fontFamily: {
-        mono: ['IBM Plex Mono', 'Courier New', 'monospace'],
-        display: ['Retro Computer', 'Press Start 2P', 'monospace'],
+        mono: ['Space Mono', 'Courier New', 'monospace'],
+        display: ['Archivo Black', 'Arial Black', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -38,22 +38,24 @@ const config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        brand: {
-          white:  '#FFFFFF',
-          black:  '#1B1B1B',
-          lime:   '#A7FF05',
-          orange: '#FF4C00',
-          purple: '#B430FF',
-          cream:  '#F0E7D6',
-          blue:   '#71BBFF',
-        },
+        // The Mercury palette, named for meaning rather than hue — the same
+        // names the CSS custom properties in globals.css use.
+        ink:   '#0D0D0D',
+        paper: '#E8E6E1',
+        stone: '#C9C5BC',
+        held:  '#1F3BE8',
+        rot:   '#FF4A0F',
+        yours: '#B430FF',
+        fresh: '#F2E20A',
+        free:  '#B8B4AC',
+        water: '#1A1916',
         primary: {
-          DEFAULT: "#A7FF05",
-          foreground: "#1B1B1B",
+          DEFAULT: "#1F3BE8",
+          foreground: "#E8E6E1",
         },
         secondary: {
-          DEFAULT: "#2A2C34",
-          foreground: "#FFFFFF",
+          DEFAULT: "#141310",
+          foreground: "#E8E6E1",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -75,19 +77,14 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        cream: {
-          50: '#fdf9f4', 100: '#faf7f2', 200: '#f5f1ea',
-          300: '#ede8df', 400: '#e0d8ce', 500: '#c0b8ae',
-          600: '#a09080', 700: '#6a5f54', 800: '#2d2520',
-        },
-        ocean: '#ddeef7',
-        selected: '#facc15',
-        success: '#2d6a4f',
-        link: '#4a7fa5',
+        ocean: '#1A1916',
+        selected: '#FF4A0F',
+        success: '#1F3BE8',
+        link: '#1F3BE8',
       },
       letterSpacing: {
-        widest2: '3px',
-        button: '1.5px',
+        widest2: '0.2em',
+        button: '0.18em',
       },
       borderRadius: {
         lg: "var(--radius)",

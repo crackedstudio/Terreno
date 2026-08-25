@@ -10,10 +10,18 @@ interface TopBarProps {
   children?: React.ReactNode
 }
 
+/**
+ * The registry's masthead. Always ink, on every screen — the paper documents
+ * (ledger, deed) hang below it rather than replacing it, which is what keeps
+ * the app feeling like one bound volume instead of a set of themes.
+ *
+ * The mark is drawn rather than loaded: a paper square with a blue plot inside
+ * it, which is the whole product in 20 pixels and costs no request.
+ */
 export default function TopBar({ title, children }: TopBarProps) {
   return (
     <div
-      className="theme-bar-top"
+      className="theme-bar-top surface-ink"
       style={{
         position: 'absolute',
         top: 0,
@@ -36,24 +44,43 @@ export default function TopBar({ title, children }: TopBarProps) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 9,
           flexShrink: 0,
           textDecoration: 'none',
         }}
       >
-        <img
-          src="/brand/logo/logo.svg"
-          alt=""
-          width={28}
-          height={28}
-          style={{ imageRendering: 'pixelated' as const, display: 'block' }}
-        />
-        <img
-          src="/brand/wordmark/wordmark-white.svg"
-          alt={title}
-          height={14}
-          style={{ height: 14, display: 'block' }}
-        />
+        <span
+          aria-hidden
+          style={{
+            position: 'relative',
+            width: 20,
+            height: 20,
+            background: 'var(--paper)',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              left: 7,
+              top: 7,
+              width: 6,
+              height: 6,
+              background: 'var(--held)',
+            }}
+          />
+        </span>
+        <span
+          className="font-display"
+          style={{
+            fontSize: 18,
+            letterSpacing: '0.2em',
+            color: 'var(--paper)',
+            lineHeight: 1,
+          }}
+        >
+          TERRENO
+        </span>
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

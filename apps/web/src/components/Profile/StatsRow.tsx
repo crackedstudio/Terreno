@@ -1,6 +1,6 @@
 'use client'
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
+const MONO = "'Space Mono', monospace"
 
 interface StatsRowProps {
   pixels: number
@@ -18,83 +18,115 @@ interface StatsRowProps {
   landValue?: string
 }
 
-export default function StatsRow({ pixels, balance, balanceSymbol, rank, rankGapLabel, spent, earned, landValue }: StatsRowProps) {
+interface Cell {
+  value: string
+  label: string
+  /** Colour for the figure. Defaults to ink. */
+  accent?: string
+  sub?: string
+}
+
+/**
+ * The deed's figures, printed as one bordered grid rather than as separate
+ * cards. A single grid with internal rules is what makes it read as a
+ * document: the numbers belong to each other, and the box is the deed.
+ */
+export default function StatsRow({
+  pixels,
+  balance,
+  balanceSymbol,
+  rank,
+  rankGapLabel,
+  spent,
+  earned,
+  landValue,
+}: StatsRowProps) {
   const balanceLabel = balanceSymbol ? `BALANCE · ${balanceSymbol.toUpperCase()}` : 'BALANCE'
-  const cards = [
-    { value: String(pixels), label: 'PIXELS' },
-    { value: balance, label: balanceLabel },
+
+  // Six cells in a 3×2 grid. LAND VALUE is only present once the multi-map
+  // scan has produced one; when it isn't, its slot holds the em-dash rather
+  // than collapsing the grid, so the deed keeps its shape.
+  const cells: Cell[] = [
+    { value: String(pixels), label: 'PLOTS', accent: 'var(--held)' },
     {
-      value: rank > 0 ? `#${rank}` : '-',
+      value: landValue ?? '—',
+      label: 'LAND VALUE',
+      accent: 'var(--yours)',
+    },
+    { value: balance, label: balanceLabel },
+    { value: spent || '0.00', label: 'SPENT' },
+    { value: earned || '0.00', label: 'EARNED' },
+    {
+      value: rank > 0 ? `#${rank}` : '—',
       label: 'RANK',
+      accent: rank === 1 ? 'var(--rot)' : undefined,
       sub: rank > 0 ? rankGapLabel : undefined,
     },
   ]
 
-  // Money row — LAND VALUE (what your held pixels are worth now) sits with the
-  // SPENT / EARNED figures so all three USD numbers read as one group. LAND
-  // VALUE is only added when a value was passed; the whole row is hidden when
-  // no money figures are supplied.
-  const pnlCards = [
-    { value: spent || '0.00', label: 'SPENT' },
-    { value: earned || '0.00', label: 'EARNED' },
-    ...(landValue !== undefined ? [{ value: landValue || '0.00', label: 'LAND VALUE' }] : []),
-  ]
-
   return (
-    <>
-    <div style={{ display: 'flex', gap: 8, margin: '0 auto 12px', maxWidth: 460, padding: '0 16px', width: '100%' }}>
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          style={{
-            flex: 1,
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: '10px 6px',
-            textAlign: 'center',
-          }}
-        >
-          <div style={{ fontSize: 14, fontFamily: PIXEL_FONT, letterSpacing: 2, color: 'var(--text)' }}>
-            {card.value}
-          </div>
-          {card.sub && (
-            // Rank-proximity nudge — 6px so it survives the 3-across card
-            // layout at 360px; wraps onto a second line when it must.
-            <div style={{ fontSize: 6, fontFamily: PIXEL_FONT, letterSpacing: 1, lineHeight: 1.6, color: '#A7FF05', marginTop: 4 }}>
-              {card.sub}
-            </div>
-          )}
-          <div style={{ fontSize: 6, fontFamily: PIXEL_FONT, letterSpacing: 2, color: 'var(--text-muted)', marginTop: 4 }}>
-            {card.label}
-          </div>
-        </div>
-      ))}
-    </div>
-      {(spent || earned || landValue !== undefined) && (
-        <div style={{ display: 'flex', gap: 8, margin: '0 auto 12px', maxWidth: 460, padding: '0 16px', width: '100%' }}>
-          {pnlCards.map((card) => (
+    <div style={{ width: '100%', maxWidth: 460, margin: '0 auto 14px', padding: '0 16px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          border: '3px solid var(--ink)',
+        }}
+      >
+        {cells.map((cell, i) => (
+          <div
+            key={cell.label}
+            style={{
+              padding: '11px 9px',
+              borderRight: i % 3 < 2 ? '3px solid var(--ink)' : undefined,
+              borderTop: i > 2 ? '3px solid var(--ink)' : undefined,
+              minWidth: 0,
+            }}
+          >
             <div
-              key={card.label}
+              className="font-display"
               style={{
-                flex: 1,
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '10px 6px',
-                textAlign: 'center',
+                fontSize: 24,
+                lineHeight: 1,
+                color: cell.accent ?? 'var(--ink)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
-              <div style={{ fontSize: 12, fontFamily: PIXEL_FONT, letterSpacing: 2, color: 'var(--text)' }}>
-                {card.value}
-              </div>
-              <div style={{ fontSize: 6, fontFamily: PIXEL_FONT, letterSpacing: 2, color: 'var(--text-muted)', marginTop: 4 }}>
-                {card.label}
-              </div>
+              {cell.value}
             </div>
-          ))}
-        </div>
-      )}
-    </>
+            {cell.sub && (
+              // Rank-proximity nudge — small enough to survive the 3-across
+              // grid at 360px, and allowed to wrap onto a second line.
+              <div
+                style={{
+                  fontFamily: MONO,
+                  fontWeight: 700,
+                  fontSize: 8,
+                  letterSpacing: '0.1em',
+                  lineHeight: 1.5,
+                  color: 'var(--rot)',
+                  marginTop: 4,
+                }}
+              >
+                {cell.sub}
+              </div>
+            )}
+            <div
+              style={{
+                fontFamily: MONO,
+                fontWeight: 700,
+                fontSize: 8,
+                letterSpacing: '0.14em',
+                color: 'var(--mute-on-paper)',
+                marginTop: 4,
+              }}
+            >
+              {cell.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

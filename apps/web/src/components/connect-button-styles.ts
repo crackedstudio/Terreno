@@ -7,15 +7,17 @@
  * Its own module because the two components deliberately live in separate
  * chunks — see `privy-ready-context.ts`.
  */
-export const buttonClassName = "pixel-btn pixel-btn-sm font-display";
+export const buttonClassName = "pixel-btn pixel-btn-sm pixel-btn-filled";
 
 export const buttonStyle: React.CSSProperties = {
-  fontSize: 8,
-  letterSpacing: 1.5,
-  minWidth: 108,
+  fontSize: 9,
+  letterSpacing: "0.14em",
+  minWidth: 104,
+  height: 32,
   padding: "0 10px",
   justifyContent: "center",
   maxWidth: 160,
   overflow: "hidden",
   textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };

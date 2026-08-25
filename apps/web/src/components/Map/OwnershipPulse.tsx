@@ -24,7 +24,9 @@ export default function OwnershipPulse({ pixelData, userAddress, isDark = true }
     if (!ctx) return
 
     const addr = userAddress.toLowerCase()
-    const accent = isDark ? [167, 255, 5] : [26, 26, 26] // brand lime #A7FF05
+    // The palette's "yours" purple (#B430FF) — same colour the MINE lens
+    // and the deed's flag block use for the connected wallet's own land.
+    const accent = isDark ? [180, 48, 255] : [13, 13, 13]
 
     // Collect owned pixel positions
     const ownedPixels: { x: number; y: number }[] = []

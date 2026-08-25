@@ -218,6 +218,10 @@ export default function IntroScreen({ inline = false }: { inline?: boolean } = {
   }
 
   const isLast = index === SLIDES.length - 1
+  // Each step owns an accent, carried by the numeral, the step bar and the
+  // CTA's drop shadow — so "which step am I on" is answerable from colour
+  // before a word is read.
+  const accent = STEP_ACCENTS[index % STEP_ACCENTS.length]
 
   return (
     <div
@@ -235,70 +239,90 @@ export default function IntroScreen({ inline = false }: { inline?: boolean } = {
     >
       <style>{INTRO_CSS}</style>
 
-      {!inline && (
-        <button
-          className="mi-skip font-display"
-          onClick={(e) => { e.stopPropagation(); dismiss() }}
-        >
-          SKIP
-        </button>
-      )}
+      <div className="mi-head">
+        <span className="mi-mark" aria-hidden>
+          <span className="mi-mark-dot" style={{ background: accent }} />
+        </span>
+        <span className="mi-wordmark font-display">TERRENO</span>
+        {!inline && (
+          <button
+            className="mi-skip"
+            onClick={(e) => { e.stopPropagation(); dismiss() }}
+          >
+            SKIP
+          </button>
+        )}
+      </div>
 
       <div className="mi-track-wrap">
         <div
           className="mi-track"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {SLIDES.map((s) => (
+          {SLIDES.map((s, i) => (
             <div key={s.key} className="mi-slide">
               <div className="mi-visual">{s.visual}</div>
-              <div className="mi-kicker font-display">&gt; {s.kicker}</div>
+              <div
+                className="mi-step font-display"
+                style={{ color: STEP_ACCENTS[i % STEP_ACCENTS.length] }}
+                aria-hidden
+              >
+                {String(i + 1).padStart(2, '0')}
+              </div>
+              <div className="mi-kicker font-display">{s.kicker}</div>
               {s.headline && (
                 <div className="mi-headline font-display">{s.headline}</div>
               )}
-              <div className="mi-body font-mono">{s.body}</div>
-              {s.tagline && (
-                <div className="mi-tagline font-mono">{s.tagline}</div>
-              )}
+              <div className="mi-body">{s.body}</div>
+              {s.tagline && <div className="mi-tagline">{s.tagline}</div>}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mi-dots" aria-hidden>
-        {SLIDES.map((s, i) => (
-          <span key={s.key} className={`mi-dot ${i === index ? 'on' : ''}`} />
-        ))}
+      <div className="mi-foot">
+        <div className="mi-bars-nav" aria-hidden>
+          {SLIDES.map((s, i) => (
+            <span
+              key={s.key}
+              className="mi-bar-nav"
+              style={{
+                background: i === index
+                  ? STEP_ACCENTS[i % STEP_ACCENTS.length]
+                  : 'var(--dim-on-ink)',
+              }}
+            />
+          ))}
+        </div>
+        <span className="mi-count">{index + 1} / {SLIDES.length}</span>
       </div>
 
       <div className="mi-cta">
-        {isLast ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); inline ? setIndex(0) : dismiss() }}
-            className="pixel-btn pixel-btn-filled font-display mi-start"
-          >
-            {inline ? 'REPLAY' : 'START'}
-          </button>
-        ) : (
-          <button
-            onClick={(e) => { e.stopPropagation(); next() }}
-            className="pixel-btn font-display mi-next"
-          >
-            NEXT
-          </button>
-        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isLast) { inline ? setIndex(0) : dismiss() } else { next() }
+          }}
+          className="mi-go font-display"
+          style={{ boxShadow: `6px 6px 0 ${accent}` }}
+        >
+          {isLast ? (inline ? 'REPLAY' : 'TAKE SOMETHING →') : 'UNDERSTOOD →'}
+        </button>
       </div>
     </div>
   )
 }
 
+/** One accent per step, in deck order. */
+const STEP_ACCENTS = ['#FF4A0F', '#B430FF', '#F2E20A', '#1F3BE8', '#FF4A0F']
+
 const INTRO_CSS = `
 .mi-root {
   position: fixed; inset: 0; z-index: 100;
-  background: var(--bg);
+  background: var(--ink);
   display: flex; flex-direction: column;
-  align-items: stretch; justify-content: space-between;
-  padding: 28px 0 32px;
+  align-items: stretch;
+  padding: 22px 0 26px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
@@ -308,23 +332,41 @@ const INTRO_CSS = `
    than a full-screen overlay. Bounded height so it sits in the document. */
 .mi-inline {
   position: relative; inset: auto; z-index: 0;
-  height: 480px; max-width: 480px;
+  height: 620px; max-width: 480px;
   margin: 0 auto 8px;
-  padding: 20px 0 24px;
-  border: 2px solid var(--brand-lime);
-  border-radius: 10px;
+  padding: 18px 0 22px;
+  border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
 }
 
+/* ---------- Chrome ---------- */
+.mi-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 0 20px 4px;
+}
+.mi-mark {
+  position: relative; display: block;
+  width: 18px; height: 18px; background: var(--paper);
+  flex: 0 0 auto;
+}
+.mi-mark-dot {
+  position: absolute; left: 6px; top: 6px;
+  width: 6px; height: 6px;
+}
+.mi-wordmark {
+  font-size: 15px; letter-spacing: 0.2em; color: var(--paper);
+}
 .mi-skip {
-  position: absolute; top: 16px; right: 16px;
+  margin-left: auto;
   background: transparent; border: none;
-  color: rgba(255,255,255,0.6);
-  font-size: 10px; letter-spacing: 2px;
-  padding: 8px 12px; cursor: pointer; z-index: 2;
+  color: var(--mute-on-ink);
+  font-family: 'Space Mono', monospace; font-weight: 700;
+  font-size: 9px; letter-spacing: 0.16em;
+  padding: 6px 0 6px 12px; cursor: pointer;
 }
-.mi-skip:hover { color: var(--brand-lime); }
+.mi-skip:hover { color: var(--paper); }
 
-.mi-track-wrap { flex: 1; overflow: hidden; display: flex; align-items: center; }
+.mi-track-wrap { flex: 1; min-height: 0; overflow: hidden; display: flex; }
 .mi-track {
   display: flex; width: 100%;
   transition: transform 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -332,53 +374,81 @@ const INTRO_CSS = `
 .mi-slide {
   flex: 0 0 100%;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: flex-start;
-  padding: 0 28px;
-  text-align: center;
+  align-items: flex-start; justify-content: flex-start;
+  padding: 0 20px;
+  min-width: 0;
 }
 
 .mi-visual {
-  width: 100%; max-width: 280px;
-  height: 220px;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 28px;
 }
 
-.mi-kicker {
-  font-size: 13px; letter-spacing: 2px;
-  color: var(--brand-lime);
+/* The step numeral. Big enough to be the first thing seen, in the step's
+   own accent, and hidden from screen readers — the kicker carries meaning. */
+.mi-step {
+  font-size: 76px; line-height: 0.8;
   margin-bottom: 12px;
+  flex: 0 0 auto;
+}
+.mi-kicker {
+  font-size: 26px; line-height: 1.02;
+  color: var(--paper);
+  text-wrap: pretty;
+  flex: 0 0 auto;
 }
 .mi-headline {
-  font-size: 18px; letter-spacing: 2px;
-  color: var(--brand-lime);
-  margin: -4px 0 12px;
+  font-size: 20px; line-height: 1.05;
+  color: var(--rot);
+  margin-top: 8px;
+  flex: 0 0 auto;
 }
 .mi-body {
-  font-size: 12px; line-height: 1.55;
-  color: #FFFFFF;
-  max-width: 320px;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; line-height: 1.7;
+  color: var(--free);
+  margin-top: 12px;
+  text-wrap: pretty;
+  flex: 0 0 auto;
 }
 .mi-tagline {
-  font-size: 10px; letter-spacing: 2px;
-  color: rgba(255,255,255,0.6);
+  font-family: 'Space Mono', monospace; font-weight: 700;
+  font-size: 9px; letter-spacing: 0.16em;
+  color: var(--mute-on-ink);
   text-transform: uppercase;
-  margin-top: 14px;
+  margin-top: 12px;
+  flex: 0 0 auto;
 }
 
-.mi-dots {
-  display: flex; justify-content: center; gap: 8px;
-  margin: 16px 0 18px;
+.mi-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 12px;
 }
-.mi-dot {
-  width: 8px; height: 8px; background: rgba(255,255,255,0.2);
-  transition: background 200ms, transform 200ms;
+.mi-bars-nav { display: flex; gap: 6px; }
+.mi-bar-nav {
+  width: 26px; height: 8px;
+  transition: background 200ms;
 }
-.mi-dot.on { background: var(--brand-lime); transform: scale(1.2); }
+.mi-count {
+  font-family: 'Space Mono', monospace; font-weight: 700;
+  font-size: 9px; letter-spacing: 0.16em;
+  color: var(--mute-on-ink);
+}
 
-.mi-cta { display: flex; justify-content: center; }
-.mi-cta button { font-size: 12px; padding: 12px 32px; }
+.mi-cta { padding: 0 20px; }
+.mi-go {
+  width: 100%; height: 58px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--paper);
+  font-size: 17px; letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: transform 120ms, box-shadow 120ms;
+}
+.mi-go:active { transform: translate(3px, 3px); }
 
 /* ---------- Slide 1: TYCOON ---------- */
 .mi-stage { position: relative; width: 100%; height: 100%;
@@ -386,7 +456,7 @@ const INTRO_CSS = `
 .mi-watermark {
   animation: mi-rotate 12s linear infinite;
   position: relative; z-index: 2;
-  filter: drop-shadow(0 0 18px rgba(180, 144, 255, 0.35));
+  filter: drop-shadow(4px 4px 0 rgba(31, 59, 232, 0.55));
 }
 @keyframes mi-rotate {
   from { transform: rotate(0deg); }
@@ -395,8 +465,8 @@ const INTRO_CSS = `
 .mi-coins { position: absolute; inset: 0; pointer-events: none; }
 .mi-coin {
   position: absolute; bottom: 20%;
-  font-family: 'Retro Computer', 'Press Start 2P', monospace;
-  font-size: 14px; color: var(--brand-lime);
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 14px; color: var(--fresh);
   opacity: 0;
   animation: mi-coin-rise 3.2s ease-in infinite;
 }
@@ -416,10 +486,10 @@ const INTRO_CSS = `
 .mi-tag {
   position: absolute; left: 50%;
   font-size: 20px; line-height: 1;
-  color: var(--brand-lime);
-  background: var(--brand-black);
-  border: 3px solid var(--brand-lime);
-  box-shadow: 0 0 0 3px var(--brand-black), 0 0 14px rgba(167, 255, 5, 0.45);
+  color: var(--held);
+  background: var(--ink);
+  border: 3px solid var(--held);
+  box-shadow: 4px 4px 0 var(--ink);
   padding: 8px 12px;
   opacity: 0;
   /* Tags appear one per 2s beat (25% of the 8s loop) and HOLD until the cycle
@@ -430,7 +500,7 @@ const INTRO_CSS = `
 .mi-tag-2 { animation-name: mi-tag-grow-2; top: 22%; transform: translateX(-62%);  }
 .mi-tag-3 { animation-name: mi-tag-grow-3; top: 14%; transform: translateX(62%);   }
 .mi-tag-4 { animation-name: mi-tag-grow-4; top: 6%;  transform: translateX(185%);
-  color: var(--brand-black); background: var(--brand-lime); border-color: var(--brand-black); }
+  color: var(--ink); background: var(--held); border-color: var(--ink); }
 /* Per-tag keyframes share the 8s timeline so tags accumulate (all four on
    screen from ~75% to ~94%), then reset together. Each pops in with a little
    overshoot bounce. translateX is repeated in every frame so the scale pop
@@ -463,9 +533,8 @@ const INTRO_CSS = `
    doubled tag lands, so the rhythm reads "x2 -> new number -> x2 -> ...". */
 .mi-arrow {
   position: absolute; left: 50%; bottom: 14%;
-  color: var(--brand-lime);
+  color: var(--held);
   font-size: 32px;
-  text-shadow: 0 0 14px rgba(167, 255, 5, 0.6);
   transform: translateX(-50%);
   animation: mi-arrow-bounce 2s ease-in-out infinite;
 }
@@ -492,12 +561,12 @@ const INTRO_CSS = `
 }
 .mi-cell {
   width: 28px; height: 28px;
-  background: #1a1a1a;
+  background: var(--water);
 }
-.mi-cell-0 { background: #1a1a1a; }
-.mi-cell-1 { background: #222; }
-.mi-cell-2 { background: #1a1a1a; }
-.mi-cell-3 { background: #2a2a2a; }
+.mi-cell-0 { background: var(--water); }
+.mi-cell-1 { background: var(--line-on-ink-2); }
+.mi-cell-2 { background: var(--water); }
+.mi-cell-3 { background: var(--dim-on-ink); }
 .mi-lens {
   position: absolute;
   top: 24%; left: 50%;
@@ -506,15 +575,13 @@ const INTRO_CSS = `
 .mi-lens-ring {
   display: block;
   width: 42px; height: 42px;
-  border: 3px solid var(--brand-lime);
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--brand-black);
+  border: 3px solid var(--rot);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 .mi-lens-stem {
   display: block;
   width: 4px; height: 16px;
-  background: var(--brand-lime);
-  box-shadow: 0 0 0 1px var(--brand-black);
+  background: var(--rot);
   transform: rotate(-40deg);
   margin: 2px 0 0 30px;
 }
@@ -526,7 +593,8 @@ const INTRO_CSS = `
   position: absolute; bottom: 8%;
   width: 100%;
   display: flex; justify-content: center;
-  font-size: 14px; color: var(--brand-lime);
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 16px; color: var(--rot);
 }
 .mi-decay {
   position: absolute;
@@ -536,7 +604,7 @@ const INTRO_CSS = `
 .mi-decay-1 { animation-delay: 0s; }
 .mi-decay-2 { animation-delay: 1s; }
 .mi-decay-3 { animation-delay: 2s; }
-.mi-decay-4 { animation-delay: 3s; color: #FFFFFF; }
+.mi-decay-4 { animation-delay: 3s; color: var(--fresh); }
 @keyframes mi-decay-flash {
   0%, 100% { opacity: 0; transform: translateY(8px); }
   6%, 22%  { opacity: 1; transform: translateY(0); }
@@ -550,16 +618,13 @@ const INTRO_CSS = `
 }
 .mi-bar {
   width: 28px;
-  background: var(--brand-lime);
-  box-shadow:
-    0 0 0 2px var(--brand-black),
-    0 0 0 4px var(--brand-lime);
+  border: 3px solid var(--ink);
   transform-origin: bottom;
   animation: mi-grow 2.4s ease-out infinite;
 }
-.mi-bar-1 { height: 50px;  animation-delay: 0s;   }
-.mi-bar-2 { height: 90px;  animation-delay: 0.3s; }
-.mi-bar-3 { height: 130px; animation-delay: 0.6s; }
+.mi-bar-1 { height: 50px;  animation-delay: 0s;   background: var(--held);  }
+.mi-bar-2 { height: 90px;  animation-delay: 0.3s; background: var(--yours); }
+.mi-bar-3 { height: 130px; animation-delay: 0.6s; background: var(--fresh); }
 @keyframes mi-grow {
   0%   { transform: scaleY(0); }
   40%  { transform: scaleY(1); }
@@ -573,14 +638,14 @@ const INTRO_CSS = `
 }
 .mi-crown-tip {
   position: absolute; top: 0; width: 12px; height: 16px;
-  background: var(--brand-lime);
+  background: var(--fresh);
 }
 .mi-crown-tip-1 { left: 0; }
 .mi-crown-tip-2 { left: 22px; height: 22px; }
 .mi-crown-tip-3 { right: 0; }
 .mi-crown-band {
   position: absolute; bottom: 0; left: 0; right: 0;
-  height: 14px; background: var(--brand-lime);
+  height: 14px; background: var(--fresh);
 }
 @keyframes mi-bounce {
   0%, 100% { transform: translate(-50%, 0); }
@@ -595,18 +660,18 @@ const INTRO_CSS = `
 }
 .mi-paint-cell {
   width: 24px; height: 24px;
-  background: #1a1a1a;
+  background: var(--water);
   animation: mi-paint-fill 4s ease-in-out infinite;
 }
 .mi-paint-cell.on { animation-name: mi-paint-on; }
 @keyframes mi-paint-fill {
-  0%, 100% { background: #1a1a1a; }
-  50%      { background: #2a2a2a; }
+  0%, 100% { background: var(--water); }
+  50%      { background: var(--line-on-ink-2); }
 }
 @keyframes mi-paint-on {
-  0%, 100% { background: #1a1a1a; }
-  30%      { background: var(--brand-lime); }
-  70%      { background: var(--brand-blue); }
+  0%, 100% { background: var(--water); }
+  30%      { background: var(--yours); }
+  70%      { background: var(--held); }
 }
 .mi-splatter { position: absolute; inset: 0; pointer-events: none; }
 .mi-splat {
@@ -615,9 +680,9 @@ const INTRO_CSS = `
   opacity: 0;
   animation: mi-splat-pop 3s ease-in-out infinite;
 }
-.mi-splat-1 { top: 16%; left: 16%; background: var(--brand-lime); animation-delay: 0.4s; }
-.mi-splat-2 { top: 70%; right: 14%; background: var(--brand-blue); animation-delay: 1.1s; }
-.mi-splat-3 { top: 22%; right: 22%; background: #FFFFFF; animation-delay: 2s; }
+.mi-splat-1 { top: 16%; left: 16%; background: var(--held); animation-delay: 0.4s; }
+.mi-splat-2 { top: 70%; right: 14%; background: var(--water); animation-delay: 1.1s; }
+.mi-splat-3 { top: 22%; right: 22%; background: var(--fresh); animation-delay: 2s; }
 @keyframes mi-splat-pop {
   0%, 100% { transform: scale(0); opacity: 0; }
   40%      { transform: scale(1.4); opacity: 1; }

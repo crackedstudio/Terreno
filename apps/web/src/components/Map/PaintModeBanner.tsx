@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import { MAX_SELECT } from '@/constants/map'
+import { LENS_BAR_BOTTOM } from '@/constants/layout'
 
 interface PaintModeBannerProps {
   visible: boolean
@@ -9,6 +10,11 @@ interface PaintModeBannerProps {
   limitBump?: number
 }
 
+/**
+ * The strip that appears once the map is zoomed far enough to target
+ * individual plots. Reads as a machine status line: orange bar, sector-style
+ * label on the left, the running count on the right.
+ */
 export default function PaintModeBanner({
   visible,
   scale,
@@ -59,40 +65,48 @@ export default function PaintModeBanner({
   return (
     <div
       style={{
-        // Stacked directly under the HEATMAP / MY LAND lime band (which
-        // occupies y=56..82 — TopBar 56px + toggle 26px). Banner height 30,
-        // so it ends at y=112. Anything map-overlay-related (e.g. selection
-        // pill) should clear y=112 if it shows simultaneously.
+        // Sits directly under the lens bar (56px top bar + 43px bar/rule).
+        // Banner height 30, so it ends at y=129; anything else that overlays
+        // the map at the same time should clear that.
         position: 'absolute',
-        top: 82,
+        top: LENS_BAR_BOTTOM,
         left: 0,
         right: 0,
         height: 30,
-        background: 'var(--card-bg)',
-        borderBottom: '1px solid var(--border)',
-        backdropFilter: 'blur(6px)',
+        background: 'var(--rot)',
+        borderBottom: '3px solid var(--ink)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 10px',
+        padding: '0 12px',
         zIndex: 15,
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 150ms ease',
       }}
     >
       <span
+        className="font-display"
         style={{
-          fontSize: 8,
-          fontFamily: "'Press Start 2P', monospace",
-          color: 'var(--text)',
-          letterSpacing: 1,
+          fontSize: 13,
+          color: 'var(--ink)',
+          letterSpacing: '0.06em',
         }}
       >
-        GAME ON — pick your next move
+        PAINT MODE
       </span>
       <span
-        style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4 }}
+        style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}
       >
+        <span
+          style={{
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: 9,
+            letterSpacing: '0.14em',
+            color: 'var(--ink)',
+            opacity: 0.7,
+          }}
+        >
+          {scale}× ZOOM
+        </span>
         {/* Floating +1 animations */}
         {floats.map(id => (
           <span
@@ -100,9 +114,9 @@ export default function PaintModeBanner({
             style={{
               position: 'absolute',
               right: 0,
-              fontSize: 8,
-              fontFamily: "'Press Start 2P', monospace",
-              color: 'var(--text)',
+              fontFamily: "'Archivo Black', sans-serif",
+              fontSize: 12,
+              color: 'var(--ink)',
               pointerEvents: 'none',
               animation: 'floatUp 0.6s ease-out forwards',
             }}
@@ -113,12 +127,14 @@ export default function PaintModeBanner({
         <span
           className={shaking ? 'animate-shake' : ''}
           style={{
-            fontSize: 9,
-            fontFamily: "'Press Start 2P', monospace",
-            color: isAtLimit ? 'var(--error)' : 'var(--text)',
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: 11,
+            letterSpacing: '0.1em',
+            color: 'var(--ink)',
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 5,
             transform: flash ? 'scale(1.3)' : 'scale(1)',
             transition: 'transform 0.15s ease-out',
           }}
@@ -126,13 +142,11 @@ export default function PaintModeBanner({
           {isAtLimit && (
             <span
               style={{
-                fontSize: 7,
-                fontWeight: 700,
-                background: 'var(--error)',
-                color: '#fff',
-                padding: '1px 4px',
-                borderRadius: 3,
-                letterSpacing: 0.5,
+                fontSize: 8,
+                background: 'var(--ink)',
+                color: 'var(--rot)',
+                padding: '2px 5px',
+                letterSpacing: '0.14em',
               }}
             >
               MAX

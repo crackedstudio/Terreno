@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useCallback } from 'react'
 import { idToXY, pixelId, screenToPixel } from '@/lib/pixelMath'
 import { isLandXY } from '@/lib/landMask'
 import { useCurrentMapMeta } from '@/hooks/useCurrentMapMeta'
+import { PAPER, ROT } from '@/constants/mapColors'
 
 interface SelectionLayerProps {
   selectedIds: Set<number>
@@ -15,6 +16,12 @@ interface SelectionLayerProps {
 }
 
 const S = 4 // render scale for high-res overlay
+
+// Pre-split so the animation loop isn't parsing hex 60 times a second.
+const rgb = (hex: string) =>
+  `${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)}`
+const ROT_RGB = rgb(ROT)
+const PAPER_RGB = rgb(PAPER)
 
 export default function SelectionLayer({
   selectedIds,
@@ -35,7 +42,7 @@ export default function SelectionLayer({
   const longPressFiredRef = useRef(false)
   const movedRef = useRef(false)
 
-  // Animate selection overlay: pulsing green border + stud
+  // Animate selection overlay: pulsing picked-orange border + paper stud
   useEffect(() => {
     const canvas = overlayRef.current
     if (!canvas) return
@@ -56,8 +63,8 @@ export default function SelectionLayer({
 
       const t = (Date.now() % 2000) / 2000
       const alpha = 0.5 + 0.5 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2))
-      const accent = `rgba(0,255,65,${alpha})`
-      const highlight = `rgba(255,255,255,${alpha * 0.5})`
+      const accent = `rgba(${ROT_RGB},${alpha})`
+      const highlight = `rgba(${PAPER_RGB},${alpha})`
 
       for (const { x, y } of positions) {
         const sx = x * S
@@ -68,17 +75,13 @@ export default function SelectionLayer({
         ctx.lineWidth = 1
         ctx.strokeRect(sx + 0.5, sy + 0.5, S - 1, S - 1)
 
-        // Center stud
+        // Centre stud — square, like everything else here.
         ctx.fillStyle = accent
-        ctx.beginPath()
-        ctx.arc(sx + S / 2, sy + S / 2, S * 0.22, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.fillRect(sx + S * 0.28, sy + S * 0.28, S * 0.44, S * 0.44)
 
         // Stud highlight
         ctx.fillStyle = highlight
-        ctx.beginPath()
-        ctx.arc(sx + S / 2 - S * 0.05, sy + S / 2 - S * 0.05, S * 0.12, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.fillRect(sx + S * 0.34, sy + S * 0.34, S * 0.2, S * 0.2)
       }
 
       rafRef.current = requestAnimationFrame(animate)

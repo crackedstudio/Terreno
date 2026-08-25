@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { dailyFallPct, halvingPeriodDays } from '@/lib/decay'
+import { ROT_RAMP, rampGradient } from '@/constants/mapColors'
 
 interface DealsLegendProps {
   visible: boolean
@@ -9,9 +10,9 @@ interface DealsLegendProps {
 }
 
 /**
- * Legend for the DEALS map view. Sibling of HeatmapLegend — same card,
- * lime ramp instead of the warm heat ramp. Mirrors interpolateLimeGradient
- * in PixelLayer.
+ * Legend for the ROT lens. Sibling of HeatmapLegend — same card, the rot ramp
+ * instead of the heat one, generated from the same ROT_RAMP the canvas
+ * samples so the swatch cannot drift from what's drawn.
  */
 export default function DealsLegend({ visible, halvingTimeSeconds }: DealsLegendProps) {
   if (!visible) return null
@@ -25,49 +26,48 @@ export default function DealsLegend({ visible, halvingTimeSeconds }: DealsLegend
       style={{
         position: 'absolute',
         bottom: 68,
-        left: 10,
-        right: 10,
-        background: 'var(--card-bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-        padding: '6px 10px',
+        left: 12,
+        right: 12,
+        background: 'var(--surface-2)',
+        border: '2px solid var(--rot)',
+        padding: '9px 11px',
         zIndex: 5,
       }}
     >
       <div
         style={{
-          height: 8,
-          background:
-            'linear-gradient(to right, #223300, #548002, #A7FF05, #E0FF9E)',
+          height: 12,
+          background: rampGradient(ROT_RAMP),
+          border: '1px solid var(--paper)',
         }}
       />
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          marginTop: 2,
+          marginTop: 5,
+          fontFamily: "'Space Mono', monospace",
+          fontWeight: 700,
+          fontSize: 8,
+          letterSpacing: '0.14em',
+          color: 'var(--mute-on-ink)',
         }}
       >
-        <span style={{ fontSize: 6, color: 'var(--text-muted)', fontFamily: "'Press Start 2P', monospace" }}>
-          BARELY CHEAPER
-        </span>
-        <span style={{ fontSize: 6, color: 'var(--text-muted)', fontFamily: "'Press Start 2P', monospace" }}>
-          DEEPEST DEAL
-        </span>
+        <span>FRESH · EXPENSIVE</span>
+        <span>ROTTEN · CHEAP</span>
       </div>
       <div
         style={{
-          fontSize: 6,
-          color: 'var(--text-muted)',
-          fontFamily: "'Press Start 2P', monospace",
-          marginTop: 4,
-          letterSpacing: 0.5,
-          lineHeight: 1.5,
+          fontFamily: "'Space Mono', monospace",
+          fontSize: 11,
+          lineHeight: 1.55,
+          color: 'var(--free)',
+          marginTop: 8,
         }}
       >
         {fallPct !== null && halvingDays !== null
-          ? `BRIGHTER = CHEAPER RIGHT NOW. PRICE HALVES EVERY ~${halvingDays} DAYS, SO IT DROPS ~${fallPct.toFixed(1)}%/DAY UNTIL SOMEONE BUYS.`
-          : 'BRIGHTER = CHEAPER RIGHT NOW. THE LONGER LAND SITS UNSOLD, THE CHEAPER IT GETS.'}
+          ? `A PLOT LOSES ~${fallPct.toFixed(1)}% OF ITS PRICE EVERY DAY NOBODY WANTS IT — HALF OF IT EVERY ~${halvingDays} DAYS. BRIGHTER MEANS CHEAPER RIGHT NOW.`
+          : 'BRIGHTER MEANS CHEAPER RIGHT NOW. THE LONGER LAND SITS UNSOLD, THE CHEAPER IT GETS.'}
       </div>
     </div>
   )

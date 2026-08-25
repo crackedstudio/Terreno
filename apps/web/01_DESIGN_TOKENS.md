@@ -1,229 +1,207 @@
-# Terreno — Design Tokens
-# Feed to: Agent responsible for globals.css + tailwind.config.js
+# Terreno — Design Tokens ("Mercury")
+
+Governs [`src/app/globals.css`](src/app/globals.css) and
+[`tailwind.config.js`](tailwind.config.js). Those two files are the
+implementation; this is the reasoning. If they disagree, the code is right and
+this file is the bug.
+
+Live reference, rendered from the real tokens: **`/dev/design-preview`**
+(gated out of production by `src/app/dev/layout.tsx`).
+
+> The three `0N_SPEC_*.md` files alongside this one describe screen layouts
+> from an earlier brand and were already stale before this recolor. Treat them
+> as history; the app's own screens are the current spec.
 
 ---
 
-## Brand Identity
+## Identity
 
 **Name**: Terreno (Esperanto for "small world")
-**Aesthetic**: Retro terminal meets physical paper map. Monospace type, warm cream surfaces,
-frosted glass overlays, colorful pixel tiles on a muted natural map background.
-**One-liner**: It should feel like someone printed the internet on parchment.
+**Aesthetic**: A land registry. Hard-edged printed documents, offset drop
+shadows, punch-card perforations, rubber stamps. Nothing is rounded, nothing is
+frosted, nothing glows.
+**One-liner**: It should feel like a government office that happens to sell the
+planet.
 
 ---
 
-## Color Palette
+## Two surfaces
 
-### Base (UI Chrome)
-```
---cream-50:   #fdf9f4   /* page background */
---cream-100:  #faf7f2   /* cards, nav, panels */
---cream-200:  #f5f1ea   /* section backgrounds, inputs */
---cream-300:  #ede8df   /* borders light */
---cream-400:  #e0d8ce   /* borders default */
---cream-500:  #c0b8ae   /* borders strong, handles */
---cream-600:  #a09080   /* muted text, inactive nav */
---cream-700:  #6a5f54   /* secondary text */
---cream-800:  #2d2520   /* primary ink — headings, active nav, buttons */
-```
+The whole system is two surfaces and one variable that reconciles them.
 
-### Map / Ocean
-```
---ocean:      #ddeef7   /* unowned pixel / ocean bg */
---land-green: #c5d9a8   /* continent base (Natural Earth) */
---land-tan:   #d4c0a0   /* desert/arid regions */
-```
+| Surface | Class | When |
+|---|---|---|
+| **Ink** | `.surface-ink` (and `:root`) | The map, intake, wallet states, all chrome |
+| **Paper** | `.surface-paper` | Printed documents: the ledger, the deed, the claim form, the rules |
 
-### Pixel Owner Colors (curated palette — users pick from these)
-```
---px-red:     #e74c3c
---px-orange:  #e67e22
---px-yellow:  #f1c40f
---px-green:   #2ecc71
---px-teal:    #1abc9c
---px-blue:    #3498db
---px-purple:  #9b59b6
---px-pink:    #e91e63
---px-coral:   #ff5722
---px-cyan:    #00bcd4
---px-lime:    #8bc34a
---px-white:   #f0f0f0
-```
-> Decision: Full hex via color picker. Keep this palette as defaults/presets.
+`--edge` is the load-bearing token: **every hard border and every offset
+shadow draws in it.** On ink it is paper; on paper it is ink. A block therefore
+keeps a visible edge on either surface without a modifier class.
 
-### Selection State
+**The trap this exists to prevent**: painting a region ink with
+`background: var(--ink)` *inside* a paper page leaves `--edge` set to ink, so
+any button in it draws an ink border on an ink fill — invisible. Painting a
+region ink means adding `.surface-ink`, not just setting a background. (This
+bit us in the connect dialog on the deed; `/dev/design-preview` now demos both
+surfaces side by side so it can't come back silently.)
+
+---
+
+## Palette
+
+Named for meaning, not hue, so the names survive the next recolor.
+
 ```
---selected:       #facc15   /* yellow — selected pixel highlight */
---selected-ring:  #2d2520   /* dark border on selected tile */
+--ink     #0D0D0D   the black everything is printed in
+--paper   #E8E6E1   the light card / document surface
+--stone   #C9C5BC   the grey the documents sit on
+--held    #1F3BE8   land somebody holds — and the primary action
+--rot     #FF4A0F   decay, warnings, the thing you should look at
+--yours   #B430FF   the connected wallet's own land
+--fresh   #F2E20A   just changed hands
+--free    #B8B4AC   unclaimed land
+--water   #1A1916   locked ocean — the contract refuses to sell it
 ```
 
-### Heatmap Mode (dark, replaces entire UI when toggled)
+Greys are split by the surface they sit on. Reaching for the wrong one is the
+easiest way to make text unreadable here:
+
 ```
---heat-bg:    #0a0a0a
---heat-cheap: #4444ff
---heat-low:   #2288ff
---heat-mid1:  #00ccff
---heat-mid2:  #00ff88
---heat-high1: #ffff00
---heat-high2: #ff8800
---heat-hot:   #ff4400
---heat-max:   #ffffff
+--mute-on-paper  #5A564E
+--mute-on-ink    #7C776E
+--dim-on-ink     #4A4740
+--line-on-ink    #2A2823
+--line-on-ink-2  #33312B
 ```
 
-### Semantic
+**Yellow is a fill, never type on paper.** `#F2E20A` on `#E8E6E1` is
+unreadable. Where a yellow accent must carry a word on a light surface, it
+becomes a filled chip with ink on top — the TYCOONS tab and the rules page both
+do this.
+
+### Canvas fills
+
+The renderer can't read CSS custom properties, so the same values are restated
+as literals in [`src/constants/mapColors.ts`](src/constants/mapColors.ts).
+Legends import the ramps from there rather than hand-copying a gradient, so a
+ramp and its legend cannot drift apart.
+
 ```
---success:    #2d6a4f
---tx-pending: #6a5f54
---link:       #4a7fa5
+HEAT_RAMP  least traded ................ most traded
+           #241F1A #4A2A12 #8A3A12 #FF4A0F #FF9A5C #F2E20A
+
+ROT_RAMP   fresh & expensive ....... rotten & cheap
+           #4A4740 #8A6A52 #FF7A3C #FF4A0F #F2E20A
 ```
+
+### Owner colours
+
+Holders pick any hex. `PROFILE_DEFAULT_PALETTE` in
+[`src/constants/map.ts`](src/constants/map.ts) is the seed set and the swatch
+row, curated to avoid anything near the locked-ocean near-black or the
+unclaimed-land stone — a holder whose colour matches either looks like they own
+nothing.
 
 ---
 
 ## Typography
 
-### Font
-```
-Primary: 'IBM Plex Mono' (Google Fonts)
-Weights: 400 (regular), 500 (medium)
-Import: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
-Fallback: 'IBM Plex Mono', 'Courier New', monospace
-```
-
-### Scale
-```
---text-2xs:  7px    /* nav labels, field labels (letter-spacing: 1px) */
---text-xs:   8px    /* secondary values, timestamps */
---text-sm:   9px    /* body, field values */
---text-base: 10px   /* standard UI text */
---text-md:   11px   /* screen titles, drawer headers */
---text-lg:   13px   /* stat numbers */
---text-xl:   18px   /* total cost in summary drawer */
-```
-
-### Letter Spacing
-```
---tracking-wide:   1px    /* screen titles, field labels */
---tracking-wider:  2px    /* section headers e.g. LEADERBOARD */
---tracking-widest: 3px    /* logo TERRENO */
---tracking-button: 1.5px  /* CTAs e.g. [ BUY LAND ] */
-```
-
----
-
-## Spacing
+Two faces, with a hard split of duties.
 
 ```
---space-1:  4px
---space-2:  6px
---space-3:  8px
---space-4:  10px
---space-5:  12px
---space-6:  14px
---space-8:  20px
+Display: 'Archivo Black'  — figures, headlines, the wordmark. ONE weight (400).
+Body:    'Space Mono'     — labels, data, body, everything else. 400 and 700.
+Import:  https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap
+```
+
+Archivo Black ships a single weight; asking for 700 makes the browser
+synthesise a bolder one, which smears at small sizes. Every rule that uses it
+pins `font-weight: 400` — that is what `.font-display` does.
+
+**A number is a headline.** Prices, ranks, plot counts, percentages: display
+face, large, tight leading. Everything around them is Space Mono at 8–13px with
+generous tracking.
+
+```
+--text-2xs  8px    --tracking-wide    0.10em
+--text-xs   9px    --tracking-wider   0.14em
+--text-sm   10px   --tracking-widest  0.20em
+--text-base 11px   --tracking-button  0.18em
+--text-md   12px
+--text-lg   14px
+--text-xl   18px
 ```
 
 ---
 
-## Border Radius
+## Parts
 
-```
---radius-sm:   3px    /* pixel tiles at 1× zoom */
---radius-md:   8px    /* input fields, stat cards */
---radius-lg:   10px   /* drawers inner sections */
---radius-xl:   18px   /* drawer top corners */
---radius-full: 9999px /* pills, badges */
-```
-
----
-
-## Pixel Grid
-
-```
-GRID_WIDTH:   300    /* pixels horizontal */
-GRID_HEIGHT:  150    /* pixels vertical */
-TILE_GAP:     0.1    /* gap between tiles at 1× (in canvas px) */
-TILE_RADIUS:  0.15   /* roundRect radius at 1× */
-PAINT_SCALE:  4      /* minimum zoom to activate paint mode */
-MAX_SELECT:   1000   /* max pixels selectable per tx */
-```
-
----
-
-## Frosted Glass
-
-Standard formula used on: bottom nav, top bar, zoom-mode banner
 ```css
-background: rgba(250, 247, 242, 0.75);
-backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
-border-top: 0.5px solid rgba(200, 190, 175, 0.5);
+.brut        /* 3px solid var(--edge)                                  */
+.brut-shadow /* 6px 6px 0 var(--edge)                                  */
+.brut-card   /* surface fill + both of the above                       */
+.brut-thin   /* 2px border, for rows that repeat down a list           */
+.punch       /* 10px punch-card perforation, in var(--edge)            */
+.stamp       /* rotated -7°, outlined in --rot — UNSTAMPED and friends */
+.chip        /* small 2px outlined label in currentColor               */
 ```
 
-Heatmap variant (dark):
-```css
-background: rgba(10, 10, 10, 0.75);
-border-top: 0.5px solid rgba(80, 80, 80, 0.3);
-```
-
----
-
-## Shadows / Elevation
-
-No drop shadows. Elevation is communicated through:
-- Border color weight (--cream-400 vs --cream-500)
-- Background contrast (--cream-100 on --cream-200)
-- Frosted glass blur for overlapping layers
-
----
-
-## Transitions
+Buttons keep the `.pixel-btn` class name (~20 call sites) but draw the
+hard-shadow block. Pressing one moves it onto its own shadow — that is the
+interaction language of the whole design.
 
 ```
---transition-fast:   150ms ease
---transition-base:   250ms ease
---transition-slow:   400ms ease
---transition-drawer: 300ms cubic-bezier(0.32, 0.72, 0, 1)  /* drawer slide up */
+.pixel-btn         block, 3px edge, 5px offset shadow
+.pixel-btn-filled  --held fill, paper label      (primary)
+.pixel-btn-rot     --rot fill, ink label         (take-the-rot, discard)
+.pixel-btn-sm      2px edge, 3px shadow          (top bar, inline)
 ```
 
 ---
 
-## Active / Inactive States
+## Corners, shadows, motion
 
-Nav item active:
-- Icon stroke: #2d2520
-- Label color: #2d2520
-- Underline bar: 16px wide, 2px tall, #2d2520, below label
+**No rounded corners.** `--radius-*` are all `0`, kept declared only because a
+couple of genuinely pill-shaped controls still reference `--radius-full`.
 
-Nav item inactive:
-- Icon stroke: #a09080
-- Label color: #a09080
-- No underline
+**No soft shadows and no blur.** Elevation is the offset solid shadow, or a
+heavier border, or an accent rule. The old frosted-glass bars are gone — they
+read as soft, and nothing here is soft.
+
+```
+--transition-fast   120ms ease      button press
+--transition-base   200ms ease
+--transition-slow   400ms ease
+--transition-drawer 300ms cubic-bezier(0.32, 0.72, 0, 1)
+```
+
+Motion is sparing and mechanical: a ticker, a hard-stepped caret blink, a
+shake on a rejected tap, a spinner. `blink` is `steps(1)` — a terminal caret,
+not a fade.
 
 ---
 
-## Tailwind Config Additions
+## Grid
 
-Add to tailwind.config.js:
-```js
-theme: {
-  extend: {
-    fontFamily: {
-      mono: ['IBM Plex Mono', 'Courier New', 'monospace'],
-    },
-    colors: {
-      cream: {
-        50: '#fdf9f4', 100: '#faf7f2', 200: '#f5f1ea',
-        300: '#ede8df', 400: '#e0d8ce', 500: '#c0b8ae',
-        600: '#a09080', 700: '#6a5f54', 800: '#2d2520',
-      },
-      ocean: '#ddeef7',
-      selected: '#facc15',
-      success: '#2d6a4f',
-    },
-    letterSpacing: {
-      widest2: '3px',
-      button: '1.5px',
-    },
-  }
-}
+Per-map, not global — read it from `useCurrentMapMeta()`, never from a
+constant. The world map is 170×100. Plots are drawn as **squares**;
+`TILE_RADIUS` went with the rounded tiles of the previous look.
+
 ```
+TILE_GAP     0.08   gap between plots at 1× (canvas units)
+PAINT_SCALE  4      minimum zoom to activate paint mode
+MAX_SELECT   100    contract gas limit, ~100 plots per tx
+```
+
+---
+
+## Tailwind
+
+`tailwind.config.js` mirrors the palette under the same names (`ink`, `paper`,
+`held`, `rot`, `yours`, `fresh`, `free`, `water`) plus
+`fontFamily.display` / `fontFamily.mono`.
+
+One constraint worth knowing: `--border` **must** stay an HSL triplet, because
+Tailwind's `border-border` wraps it in `hsl()`. Inline styles that want a
+hairline use `--hairline`. Every inline `var(--border)` in the old code was
+silently invalid for exactly this reason.

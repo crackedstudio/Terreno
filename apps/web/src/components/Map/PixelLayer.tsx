@@ -1,6 +1,14 @@
 'use client'
 import React from 'react'
-import { TILE_GAP, TILE_RADIUS, ZERO_ADDRESS } from '@/constants/map'
+import { TILE_GAP, ZERO_ADDRESS } from '@/constants/map'
+import {
+  FREE_LAND,
+  HEAT_RAMP,
+  PENDING_LAND,
+  ROT_RAMP,
+  TAKEN_LAND,
+  sampleRamp,
+} from '@/constants/mapColors'
 import { idToXY } from '@/lib/pixelMath'
 import { isLand } from '@/lib/landMask'
 import { ownerDefaultColor } from '@/lib/colorUtils'
@@ -9,52 +17,6 @@ import { useCurrentMapMeta } from '@/hooks/useCurrentMapMeta'
 import type { PixelView } from '@/lib/mock'
 
 export type MapView = 'normal' | 'heatmap' | 'myland' | 'deals'
-
-// Heatmap ramp: dark amber → brand orange → white-hot. Mirrors the legend
-// gradient and the 8 --heat-* tokens in globals.css.
-function interpolateWarmGradient(ratio: number): string {
-  const t = Math.max(0, Math.min(1, ratio))
-  const stops = [
-    { p: 0.00, r: 0x3A, g: 0x1E, b: 0x0A },
-    { p: 0.15, r: 0x6B, g: 0x2F, b: 0x0E },
-    { p: 0.30, r: 0xA1, g: 0x43, b: 0x10 },
-    { p: 0.45, r: 0xD8, g: 0x56, b: 0x14 },
-    { p: 0.60, r: 0xFF, g: 0x4C, b: 0x00 },
-    { p: 0.75, r: 0xFF, g: 0x8A, b: 0x4C },
-    { p: 0.90, r: 0xFF, g: 0xC4, b: 0x99 },
-    { p: 1.00, r: 0xFF, g: 0xFF, b: 0xFF },
-  ]
-  let lo = stops[0], hi = stops[stops.length - 1]
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (t >= stops[i].p && t <= stops[i + 1].p) { lo = stops[i]; hi = stops[i + 1]; break }
-  }
-  const f = hi.p === lo.p ? 0 : (t - lo.p) / (hi.p - lo.p)
-  const r = Math.round(lo.r + (hi.r - lo.r) * f)
-  const g = Math.round(lo.g + (hi.g - lo.g) * f)
-  const b = Math.round(lo.b + (hi.b - lo.b) * f)
-  return `rgb(${r},${g},${b})`
-}
-
-// Deals ramp: dark moss → brand lime (#A7FF05) → pale lime. Deeper discount
-// under the entry price = brighter. Mirrors the DealsLegend gradient.
-function interpolateLimeGradient(ratio: number): string {
-  const t = Math.max(0, Math.min(1, ratio))
-  const stops = [
-    { p: 0.00, r: 0x22, g: 0x33, b: 0x00 },
-    { p: 0.35, r: 0x54, g: 0x80, b: 0x02 },
-    { p: 0.70, r: 0xA7, g: 0xFF, b: 0x05 },
-    { p: 1.00, r: 0xE0, g: 0xFF, b: 0x9E },
-  ]
-  let lo = stops[0], hi = stops[stops.length - 1]
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (t >= stops[i].p && t <= stops[i + 1].p) { lo = stops[i]; hi = stops[i + 1]; break }
-  }
-  const f = hi.p === lo.p ? 0 : (t - lo.p) / (hi.p - lo.p)
-  const r = Math.round(lo.r + (hi.r - lo.r) * f)
-  const g = Math.round(lo.g + (hi.g - lo.g) * f)
-  const b = Math.round(lo.b + (hi.b - lo.b) * f)
-  return `rgb(${r},${g},${b})`
-}
 
 export function drawPixels(
   ctx: CanvasRenderingContext2D,
@@ -72,17 +34,19 @@ export function drawPixels(
   ctx.clearRect(0, 0, width, height)
 
   const gap = TILE_GAP
-  const rad = TILE_RADIUS
   const userAddr = userAddress?.toLowerCase()
-  const unownedColor = '#dddddd'
-  const fadedColor = 'rgba(221,221,221,0.25)'
-  // Deals view: sold land that isn't a deal right now. Solid grey so it reads as
-  // "taken", not as ocean — a translucent fade blends into the blue water below.
-  const soldColor = '#5b5b5b'
-  // My-land view: everyone else's land as a SOLID muted grey so the continents
-  // stay readable (a translucent fade blends into the ocean and the whole map
-  // goes pale blue) while MY pixels pop in my color.
-  const myLandFaded = '#c8c8c8'
+  // Unclaimed land. Every non-normal view keeps the same stone tone for it so
+  // "nobody owns this" reads identically whichever lens is on.
+  const unownedColor = FREE_LAND
+  // Prices haven't resolved yet — near-black so it reads as "not known", not
+  // as a cheap deal.
+  const fadedColor = PENDING_LAND
+  // Deals view: sold land that isn't a deal right now. Opaque, so it reads as
+  // "taken" rather than blending into the ocean underneath.
+  const soldColor = TAKEN_LAND
+  // My-land view: everyone else's land, deliberately flattened to one tone so
+  // MY pixels are the only colour on the map.
+  const myLandFaded = TAKEN_LAND
 
   // Resolve an owned pixel's fill:
   //   1. on-chain per-owner color (what everyone agrees on) wins;
@@ -123,18 +87,16 @@ export function drawPixels(
         ctx.fillStyle = unownedColor
       } else {
         const ratio = maxSales > 0 ? pixel.saleCount / maxSales : 0
-        ctx.fillStyle = interpolateWarmGradient(ratio)
+        ctx.fillStyle = sampleRamp(HEAT_RAMP, ratio)
       }
 
-      ctx.beginPath()
-      ctx.roundRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap, rad)
-      ctx.fill()
+      ctx.fillRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap)
     }
   } else if (mapView === 'deals') {
-    // Deals view: several stages of "deal" over the CHEAPEST land on the map,
+    // Deals view — the rot lens. Several stages of "deal" over the CHEAPEST land,
     // anchored to the actual lowest live price — NOT the entry price. The
     // cheapest of the DEAL_STAGES lowest price levels is the deepest deal
-    // (brightest lime); each level up is a shallower stage; everything above
+    // (brightest, yellow); each level up is a shallower stage; everything above
     // greys out. Because it tracks the map's real lowest price, the view always
     // surfaces the best-value land even once every pixel is bought and bid up:
     // if the cheapest land is 8¢, that 8¢ tier is the deal. The scale re-ranks
@@ -154,9 +116,9 @@ export function drawPixels(
       const ramp = ramps.get(pixel.currentPrice)
 
       if (ramp !== undefined) {
-        ctx.fillStyle = interpolateLimeGradient(ramp)
+        ctx.fillStyle = sampleRamp(ROT_RAMP, ramp)
       } else if (pixel.owner !== ZERO_ADDRESS) {
-        // Above the deal stages (bid up) — taken and not a bargain. Solid grey
+        // Above the deal stages (bid up) — taken and not a bargain. Opaque
         // (see soldColor) so it reads as "taken" instead of blending into the
         // ocean.
         ctx.fillStyle = soldColor
@@ -165,9 +127,7 @@ export function drawPixels(
         ctx.fillStyle = fadedColor
       }
 
-      ctx.beginPath()
-      ctx.roundRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap, rad)
-      ctx.fill()
+      ctx.fillRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap)
     }
   } else if (mapView === 'myland') {
     for (let i = 0; i < pixelData.length; i++) {
@@ -185,9 +145,7 @@ export function drawPixels(
         ctx.fillStyle = myLandFaded
       }
 
-      ctx.beginPath()
-      ctx.roundRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap, rad)
-      ctx.fill()
+      ctx.fillRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap)
     }
   } else {
     for (let i = 0; i < pixelData.length; i++) {
@@ -202,9 +160,7 @@ export function drawPixels(
         ctx.fillStyle = unownedColor
       }
 
-      ctx.beginPath()
-      ctx.roundRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap, rad)
-      ctx.fill()
+      ctx.fillRect(x + gap / 2, y + gap / 2, 1 - gap, 1 - gap)
     }
   }
 }
