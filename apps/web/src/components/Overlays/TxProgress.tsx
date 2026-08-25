@@ -2,7 +2,7 @@
 
 import type { TxStep } from '@/hooks/useBuyPixels'
 
-const PF = "'Press Start 2P', monospace"
+const PF = "'Space Mono', monospace"
 
 interface TxProgressProps {
   step: TxStep
@@ -26,7 +26,7 @@ const steps: StepDef[] = [
         : 'active',
   },
   {
-    label: 'LOCKING IT IN...',
+    label: 'FILING THE CLAIM',
     getState: (step) =>
       ['confirming', 'success'].includes(step)
         ? 'done'
@@ -35,7 +35,7 @@ const steps: StepDef[] = [
           : 'pending',
   },
   {
-    label: 'SEALING THE DEAL...',
+    label: 'STAMPING THE RECORD',
     getState: (step) =>
       step === 'success'
         ? 'done'
@@ -45,67 +45,50 @@ const steps: StepDef[] = [
   },
 ]
 
-function StepCircle({ state }: { state: StepState }) {
+/** Square markers, not circles — nothing in this design is round. A done step
+ *  is a filled block, an active one blinks, a pending one is an empty outline. */
+function StepMark({ state }: { state: StepState }) {
   if (state === 'done') {
-    return (
-      <div
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          background: 'var(--button-bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <span style={{ fontSize: 8, fontFamily: PF, color: 'var(--button-text)' }}>ok</span>
-      </div>
-    )
+    return <div style={{ width: 16, height: 16, background: 'var(--held)', flex: '0 0 auto' }} />
   }
-
   if (state === 'active') {
     return (
       <div
-        className="animate-spin-slow"
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          border: '2px solid var(--text)',
-          borderTopColor: 'transparent',
-        }}
+        className="animate-blink"
+        style={{ width: 16, height: 16, background: 'var(--rot)', flex: '0 0 auto' }}
       />
     )
   }
-
   return (
     <div
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: '50%',
-        border: '2px solid var(--border)',
-        opacity: 0.4,
-      }}
+      style={{ width: 16, height: 16, border: '2px solid var(--hairline)', flex: '0 0 auto' }}
     />
   )
 }
 
 export default function TxProgress({ step }: TxProgressProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {steps.map((s) => {
         const state = s.getState(step)
-        const color =
-          state === 'done' ? 'var(--text)' : state === 'active' ? 'var(--text)' : 'var(--text-muted)'
+        const color = state === 'pending' ? 'var(--text-muted)' : 'var(--text)'
         return (
           <div
             key={s.label}
-            style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10 }}
+            style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 11 }}
           >
-            <StepCircle state={state} />
-            <span style={{ fontSize: 7, fontFamily: PF, color, letterSpacing: 1 }}>{s.label}</span>
+            <StepMark state={state} />
+            <span
+              style={{
+                fontFamily: PF,
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.14em',
+                color,
+              }}
+            >
+              {s.label}
+            </span>
           </div>
         )
       })}
