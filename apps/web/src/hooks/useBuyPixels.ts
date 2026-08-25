@@ -17,6 +17,7 @@ import {
 } from '@/lib/buyLimits'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { getReferrer, track } from '@/lib/analytics'
+import { BUILDER_CODE_DATA_SUFFIX } from '@/lib/attribution'
 import type { MapId } from '@/lib/maps/types'
 
 export type TxStep =
@@ -254,6 +255,9 @@ export function useBuyPixels(mapId?: MapId) {
           functionName: 'buyPixels',
           args: [bigIds, tokenAddress, maxTotalCost, deadline],
           account: address,
+          // Must match the send below — the estimate has to price the same
+          // calldata the wallet broadcasts, suffix included.
+          dataSuffix: BUILDER_CODE_DATA_SUFFIX,
         })
         buyGas = (g * 12n) / 10n
       } catch (err) {
@@ -273,6 +277,7 @@ export function useBuyPixels(mapId?: MapId) {
         // See approve above: always pass an explicit gas limit so viem never
         // asks the host wallet to estimate.
         ...(buyGas ? { gas: buyGas } : {}),
+        dataSuffix: BUILDER_CODE_DATA_SUFFIX,
       })
 
       setTxHash(buyHash)
@@ -289,6 +294,8 @@ export function useBuyPixels(mapId?: MapId) {
             functionName: 'buyPixels',
             args: [bigIds, tokenAddress, maxTotalCost, deadline],
             account: address,
+            // Replay the calldata that actually reverted, suffix included.
+            dataSuffix: BUILDER_CODE_DATA_SUFFIX,
           })
         } catch (simErr) {
           console.error('Revert reason:', simErr)
@@ -469,6 +476,8 @@ export function useBuyPixels(mapId?: MapId) {
             functionName: 'approve',
             args: [contractAddress, safeApprove],
             account: address,
+            // Must match the send below (see buyPixels).
+            dataSuffix: BUILDER_CODE_DATA_SUFFIX,
           })
           approveGas = (g * 12n) / 10n
         } catch (err) {
@@ -496,6 +505,7 @@ export function useBuyPixels(mapId?: MapId) {
           // Always pass an explicit gas limit when we have one, so viem never
           // asks the host wallet to estimate on our behalf.
           ...(approveGas ? { gas: approveGas } : {}),
+          dataSuffix: BUILDER_CODE_DATA_SUFFIX,
         })
         await publicClient.waitForTransactionReceipt({ hash: approveHash })
         // Wait for nonce to propagate on sequencer

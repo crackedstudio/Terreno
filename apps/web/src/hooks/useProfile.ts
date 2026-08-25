@@ -16,6 +16,7 @@ import { getContractByMapId } from '@/lib/maps/contracts'
 import { generateUsername } from '@/lib/username'
 import { isUserRejectedError, GENERIC_RETRY_MESSAGE } from '@/lib/buyErrors'
 import { track } from '@/lib/analytics'
+import { BUILDER_CODE_DATA_SUFFIX } from '@/lib/attribution'
 import type { MapId } from '@/lib/maps/types'
 
 // Last-resort gas ceiling for a profile write when estimation fails. An
@@ -191,6 +192,8 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
           functionName: 'updateProfile',
           args,
           account: address as `0x${string}`,
+          // Must match the send below — same calldata, suffix included.
+          dataSuffix: BUILDER_CODE_DATA_SUFFIX,
         })
         gas = (g * 12n) / 10n
       } catch (err) {
@@ -207,6 +210,8 @@ export function useProfile(address: string | undefined, mapId?: MapId) {
         functionName: 'updateProfile',
         args,
         ...(gas ? { gas } : {}),
+        // Base Builder Code attribution (ERC-8021). See lib/attribution.ts.
+        dataSuffix: BUILDER_CODE_DATA_SUFFIX,
       })
 
       setSaveState('confirming')
