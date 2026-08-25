@@ -9,8 +9,8 @@ import { track } from '@/lib/analytics'
 import { ShareButton } from '@/components/ShareButton'
 import { latestReward, type RewardEntry } from '@/lib/rewards'
 
-const PIXEL_FONT = "'Press Start 2P', monospace"
-const BRAND_LIME = '#A7FF05'
+const PIXEL_FONT = "'Space Mono', monospace"
+const BRAND_LIME = '#1F3BE8'
 
 const SEEN_KEY = 'terreno-rewards-seen'
 
@@ -102,39 +102,34 @@ export default function RewardAnnouncement() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        background: 'rgba(0, 0, 0, 0.78)',
-        backdropFilter: 'blur(2px)',
+        background: 'rgba(13, 13, 13, 0.86)',
       }}
     >
       <div
+        className="surface-ink"
         style={{
-          background: 'var(--card-bg)',
-          border: `2px solid ${BRAND_LIME}`,
-          borderRadius: 10,
-          padding: '20px 18px',
+          border: '3px solid var(--paper)',
+          boxShadow: '8px 8px 0 var(--fresh)',
+          padding: '22px 20px',
           maxWidth: 420,
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: 14,
-          textAlign: 'center',
+          gap: 12,
         }}
       >
-        <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 2, color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: 9, fontFamily: PIXEL_FONT, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--mute-on-ink)' }}>
           CAMPAIGN PAYOUT
         </div>
-        <div style={{ fontSize: 32, fontFamily: PIXEL_FONT, letterSpacing: 2, color: BRAND_LIME, lineHeight: 1 }}>
+        <div className="font-display" style={{ fontSize: 64, color: 'var(--fresh)', lineHeight: 0.9 }}>
           ${heroAmount}
         </div>
         <div
           style={{
-            fontSize: 8,
             fontFamily: PIXEL_FONT,
-            letterSpacing: 1.5,
+            fontSize: 12,
             lineHeight: 1.7,
-            color: 'var(--text)',
-            maxWidth: 320,
+            color: 'var(--free)',
           }}
         >
           {heroEntry && heroEntry.board && heroEntry.rank
@@ -160,15 +155,8 @@ export default function RewardAnnouncement() {
           />
           <button
             onClick={dismiss}
-            className="pixel-btn font-display"
-            style={{
-              display: 'block',
-              width: '100%',
-              fontSize: 9,
-              letterSpacing: 2,
-              padding: 10,
-              cursor: 'pointer',
-            }}
+            className="pixel-btn"
+            style={{ width: '100%', fontSize: 11, padding: 12, cursor: 'pointer' }}
           >
             LATER
           </button>

@@ -57,10 +57,11 @@ export default function ConnectButtonInteractive() {
     display: "block",
     width: "100%",
     padding: "10px 12px",
-    fontSize: 8,
-    fontFamily: "'Press Start 2P', monospace",
-    letterSpacing: 1.5,
-    color: "var(--text)",
+    fontSize: 9,
+    fontFamily: "'Space Mono', monospace",
+    fontWeight: 700,
+    letterSpacing: "0.14em",
+    color: "var(--paper)",
     textDecoration: "none",
     background: "transparent",
     border: "none",
@@ -82,12 +83,11 @@ export default function ConnectButtonInteractive() {
             top: "100%",
             right: 0,
             marginTop: 6,
-            background: "var(--card-bg)",
-            border: "1px solid var(--border)",
-            borderRadius: 6,
+            background: "var(--ink)",
+            border: "3px solid var(--paper)",
+            boxShadow: "4px 4px 0 var(--held)",
             minWidth: 140,
             zIndex: 100,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
             overflow: "hidden",
           }}
         >
@@ -95,7 +95,7 @@ export default function ConnectButtonInteractive() {
             href="/profile"
             role="menuitem"
             onClick={() => setMenuOpen(false)}
-            style={{ ...itemStyle, borderBottom: "1px solid var(--border)" }}
+            style={{ ...itemStyle, borderBottom: "2px solid var(--line-on-ink-2)" }}
           >
             PROFILE
           </Link>
