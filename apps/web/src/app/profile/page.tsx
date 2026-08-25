@@ -28,18 +28,36 @@ import { InviteButton } from '@/components/InviteButton'
 import { ShareButton } from '@/components/ShareButton'
 import { track } from '@/lib/analytics'
 
-// Shared "standard" secondary-button style — one source of truth so Support,
-// How-to-win, and the Share/Invite pair all read as the same size. Width matches
-// a single Share/Invite flex child (each = 50% minus half the 8px row gap), and
-// the 11px 8px padding mirrors ShareButton's compact style so heights line up
-// too. Applied on top of the `pixel-btn` class (which is inline-flex).
+const MONO = "'Space Mono', monospace"
+
+/** Space Mono, bold, tracked — every label on the deed. */
+const LABEL: React.CSSProperties = {
+  fontFamily: MONO,
+  fontWeight: 700,
+  fontSize: 11,
+  letterSpacing: '0.16em',
+}
+
+// Shared "standard" secondary-button style — one source of truth so Support
+// and How-to-win read as the same control. Full width, because on the deed
+// they are the only thing on their row; the half-width sizing was there to
+// pair with a Share/Invite child that no longer sits beside them.
 const STANDARD_BTN_STYLE: React.CSSProperties = {
-  width: 'calc(50% - 4px)',
+  width: '100%',
   justifyContent: 'center',
-  fontSize: 9,
-  letterSpacing: 2,
-  padding: '11px 8px',
+  fontSize: 11,
+  padding: '12px 10px',
   textDecoration: 'none',
+}
+
+const FOOTER_LINK: React.CSSProperties = {
+  fontFamily: MONO,
+  fontWeight: 700,
+  fontSize: 9,
+  letterSpacing: '0.16em',
+  color: 'var(--mute-on-paper)',
+  textDecoration: 'underline',
+  textUnderlineOffset: 3,
 }
 
 export default function ProfilePage() {
@@ -289,39 +307,63 @@ export default function ProfilePage() {
   }, [publicClient, addrStr, revealedMaps])
 
   const saveLabel =
-    saveState === 'saving' ? 'SAVING\u2026' :
+    saveState === 'saving' ? 'FILING\u2026' :
     saveState === 'confirming' ? 'CONFIRMING\u2026' :
-    saveState === 'saved' ? 'SAVED \u2713' :
+    saveState === 'saved' ? 'FILED \u2713' :
     saveState === 'error' ? 'TRY AGAIN' :
-    'SAVE'
+    'FILE CHANGES'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 60 }}>
+    <div
+      className="surface-paper"
+      style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: 56 }}
+    >
       <TopBar title="TERRENO" />
+
+      {/* Deed masthead — the wallet this document belongs to, then the
+          punch-card perforation that marks the start of the record. */}
+      <div
+        style={{
+          flexShrink: 0,
+          height: 34,
+          background: 'var(--ink)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+        }}
+      >
+        <span style={{ ...LABEL, fontSize: 10, letterSpacing: '0.2em', color: 'var(--paper)' }}>
+          DEED
+        </span>
+        <span style={{ ...LABEL, fontSize: 9, color: 'var(--mute-on-ink)' }}>
+          {addrStr ? `${addrStr.slice(0, 6)}…${addrStr.slice(-4)}`.toUpperCase() : 'UNSIGNED'}
+        </span>
+      </div>
+      <div className="punch" style={{ flexShrink: 0 }} />
+
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
-          background: 'var(--bg)',
-          paddingBottom: 56,
+          paddingBottom: 70,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
         {!addrStr && (
-          // Overlay, not an inline card — floats over the (zeroed) profile
-          // content instead of pushing it down. Covers the content region
-          // between the TopBar (56px) and the bottom nav (56px) so both stay
-          // usable; sits below the TopBar's zIndex 20.
+          // Overlay, not an inline card — floats over the (zeroed) deed
+          // instead of pushing it down. Covers the content region between the
+          // TopBar (56px) and the bottom nav (56px) so both stay usable; sits
+          // below the TopBar's zIndex 20.
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Connect to play"
             style={{
               position: 'fixed',
-              top: 60,
+              top: 56,
               bottom: 56,
               left: 0,
               right: 0,
@@ -330,80 +372,81 @@ export default function ProfilePage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: 16,
-              background: 'rgba(0, 0, 0, 0.72)',
-              backdropFilter: 'blur(2px)',
+              background: 'rgba(13, 13, 13, 0.86)',
             }}
           >
             <div
+              className="surface-ink"
               style={{
-                background: 'var(--card-bg)',
-                border: '2px solid var(--brand-lime)',
-                padding: '16px 18px',
-                maxWidth: 460,
+                border: '3px solid var(--paper)',
+                boxShadow: '8px 8px 0 var(--held)',
+                padding: '22px 20px',
+                maxWidth: 420,
                 width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                gap: 12,
-                textAlign: 'center',
+                gap: 14,
               }}
             >
               <div
-                style={{
-                  fontSize: 10,
-                  fontFamily: "'Press Start 2P', monospace",
-                  letterSpacing: 2,
-                  color: 'var(--text)',
-                }}
+                className="font-display"
+                style={{ fontSize: 30, lineHeight: 0.98, color: 'var(--paper)' }}
               >
-                CONNECT TO PLAY
+                THE REGISTRY
+                <br />
+                NEEDS A
+                <br />
+                SIGNATURE.
               </div>
               <div
                 style={{
-                  fontSize: 7,
-                  fontFamily: "'Press Start 2P', monospace",
-                  letterSpacing: 1.5,
-                  lineHeight: 1.6,
-                  color: 'var(--text-muted)',
-                  maxWidth: 320,
+                  fontFamily: MONO,
+                  fontSize: 12,
+                  lineHeight: 1.7,
+                  color: 'var(--free)',
                 }}
               >
-                link a wallet to claim pixels, set your color, and save your name on-chain
+                Nothing is custodial. Your plots live on the contract, not with
+                us. Link a wallet to claim land, fly your colour, and put your
+                name on-chain.
               </div>
               <ConnectButton />
             </div>
           </div>
         )}
+
         <AvatarBlock color={color} name={name} />
+
         {ruledMaps.length > 0 && (
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: 6,
-              margin: '0 16px 10px',
+              gap: 7,
+              width: '100%',
+              maxWidth: 460,
+              padding: '0 16px 14px',
             }}
           >
             {ruledMaps.map((m) => (
               <span
                 key={m.id}
                 style={{
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: 7,
-                  letterSpacing: 1.5,
-                  padding: '5px 9px',
-                  borderRadius: 999,
-                  color: '#A7FF05',
-                  border: '1px solid #A7FF05',
+                  ...LABEL,
+                  fontSize: 9,
+                  letterSpacing: '0.14em',
+                  padding: '4px 8px',
+                  background: 'var(--held)',
+                  color: 'var(--paper)',
                   whiteSpace: 'nowrap',
                 }}
               >
-                RULER OF {m.displayName}
+                RULER OF {m.displayName.toUpperCase()}
               </span>
             ))}
           </div>
         )}
+
         <StatsRow
           pixels={pixelCount}
           balance={formatBalanceForDisplay(walletBalance.preferred?.amount ?? walletBalance.totalAmount)}
@@ -424,69 +467,64 @@ export default function ProfilePage() {
         {/* "FLEX MY EARNINGS" share is intentionally hidden for now. The
             earnings number is reconstructed from a full PixelsPurchased log
             scan (/api/pnl), which is only complete against an authenticated
-            Forno endpoint — bragging a wrong $ figure publicly is worse than
-            not offering it. Re-enable once the indexer backs these numbers.
-        {addrStr && earned > 0n && (
-          <div style={{ width: '100%', maxWidth: 460, padding: '10px 16px 0' }}>
-            <ShareButton
-              kind="reward"
-              filled
-              label="FLEX MY EARNINGS"
-              params={{
-                amount: formatUSDT(earned),
-                mapId: currentMapId,
-                mapName: terrenoContract.displayName,
-                ref: addrStr.toLowerCase(),
-              }}
-            />
-          </div>
-        )} */}
+            RPC endpoint — bragging a wrong $ figure publicly is worse than
+            not offering it. Re-enable once the indexer backs these numbers. */}
 
         <div style={{ width: '100%', maxWidth: 460, padding: '0 16px' }}>
-          {/* Name field */}
-          <div
-            style={{
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '10px 12px',
-              marginBottom: 8,
-            }}
-          >
-            <div style={{ fontSize: 6, fontFamily: "'Press Start 2P', monospace", color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>
-              NAME
+          {/* Holder name, filed on chain */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ ...LABEL, fontSize: 9, letterSpacing: '0.18em', color: 'var(--mute-on-paper)', marginBottom: 8 }}>
+              HOLDER NAME · ON CHAIN
             </div>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value)
-                if (nameError) setNameError(null)
+            <div
+              style={{
+                border: '3px solid var(--ink)',
+                padding: '11px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
-              maxLength={32}
-              placeholder="enter name..."
-              style={{ fontSize: 10, fontFamily: "'Press Start 2P', monospace", letterSpacing: 1, color: 'var(--text)', background: 'transparent', border: 'none', width: '100%', outline: 'none' }}
-            />
+            >
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  if (nameError) setNameError(null)
+                }}
+                maxLength={32}
+                placeholder="UNNAMED"
+                aria-label="Holder name"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontFamily: MONO,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  letterSpacing: '0.06em',
+                  color: 'var(--ink)',
+                  background: 'transparent',
+                  border: 'none',
+                  width: '100%',
+                  outline: 'none',
+                  textTransform: 'uppercase',
+                }}
+              />
+              <span aria-hidden className="animate-blink" style={{ color: 'var(--held)', fontFamily: MONO, fontWeight: 700 }}>
+                |
+              </span>
+            </div>
           </div>
 
           {nameError && (
-            <div
-              style={{
-                fontSize: 7,
-                fontFamily: "'Press Start 2P', monospace",
-                color: 'var(--error)',
-                letterSpacing: 1,
-                marginBottom: 8,
-                paddingLeft: 4,
-              }}
-            >
+            <div style={{ ...LABEL, fontSize: 10, color: 'var(--rot)', marginBottom: 10, textTransform: 'none' }}>
               {nameError}
             </div>
           )}
 
           <ColorPicker color={color} onChange={setColor} />
 
-          {/* Save button */}
+          {/* File changes */}
           <button
             onClick={() => {
               const check = checkProfanity(name)
@@ -498,15 +536,14 @@ export default function ProfilePage() {
               save()
             }}
             disabled={!addrStr || saveState === 'saving' || saveState === 'confirming'}
-            className="pixel-btn pixel-btn-filled font-display"
+            className="pixel-btn pixel-btn-filled"
             style={{
-              display: 'block',
-              margin: '16px 0 8px',
+              display: 'flex',
+              margin: '14px 0 10px',
               width: '100%',
-              fontSize: 10,
-              letterSpacing: 2,
-              padding: 12,
-              opacity: (!addrStr || saveState === 'saving' || saveState === 'confirming') ? 0.5 : 1,
+              fontSize: 12,
+              padding: 14,
+              opacity: (!addrStr || saveState === 'saving' || saveState === 'confirming') ? 0.45 : 1,
               cursor: (!addrStr || saveState === 'saving' || saveState === 'confirming') ? 'default' : 'pointer',
             }}
           >
@@ -514,26 +551,16 @@ export default function ProfilePage() {
           </button>
 
           {saveState === 'error' && saveError && (
-            <div
-              style={{
-                fontSize: 7,
-                fontFamily: "'Press Start 2P', monospace",
-                color: 'var(--error)',
-                letterSpacing: 1,
-                marginBottom: 8,
-                paddingLeft: 4,
-              }}
-            >
+            <div style={{ ...LABEL, fontSize: 10, color: 'var(--rot)', marginBottom: 10, textTransform: 'none' }}>
               {saveError}
             </div>
           )}
 
-          {/* Share actions — grouped and secondary to Save (compact icon
-              buttons in a row), so they read as "spread the word", not a second
-              primary action. Share needs pixels to brag about; Invite always
-              shows. Each opens the share menu (X / WhatsApp / Telegram / copy). */}
+          {/* Share actions — grouped and secondary to FILE CHANGES, so they
+              read as "spread the word", not a second primary action. Share
+              needs plots to brag about; Invite always shows. */}
           {addrStr && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               {pixelCount > 0 && (
                 <ShareButton
                   kind="positions"
@@ -556,46 +583,31 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* How-to-win — the guide CTA, standalone below the Save/Share/Invite
-              cluster and above the Legal-and-Help box. Standard secondary width,
-              centered, with breathing room. Always rendered (reachable before
+          {/* How to win — the guide CTA. Always rendered (reachable before
               wallet connect). */}
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-            <Link
-              href="/faq"
-              className="pixel-btn pixel-btn-filled font-display"
-              style={STANDARD_BTN_STYLE}
-            >
-              HOW TO WIN
-            </Link>
-          </div>
+          <Link
+            href="/faq"
+            className="pixel-btn"
+            style={{ ...STANDARD_BTN_STYLE, marginTop: 18 }}
+          >
+            HOW TO WIN
+          </Link>
 
-          {/* Legal and Help — boxed section grouping the Support action with the
-              legal links. The card always renders, so Support stays reachable
-              before wallet connect (MiniPay requires Support / Terms / Privacy
-              in-app). 2px accent border pops in dark mode where card-bg ≈ page
-              bg. */}
+          {/* Legal and Help — boxed section grouping the Support action with
+              the legal links. Always rendered, so Support stays reachable
+              before wallet connect (the mini-app checklist requires Support /
+              Terms / Privacy in-app). */}
           <div
             style={{
-              marginTop: 32,
-              background: 'var(--card-bg)',
-              border: '2px solid var(--text-muted)',
-              borderRadius: 10,
-              padding: '14px 12px',
+              marginTop: 26,
+              border: '3px solid var(--ink)',
+              padding: '14px 14px 12px',
               display: 'flex',
               flexDirection: 'column',
               gap: 12,
-              alignItems: 'center',
             }}
           >
-            <div
-              style={{
-                fontSize: 6,
-                fontFamily: "'Press Start 2P', monospace",
-                color: 'var(--text-muted)',
-                letterSpacing: 2,
-              }}
-            >
+            <div style={{ ...LABEL, fontSize: 9, letterSpacing: '0.2em', color: 'var(--mute-on-paper)' }}>
               LEGAL AND HELP
             </div>
             <a
@@ -603,24 +615,16 @@ export default function ProfilePage() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => track('support_form_opened')}
-              className="pixel-btn pixel-btn-filled font-display"
+              className="pixel-btn"
               style={STANDARD_BTN_STYLE}
             >
               SUPPORT
             </a>
             {/* Rewards are on-chain, so a wallet address is the only thing
-                support can look a payment up by. Saying so here is cheaper than
-                a round-trip asking for it after someone sends a phone number. */}
-            <div
-              style={{
-                fontSize: 6,
-                fontFamily: "'Press Start 2P', monospace",
-                color: 'var(--text-muted)',
-                letterSpacing: 1,
-                lineHeight: 1.6,
-                textAlign: 'center',
-              }}
-            >
+                support can look a payment up by. Saying so here is cheaper
+                than a round-trip asking for it after someone sends a phone
+                number. */}
+            <div style={{ ...LABEL, fontSize: 9, letterSpacing: '0.12em', color: 'var(--mute-on-paper)', lineHeight: 1.6 }}>
               HAVE YOUR 0x WALLET ADDRESS READY
             </div>
             <div
@@ -628,38 +632,11 @@ export default function ProfilePage() {
                 display: 'flex',
                 gap: 18,
                 paddingTop: 10,
-                borderTop: '1px solid var(--text-muted)',
-                width: '100%',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
+                borderTop: '1px solid var(--free)',
               }}
             >
-              <Link
-                href="/terms"
-                style={{
-                  fontSize: 7,
-                  fontFamily: "'Press Start 2P', monospace",
-                  letterSpacing: 2,
-                  color: 'var(--text-muted)',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: 3,
-                }}
-              >
-                terms
-              </Link>
-              <Link
-                href="/privacy"
-                style={{
-                  fontSize: 7,
-                  fontFamily: "'Press Start 2P', monospace",
-                  letterSpacing: 2,
-                  color: 'var(--text-muted)',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: 3,
-                }}
-              >
-                privacy
-              </Link>
+              <Link href="/terms" style={FOOTER_LINK}>TERMS</Link>
+              <Link href="/privacy" style={FOOTER_LINK}>PRIVACY</Link>
             </div>
           </div>
         </div>

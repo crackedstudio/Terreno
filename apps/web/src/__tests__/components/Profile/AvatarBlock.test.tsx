@@ -3,19 +3,22 @@ import { render, screen } from '@testing-library/react'
 import AvatarBlock from '@/components/Profile/AvatarBlock'
 
 describe('AvatarBlock', () => {
-  it('shows first letter of name uppercased', () => {
+  it('prints the holder name in full, uppercased', () => {
     render(<AvatarBlock color="#ff0000" name="alice" />)
-    expect(screen.getByText('A')).toBeInTheDocument()
+    expect(screen.getByText('ALICE')).toBeInTheDocument()
   })
 
-  it('shows ? when no name', () => {
+  it('falls back to UNNAMED when no name is set', () => {
     render(<AvatarBlock color="#ff0000" name="" />)
-    expect(screen.getByText('?')).toBeInTheDocument()
+    expect(screen.getByText('UNNAMED')).toBeInTheDocument()
   })
 
-  it('uses color as background', () => {
+  it('flies the chosen colour on the flag block', () => {
     const { container } = render(<AvatarBlock color="#ff0000" name="bob" />)
-    const avatar = container.firstChild as HTMLElement
-    expect(avatar).toHaveStyle({ background: '#ff0000' })
+    // The flag is the decorative square, not the row that wraps it — assert
+    // on the element that actually carries the colour.
+    const flag = container.querySelector('span[aria-hidden]') as HTMLElement
+    expect(flag).not.toBeNull()
+    expect(flag).toHaveStyle({ background: '#ff0000' })
   })
 })

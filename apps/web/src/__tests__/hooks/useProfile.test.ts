@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useProfile } from '@/hooks/useProfile'
+import { PROFILE_DEFAULT_PALETTE } from '@/constants/map'
 
 // Shared, per-test-configurable mocks. base.id (8453) is used as the connected
 // chain so save() skips the chain-switch branch by default.
@@ -40,7 +41,7 @@ describe('useProfile', () => {
   it('has default initial state', () => {
     const { result } = renderHook(() => useProfile(undefined))
     expect(result.current.name).toBe('')
-    expect(result.current.color).toBe('#e74c3c')
+    expect(result.current.color).toBe(PROFILE_DEFAULT_PALETTE[0])
     expect(result.current.saveState).toBe('idle')
     expect(result.current.error).toBeNull()
   })
