@@ -41,10 +41,24 @@ describe('Base Builder Code data suffix', () => {
     )
   })
 
-  it('costs the gas we claim it does: 42 non-zero-ish bytes of calldata', () => {
-    // 24 code bytes + 1 length + 1 schema + 16 marker. The buy path passes an
+  it('costs the gas the module claims: 29 bytes of calldata', () => {
+    // 11 code bytes + 1 length + 1 schema + 16 marker. The buy path passes an
     // explicit gas limit sized from an estimate, so the suffix growing without
     // anyone noticing is exactly how that limit would go stale.
-    expect((BUILDER_CODE_DATA_SUFFIX.length - 2) / 2).toBe(42)
+    expect((BUILDER_CODE_DATA_SUFFIX.length - 2) / 2).toBe(29)
+
+    // Recomputed from the bytes rather than restated: 16 gas per non-zero
+    // byte, 4 per zero byte. Pins the number in the module header.
+    const bytes = BUILDER_CODE_DATA_SUFFIX.slice(2).match(/../g) ?? []
+    const gas = bytes.reduce((sum, b) => sum + (b === '00' ? 4 : 16), 0)
+    expect(gas).toBe(452)
+  })
+
+  it('is the code base.dev minted, not the app id used for domain verification', () => {
+    // These were conflated once already. The app id belongs in the
+    // `base:app_id` meta tag (app/layout.tsx) and never in calldata; a suffix
+    // naming it would be well-formed and attribute nothing.
+    expect(BASE_BUILDER_CODE).toBe('bc_e00ljsvz')
+    expect(BASE_BUILDER_CODE).not.toBe('6a8dad7b934c036b21810d7d')
   })
 })
