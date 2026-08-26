@@ -8,6 +8,7 @@ import BottomNav from '@/components/Layout/BottomNav'
 import AvatarBlock from '@/components/Profile/AvatarBlock'
 import StatsRow from '@/components/Profile/StatsRow'
 import ColorPicker from '@/components/Profile/ColorPicker'
+import ChainsBlock from '@/components/Profile/ChainsBlock'
 import { useProfile } from '@/hooks/useProfile'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { useMaps } from '@/hooks/useMaps'
@@ -555,6 +556,12 @@ export default function ProfilePage() {
               {saveError}
             </div>
           )}
+
+          {/* Chains — Base (where the land is) and the optional NIM link.
+              Below FILE CHANGES because the on-chain profile edit above is the
+              deed's primary action; linking a Nimiq address is a side note that
+              changes nothing on chain. */}
+          <ChainsBlock baseAddress={addrStr} />
 
           {/* Share actions — grouped and secondary to FILE CHANGES, so they
               read as "spread the word", not a second primary action. Share

@@ -92,3 +92,59 @@ describe('Nimiq Pay bundle isolation', () => {
     expect(staticImportSources(context)).toEqual(['react'])
   })
 })
+
+/**
+ * The mirror-image rule: `@nimiq/mini-app-sdk` must stay out of the static
+ * graph too.
+ *
+ * Only Nimiq Pay clients can use the NIM provider, but a value import anywhere
+ * reachable from the shell would ship the SDK — and its `events` polyfill and
+ * provider stack — to every browser visitor and into the map's first paint.
+ * `lib/nimiqProvider.ts` reaches it through a dynamic `import()` behind an
+ * `isNimiqPay()` gate; `lib/nimiq.ts` must not reach it at all, because the
+ * whole point of that module is a synchronous, dependency-free detection path.
+ *
+ * Type-only imports are allowed: `import type` is erased before webpack sees
+ * it, so it costs nothing at runtime.
+ */
+const SRC = path.join(process.cwd(), 'src')
+
+function readSrc(file: string): string {
+  return fs.readFileSync(path.join(SRC, file), 'utf8')
+}
+
+/** Static value-import sources only — ignores `import()` and `import type`. */
+function staticValueImportSources(source: string): string[] {
+  return Array.from(
+    source.matchAll(/^\s*import\s+(?!type\s)[^;]*?from\s+['"]([^'"]+)['"]/gm),
+    (m) => m[1],
+  )
+}
+
+describe('Nimiq SDK bundle isolation', () => {
+  it.each([
+    'lib/nimiq.ts',
+    'lib/nimiqProvider.ts',
+    'lib/nimiqLink.ts',
+    'hooks/useNimiqLink.ts',
+    'components/Profile/ChainsBlock.tsx',
+  ])('%s does not statically value-import the SDK', (file) => {
+    const sdk = staticValueImportSources(readSrc(file)).filter((s) =>
+      s.startsWith('@nimiq/mini-app-sdk'),
+    )
+    expect(sdk).toEqual([])
+  })
+
+  it('nimiqProvider reaches the SDK through a dynamic import, behind the host gate', () => {
+    const source = readSrc('lib/nimiqProvider.ts')
+    expect(source).toMatch(/import\(['"]@nimiq\/mini-app-sdk['"]\)/)
+    // The gate is what keeps the chunk from being fetched in a plain browser.
+    expect(source).toMatch(/if\s*\(!isNimiqPay\(\)\)\s*return null/)
+  })
+
+  it('the sync detection path stays dependency-free', () => {
+    // `lib/nimiq.ts` is read during render by wallet-provider; anything it
+    // imports is on the critical path for every client.
+    expect(staticValueImportSources(readSrc('lib/nimiq.ts'))).toEqual([])
+  })
+})

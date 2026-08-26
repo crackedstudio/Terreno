@@ -17,17 +17,24 @@
  *   - Gas. There is no stablecoin fee abstraction here; gas is paid in the
  *     chain's native asset (ETH on Base). `lib/feeCurrency.ts` is gone.
  *
- * `@nimiq/mini-app-sdk` is NOT imported here, and that is deliberate. Its
- * provider is NIM-native — Lunas, `NQ…` addresses, staking — none of which
- * this app uses; everything Terreno needs is on `window.ethereum` and the
- * `window.nimiqPay` host object. The two host-context helpers below would be
- * the only reason to pull it in, and they are three lines each.
+ * `@nimiq/mini-app-sdk` is NOT imported *here*, and that is still deliberate,
+ * though the reason has narrowed. Everything in this module is host context —
+ * detection, language, device identifier — which Nimiq Pay seeds on
+ * `window.nimiqPay` before the page script runs. Reading it directly keeps the
+ * detection path synchronous, dependency-free, and loadable even if the SDK
+ * chunk fails, which is what lets `wallet-provider.tsx` branch on it during
+ * render without an await.
+ *
+ * The NIM *provider* — `listAccounts`, `sign` — does now use the SDK, in
+ * `lib/nimiqProvider.ts`, behind a dynamic `import()` gated on `isNimiqPay()`.
+ * That split is the point: the SDK never enters the static graph, so browser
+ * clients and the map's first paint carry none of it. Nothing on the buy path
+ * touches either module; pixels are still bought over `window.ethereum`.
  *
  * The trade-off, stated because it is a real one: `NimiqPayHostContext` below
  * is hand-copied from the SDK's `dist/index.d.ts` and can drift from it
- * silently. Re-check it against the package when bumping the SDK. The package
- * stays in `dependencies` so that check is possible and so the switch to
- * importing it is a one-line change.
+ * silently. Re-check it against the package when bumping the SDK — it is
+ * verbatim as of 0.1.0.
  */
 
 /** Read-only host context Nimiq Pay injects before the page script runs. */
