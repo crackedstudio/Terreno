@@ -85,7 +85,7 @@ export default function PaintModeBanner({
       <span
         className="font-display"
         style={{
-          fontSize: 13,
+          fontSize: 19,
           color: 'var(--ink)',
           letterSpacing: '0.06em',
         }}

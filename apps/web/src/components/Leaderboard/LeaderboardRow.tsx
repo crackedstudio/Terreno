@@ -70,8 +70,8 @@ export default function LeaderboardRow({
       <span
         className="font-display"
         style={{
-          fontSize: 30,
-          lineHeight: 0.9,
+          fontSize: 44,
+          lineHeight: 0.8,
           minWidth: 38,
           color: fg,
           flexShrink: 0,
@@ -167,7 +167,7 @@ export default function LeaderboardRow({
 
       {/* Score */}
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div className="font-display" style={{ fontSize: 22, lineHeight: 1, color: fg }}>
+        <div className="font-display" style={{ fontSize: 34, lineHeight: 0.92, color: fg }}>
           {entry.value}
         </div>
         <div

@@ -57,7 +57,7 @@ export default function SuccessState({ pixelCount, totalPaid, onDone }: SuccessS
 
       <div
         className="font-display"
-        style={{ fontSize: 40, lineHeight: 0.94, color: 'var(--ink)', marginTop: 6 }}
+        style={{ fontSize: 52, lineHeight: 0.8, color: 'var(--ink)', marginTop: 6 }}
       >
         {pixelCount} {pixelCount === 1 ? 'PLOT' : 'PLOTS'}
         <br />
@@ -96,7 +96,7 @@ export default function SuccessState({ pixelCount, totalPaid, onDone }: SuccessS
         className="pixel-btn pixel-btn-filled font-display"
         style={{
           width: '100%',
-          fontSize: 16,
+          fontSize: 24,
           letterSpacing: '0.08em',
           padding: '15px 12px',
           marginTop: 16,

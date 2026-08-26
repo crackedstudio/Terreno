@@ -156,8 +156,8 @@ export default function PixelInfoPanel({
           <div
             className="font-display"
             style={{
-              fontSize: 20,
-              lineHeight: 1.05,
+              fontSize: 29,
+              lineHeight: 0.92,
               color: 'var(--ink)',
               marginTop: 3,
               overflow: 'hidden',
@@ -184,7 +184,7 @@ export default function PixelInfoPanel({
                 borderRight: i < stats.length - 1 ? '3px solid var(--ink)' : undefined,
               }}
             >
-              <div className="font-display" style={{ fontSize: 22, lineHeight: 1, color: 'var(--ink)' }}>
+              <div className="font-display" style={{ fontSize: 34, lineHeight: 0.92, color: 'var(--ink)' }}>
                 {s.value}
               </div>
               <div style={{ ...LABEL_MUTED, fontSize: 8, marginTop: 3 }}>
@@ -216,7 +216,7 @@ export default function PixelInfoPanel({
           className="pixel-btn pixel-btn-filled font-display"
           style={{
             width: '100%',
-            fontSize: 15,
+            fontSize: 22,
             letterSpacing: '0.08em',
             padding: '15px 12px',
             textTransform: 'none',

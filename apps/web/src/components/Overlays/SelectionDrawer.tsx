@@ -247,7 +247,7 @@ export default function SelectionDrawer({
       {isTxActive && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 16px 16px', maxWidth: 500, margin: '0 auto', width: '100%' }}>
           <div style={LABEL_MUTED}>FILING</div>
-          <div className="font-display" style={{ fontSize: 40, lineHeight: 0.95, color: 'var(--ink)' }}>
+          <div className="font-display" style={{ fontSize: 52, lineHeight: 0.8, color: 'var(--ink)' }}>
             {formatUSDT(totalPrice)}{' '}
             <span style={{ ...LABEL, fontSize: 12 }}>{payToken}</span>
           </div>
@@ -294,7 +294,7 @@ export default function SelectionDrawer({
           </span>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
-            <div className="font-display" style={{ fontSize: 32, lineHeight: 0.94, color: 'var(--ink)' }}>
+            <div className="font-display" style={{ fontSize: 46, lineHeight: 0.8, color: 'var(--ink)' }}>
               {pixelCount} {pixelCount === 1 ? 'PLOT' : 'PLOTS'}
               <br />
               ENTERED
@@ -345,7 +345,7 @@ export default function SelectionDrawer({
                       {name}
                     </span>
                     <span style={{ ...LABEL, fontSize: 11, color: 'var(--ink)' }}>{group.count}</span>
-                    <span className="font-display" style={{ fontSize: 16, color: 'var(--ink)', textAlign: 'right' }}>
+                    <span className="font-display" style={{ fontSize: 24, color: 'var(--ink)', textAlign: 'right' }}>
                       {formatUSDT(group.price)}
                     </span>
                     <button
@@ -372,7 +372,7 @@ export default function SelectionDrawer({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 14 }}>
               <div>
                 <div style={LABEL_MUTED}>TOTAL DUE</div>
-                <div className="font-display" style={{ fontSize: 42, lineHeight: 0.9, color: 'var(--ink)' }}>
+                <div className="font-display" style={{ fontSize: 76, lineHeight: 0.8, color: 'var(--ink)' }}>
                   {priceLoading ? '…' : formatUSDT(totalPrice)}
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function SelectionDrawer({
                 problems reads as two problems, not one paragraph. */}
             {insufficient && (
               <div style={{ ...NOTICE, borderColor: 'var(--rot)', marginTop: 12 }}>
-                <div className="font-display" style={{ fontSize: 15, lineHeight: 1.15, color: 'var(--ink)' }}>
+                <div className="font-display" style={{ fontSize: 22, lineHeight: 0.92, color: 'var(--ink)' }}>
                   SHORT BY {formatUSDT(totalPrice - userBalance)} {payToken}.
                 </div>
                 <div style={{ ...LABEL_MUTED, marginTop: 5, lineHeight: 1.6 }}>
@@ -421,7 +421,7 @@ export default function SelectionDrawer({
             )}
             {overCap && !insufficient && (
               <div style={{ ...NOTICE, borderColor: 'var(--rot)', marginTop: 12 }}>
-                <div className="font-display" style={{ fontSize: 15, lineHeight: 1.15, color: 'var(--ink)' }}>
+                <div className="font-display" style={{ fontSize: 22, lineHeight: 0.92, color: 'var(--ink)' }}>
                   OVER THE $10 CAP.
                 </div>
                 <div style={{ ...LABEL_MUTED, marginTop: 5, lineHeight: 1.6 }}>
@@ -441,7 +441,7 @@ export default function SelectionDrawer({
                 than as a fact about the contract. */}
             {totalPrice > 0n && (
               <div style={{ background: 'var(--rot)', border: '3px solid var(--ink)', padding: '11px 13px', marginTop: 12 }}>
-                <div className="font-display" style={{ fontSize: 15, lineHeight: 1.15, color: 'var(--ink)' }}>
+                <div className="font-display" style={{ fontSize: 22, lineHeight: 0.92, color: 'var(--ink)' }}>
                   SIGNING DOUBLES EVERY PRICE ON THIS FORM.
                 </div>
                 <div style={{ ...LABEL, fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink)', marginTop: 5 }}>
@@ -471,7 +471,7 @@ export default function SelectionDrawer({
               className="pixel-btn pixel-btn-filled font-display"
               style={{
                 width: '100%',
-                fontSize: 17,
+                fontSize: 26,
                 letterSpacing: '0.08em',
                 padding: '16px 12px',
                 textTransform: 'none',

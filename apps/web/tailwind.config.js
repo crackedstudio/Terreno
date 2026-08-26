@@ -30,7 +30,26 @@ const config = {
     extend: {
       fontFamily: {
         mono: ['Space Mono', 'Courier New', 'monospace'],
-        display: ['Archivo Black', 'Arial Black', 'sans-serif'],
+        // Degrades to a pixel face, never a system sans — see globals.css.
+        display: ['Jersey 10', 'Silkscreen', 'Courier New', 'monospace'],
+        ui: ['Silkscreen', 'Courier New', 'monospace'],
+      },
+      fontSize: {
+        // Display scale · Jersey 10. The face is tall, narrow and short in the
+        // x-height, so these sit well above a normal display scale: 44px Jersey
+        // reads about as loud as 30px Archivo Black did. Leading goes below 1
+        // because the face carries almost no internal leading.
+        'display-hero': ['120px', { lineHeight: '0.8' }],
+        'display-xl':   ['76px',  { lineHeight: '0.8' }],
+        'display-l':    ['52px',  { lineHeight: '0.8' }],
+        'display-m':    ['44px',  { lineHeight: '0.8' }],
+        'display-s':    ['34px',  { lineHeight: '0.8' }],
+        'display-xs':   ['26px',  { lineHeight: '0.8' }],
+        // UI scale · Silkscreen. 10px is a hard floor; below it, Space Mono.
+        'ui-lg': '16px',
+        'ui-md': '13px',
+        'ui-sm': '11px',
+        'ui-xs': '10px',
       },
       colors: {
         border: "hsl(var(--border))",

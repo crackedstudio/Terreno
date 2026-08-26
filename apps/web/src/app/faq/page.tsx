@@ -73,7 +73,7 @@ export default function FaqPage() {
       </div>
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '18px 16px 40px' }}>
-        <h1 className="font-display" style={{ fontSize: 42, lineHeight: 0.9, color: 'var(--ink)', margin: 0 }}>
+        <h1 className="font-display" style={{ fontSize: 52, lineHeight: 0.8, color: 'var(--ink)', margin: 0 }}>
           HOW TO
           <br />
           WIN THE
@@ -95,11 +95,11 @@ export default function FaqPage() {
                 alignItems: 'baseline',
               }}
             >
-              <span className="font-display" style={{ fontSize: 22, color: r.accent, flexShrink: 0 }}>
+              <span className="font-display" style={{ fontSize: 34, color: r.accent, flexShrink: 0 }}>
                 {r.n}
               </span>
               <div>
-                <div className="font-display" style={{ fontSize: 17, lineHeight: 1.1, color: 'var(--ink)' }}>
+                <div className="font-display" style={{ fontSize: 26, lineHeight: 0.92, color: 'var(--ink)' }}>
                   {r.head}
                 </div>
                 <p style={{ fontSize: 12, lineHeight: 1.65, color: 'var(--mute-on-paper)', margin: '6px 0 0' }}>
@@ -178,7 +178,7 @@ export default function FaqPage() {
             <section key={id} id={id} style={{ scrollMarginTop: 16 }}>
               <h2
                 className="font-display"
-                style={{ fontSize: 24, lineHeight: 1.05, color: 'var(--ink)', margin: 0 }}
+                style={{ fontSize: 34, lineHeight: 0.92, color: 'var(--ink)', margin: 0 }}
               >
                 {title.toUpperCase()}
               </h2>
@@ -225,7 +225,7 @@ export default function FaqPage() {
 
         {/* The scarcity line, then the way back to the map. */}
         <div className="surface-ink" style={{ padding: 16, marginTop: 34 }}>
-          <div className="font-display" style={{ fontSize: 17, lineHeight: 1.2, color: 'var(--paper)' }}>
+          <div className="font-display" style={{ fontSize: 26, lineHeight: 0.92, color: 'var(--paper)' }}>
             THE REGISTRY DOES NOT FORGET.
           </div>
           <p style={{ fontSize: 12, lineHeight: 1.7, color: 'var(--free)', margin: '8px 0 0' }}>

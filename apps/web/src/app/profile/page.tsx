@@ -390,7 +390,7 @@ export default function ProfilePage() {
             >
               <div
                 className="font-display"
-                style={{ fontSize: 30, lineHeight: 0.98, color: 'var(--paper)' }}
+                style={{ fontSize: 44, lineHeight: 0.8, color: 'var(--paper)' }}
               >
                 THE REGISTRY
                 <br />

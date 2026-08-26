@@ -121,7 +121,7 @@ export default function RewardAnnouncement() {
         <div style={{ fontSize: 9, fontFamily: PIXEL_FONT, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--mute-on-ink)' }}>
           CAMPAIGN PAYOUT
         </div>
-        <div className="font-display" style={{ fontSize: 64, color: 'var(--fresh)', lineHeight: 0.9 }}>
+        <div className="font-display" style={{ fontSize: 76, color: 'var(--fresh)', lineHeight: 0.8 }}>
           ${heroAmount}
         </div>
         <div

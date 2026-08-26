@@ -1,7 +1,13 @@
 /* Terreno — "Mercury" registry design.
-   Two faces: Archivo Black carries figures and headlines, Space Mono carries
-   labels, data and body. Both are loaded from Google Fonts in layout.tsx;
-   nothing here should reference the old local pixel TTF. */
+   Three faces, three jobs: Jersey 10 carries figures, headlines and the
+   wordmark; Silkscreen carries buttons, tabs, lens names and stamps; Space
+   Mono carries every label, rail, table cell and body line. All three load
+   from Google Fonts in layout.tsx.
+
+   The pixel faces are a deliberate reversal of the old "no pixel TTF" rule.
+   That rule was about `retro_computer_personal_use.ttf` — a local binary
+   licensed for personal use only. Jersey 10 and Silkscreen are OFL via Google
+   Fonts. Do not reinstate the TTF. */
 
 @tailwind base;
 @tailwind components;
@@ -106,6 +112,46 @@
     --transition-slow:   400ms ease;
     --transition-drawer: 300ms cubic-bezier(0.32, 0.72, 0, 1);
 
+    /* Three faces, three jobs. Silkscreen is BOTH the UI face and Jersey's
+       fallback, so the display stack degrades to a pixel face and never to a
+       system sans — a failed font load changes the size of the type, not its
+       nature. That is why the fallback is Silkscreen and not Courier.
+
+       This deliberately reverses the old "no pixel TTF" rule. What that rule
+       was protecting against was `retro_computer_personal_use.ttf` — a local
+       binary whose filename says personal use only. Jersey 10 and Silkscreen
+       are both OFL via Google Fonts, so the pixel direction is licensable
+       this time. Do not reinstate the TTF. */
+    --font-display: 'Jersey 10', 'Silkscreen', 'Courier New', monospace;
+    --font-ui:      'Silkscreen', 'Courier New', monospace;
+    --font-mono:    'Space Mono', 'Courier New', monospace;
+
+    /* Display scale · Jersey 10. The face is tall, narrow and short in the
+       x-height, so it needs sizes well above a normal display scale to carry
+       the same weight: 44px Jersey reads about as loud as 30px Archivo Black
+       did. Anything still sitting at an Archivo-era size will look shrunken —
+       that is what this scale exists to correct, per call site. */
+    --display-hero: 120px;  /* landing headline */
+    --display-xl:    76px;  /* the total on a claim form */
+    --display-l:     52px;  /* screen headline */
+    --display-m:     44px;  /* a price, a rank */
+    --display-s:     34px;  /* card figure, app-bar wordmark */
+    --display-xs:    26px;  /* inline figure */
+
+    /* Below 1 on purpose — Jersey carries almost no internal leading. */
+    --leading-display:       0.8;
+    --leading-display-loose: 0.92;
+
+    /* UI scale · Silkscreen. Buttons, tabs, lens names, stamps. Silkscreen
+       has a true 700, so a filled button never synthesises weight. */
+    --ui-lg: 16px;
+    --ui-md: 13px;
+    --ui-sm: 11px;
+    --ui-xs: 10px;   /* hard floor — below this it is always Space Mono */
+
+    /* Data scale · Space Mono. The load-bearing exception: labels, coordinate
+       rails and table cells live at 8-11px, and every pixel face is
+       unreadable down there. Unchanged. */
     --text-2xs:  8px;
     --text-xs:   9px;
     --text-sm:   10px;
@@ -118,6 +164,11 @@
     --tracking-wider:  0.14em;
     --tracking-widest: 0.20em;
     --tracking-button: 0.18em;
+    /* Pixel faces already sit on a grid; tracking them out breaks the grid
+       read. The old 0.2em wordmark tracking is wrong for Jersey — the
+       wordmark uses --tracking-display now. */
+    --tracking-display: 0.02em;
+    --tracking-ui:      0.14em;
 
     /* shadcn compatibility. `--border` MUST stay an HSL triplet — Tailwind's
        `border-border` wraps it in `hsl()`. Inline styles want `--hairline`. */
@@ -193,16 +244,35 @@
   body {
     background-color: var(--bg);
     color: var(--text);
-    font-family: 'Space Mono', 'Courier New', monospace;
+    font-family: var(--font-mono);
   }
 
-  /* Display face — figures, headlines, the wordmark. Archivo Black has one
-     weight; asking for 700 synthesises a bolder one and smears at small
-     sizes, so every rule that uses it pins `font-weight: 400`. */
+  /* Display face — figures, headlines, the wordmark. Jersey 10 has exactly
+     one weight; asking for 700 synthesises a bolder one and smears the pixel
+     grid, so every rule that uses it pins `font-weight: 400`.
+
+     Leading is set here rather than per call site because the face needs it
+     below 1 everywhere it appears. A call site that genuinely needs air uses
+     `--leading-display-loose`. */
   .font-display {
-    font-family: 'Archivo Black', 'Arial Black', sans-serif;
+    font-family: var(--font-display);
     font-weight: 400;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-display);
+    line-height: var(--leading-display);
+  }
+
+  /* UI face — buttons, tabs, lens names, stamps. 400 for tabs and quiet
+     labels, 700 for filled buttons. Never below --ui-xs (10px): Silkscreen
+     stops resolving at that size and the label turns to noise. */
+  .font-ui {
+    font-family: var(--font-ui);
+    font-weight: 400;
+    letter-spacing: var(--tracking-ui);
+    text-transform: uppercase;
+  }
+
+  .font-ui-bold {
+    font-weight: 700;
   }
 }
 
@@ -265,7 +335,7 @@
   color: var(--rot);
   background: var(--surface);
   padding: 6px 11px;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.22em;
@@ -279,7 +349,7 @@
   align-items: center;
   border: 2px solid currentColor;
   padding: 4px 8px;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 9px;
   letter-spacing: 0.14em;
@@ -301,7 +371,7 @@
   padding: 12px 20px;
   background: transparent;
   color: var(--on-surface);
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   letter-spacing: var(--tracking-button);
   text-transform: uppercase;

@@ -171,7 +171,7 @@ export default function PrivacyPage() {
           ✕
         </Link>
       </div>
-      <h1 className="font-display" style={{ fontSize: 30, lineHeight: 1.05, margin: '0 0 8px' }}>Privacy Policy</h1>
+      <h1 className="font-display" style={{ fontSize: 44, lineHeight: 0.8, margin: '0 0 8px' }}>Privacy Policy</h1>
       <p style={{ fontSize: 13, marginBottom: 4 }}>Terreno Privacy Policy</p>
       <p style={{ fontSize: 12, color: 'var(--mute-on-paper)', marginBottom: 24 }}>
         Effective Date: June 8, 2026

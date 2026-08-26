@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { ConnectButton } from '@/components/connect-button'
 import MapSwitcher from '@/components/Layout/MapSwitcher'
+import { Logo } from '@/components/core/Logo'
 
 interface TopBarProps {
   title: string
@@ -44,43 +45,11 @@ export default function TopBar({ title, children }: TopBarProps) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 9,
           flexShrink: 0,
           textDecoration: 'none',
         }}
       >
-        <span
-          aria-hidden
-          style={{
-            position: 'relative',
-            width: 20,
-            height: 20,
-            background: 'var(--paper)',
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              position: 'absolute',
-              left: 7,
-              top: 7,
-              width: 6,
-              height: 6,
-              background: 'var(--held)',
-            }}
-          />
-        </span>
-        <span
-          className="font-display"
-          style={{
-            fontSize: 18,
-            letterSpacing: '0.2em',
-            color: 'var(--paper)',
-            lineHeight: 1,
-          }}
-        >
-          TERRENO
-        </span>
+        <Logo unit={3} size={34} />
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

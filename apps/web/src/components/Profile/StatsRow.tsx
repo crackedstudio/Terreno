@@ -86,8 +86,8 @@ export default function StatsRow({
             <div
               className="font-display"
               style={{
-                fontSize: 24,
-                lineHeight: 1,
+                fontSize: 34,
+                lineHeight: 0.92,
                 color: cell.accent ?? 'var(--ink)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',

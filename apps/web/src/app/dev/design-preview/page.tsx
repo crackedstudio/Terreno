@@ -64,7 +64,7 @@ export default function DesignPreviewPage() {
           >
             1A
           </span>
-          <h1 className="font-display" style={{ fontSize: 40, lineHeight: 0.9, margin: 0 }}>
+          <h1 className="font-display" style={{ fontSize: 52, lineHeight: 0.8, margin: 0 }}>
             TERRENO / MERCURY
           </h1>
         </div>
@@ -110,7 +110,7 @@ export default function DesignPreviewPage() {
         </Section>
 
         <Section title="TYPE">
-          <div className="font-display" style={{ fontSize: 48, lineHeight: 1 }}>
+          <div className="font-display" style={{ fontSize: 76, lineHeight: 0.8 }}>
             0.42
           </div>
           <div
@@ -178,7 +178,7 @@ export default function DesignPreviewPage() {
             <span className="stamp">UNSTAMPED</span>
           </div>
           <div className="brut-card" style={{ padding: 16, marginTop: 22, maxWidth: 320 }}>
-            <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05 }}>
+            <div className="font-display" style={{ fontSize: 34, lineHeight: 0.92 }}>
               A BLOCK ON PAPER
             </div>
             <div
@@ -207,7 +207,7 @@ export default function DesignPreviewPage() {
               </span>
             </div>
             <div className="brut-card" style={{ padding: 16, marginTop: 22, maxWidth: 320 }}>
-              <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, color: 'var(--paper)' }}>
+              <div className="font-display" style={{ fontSize: 34, lineHeight: 0.92, color: 'var(--paper)' }}>
                 THE SAME BLOCK
               </div>
               <div

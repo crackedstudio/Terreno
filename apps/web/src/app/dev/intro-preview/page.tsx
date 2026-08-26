@@ -37,7 +37,7 @@ export default function IntroPreviewPage() {
         <button
           onClick={replay}
           className="pixel-btn pixel-btn-filled font-display"
-          style={{ fontSize: 10, padding: '8px 16px' }}
+          style={{ fontSize: 15, padding: '8px 16px' }}
         >
           REPLAY
         </button>

@@ -36,7 +36,7 @@ export default function NotFound() {
         style={{ display: 'block', imageRendering: 'pixelated' }}
       />
 
-      <div className="font-display" style={{ fontSize: 96, lineHeight: 0.85, color: 'var(--rot)' }}>
+      <div className="font-display" style={{ fontSize: 120, lineHeight: 0.8, color: 'var(--rot)' }}>
         404
       </div>
 

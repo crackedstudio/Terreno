@@ -49,7 +49,7 @@ export default function AvatarBlock({ color, name }: AvatarBlockProps) {
         <div
           className="font-display"
           style={{
-            fontSize: 27,
+            fontSize: 40,
             lineHeight: 0.95,
             color: 'var(--ink)',
             marginTop: 6,

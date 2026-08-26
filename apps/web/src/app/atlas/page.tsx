@@ -62,7 +62,7 @@ function AtlasRow({ map, fillPct, landCount, isHome, isCurrent, onPick }: RowPro
           {map.width}×{map.height} · {landCount} PLOTS ON LAND
         </span>
       </span>
-      <span className="font-display" style={{ fontSize: 22, lineHeight: 1 }}>
+      <span className="font-display" style={{ fontSize: 34, lineHeight: 0.92 }}>
         {fillPct === null ? '—' : `${Math.round(fillPct)}%`}
       </span>
     </button>
@@ -117,7 +117,7 @@ export default function AtlasPage() {
           color: 'var(--text)',
         }}
       >
-        <div className="font-display" style={{ fontSize: 40, lineHeight: 0.92 }}>
+        <div className="font-display" style={{ fontSize: 52, lineHeight: 0.8 }}>
           EVERY MAP
           <br />
           IN THE REGISTRY

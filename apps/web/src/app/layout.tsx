@@ -143,11 +143,11 @@ export default async function RootLayout({
         <link
           rel="preload"
           as="style"
-          href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
         />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
         />
       </head>
       <body

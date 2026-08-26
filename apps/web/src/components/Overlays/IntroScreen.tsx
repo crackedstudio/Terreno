@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { track } from '@/lib/analytics'
+import { LogoMark } from '@/components/core/Logo'
 
 // Five-slide onboarding carousel. Each slide tells one beat of the story
 // (own → 2x → decay → rewards → paint) and pairs a short headline with a
@@ -240,9 +241,7 @@ export default function IntroScreen({ inline = false }: { inline?: boolean } = {
       <style>{INTRO_CSS}</style>
 
       <div className="mi-head">
-        <span className="mi-mark" aria-hidden>
-          <span className="mi-mark-dot" style={{ background: accent }} />
-        </span>
+        <LogoMark unit={3} accent={accent} aria-hidden />
         <span className="mi-wordmark font-display">TERRENO</span>
         {!inline && (
           <button
@@ -344,17 +343,8 @@ const INTRO_CSS = `
   display: flex; align-items: center; gap: 9px;
   padding: 0 20px 4px;
 }
-.mi-mark {
-  position: relative; display: block;
-  width: 18px; height: 18px; background: var(--paper);
-  flex: 0 0 auto;
-}
-.mi-mark-dot {
-  position: absolute; left: 6px; top: 6px;
-  width: 6px; height: 6px;
-}
 .mi-wordmark {
-  font-size: 15px; letter-spacing: 0.2em; color: var(--paper);
+  font-size: 22px; letter-spacing: var(--tracking-display); color: var(--paper);
 }
 .mi-skip {
   margin-left: auto;
@@ -390,18 +380,18 @@ const INTRO_CSS = `
 /* The step numeral. Big enough to be the first thing seen, in the step's
    own accent, and hidden from screen readers — the kicker carries meaning. */
 .mi-step {
-  font-size: 76px; line-height: 0.8;
+  font-size: 110px; line-height: var(--leading-display);
   margin-bottom: 12px;
   flex: 0 0 auto;
 }
 .mi-kicker {
-  font-size: 26px; line-height: 1.02;
+  font-size: 38px; line-height: 0.92;
   color: var(--paper);
   text-wrap: pretty;
   flex: 0 0 auto;
 }
 .mi-headline {
-  font-size: 20px; line-height: 1.05;
+  font-size: 29px; line-height: 0.92;
   color: var(--rot);
   margin-top: 8px;
   flex: 0 0 auto;
@@ -444,7 +434,7 @@ const INTRO_CSS = `
   display: flex; align-items: center; justify-content: center;
   background: var(--paper); color: var(--ink);
   border: 3px solid var(--paper);
-  font-size: 17px; letter-spacing: 0.1em;
+  font-size: 24px; letter-spacing: var(--tracking-display);
   cursor: pointer;
   transition: transform 120ms, box-shadow 120ms;
 }
@@ -485,7 +475,7 @@ const INTRO_CSS = `
 .mi-tag-stack { position: absolute; inset: 0; pointer-events: none; }
 .mi-tag {
   position: absolute; left: 50%;
-  font-size: 20px; line-height: 1;
+  font-size: 29px; line-height: 1;
   color: var(--held);
   background: var(--ink);
   border: 3px solid var(--held);
@@ -534,7 +524,7 @@ const INTRO_CSS = `
 .mi-arrow {
   position: absolute; left: 50%; bottom: 14%;
   color: var(--held);
-  font-size: 32px;
+  font-size: 46px;
   transform: translateX(-50%);
   animation: mi-arrow-bounce 2s ease-in-out infinite;
 }

@@ -144,7 +144,7 @@ function TargetRow({ icon, label, onClick }: { icon: React.ReactNode; label: str
         gap: 10,
         width: '100%',
         padding: '9px 10px',
-        fontSize: 10,
+        fontSize: 15,
         letterSpacing: 1.5,
         color: 'var(--text)',
         background: 'transparent',

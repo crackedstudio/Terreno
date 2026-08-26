@@ -47,7 +47,7 @@ function Stat({
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
         <span
           className="font-display"
-          style={{ fontSize: 26, lineHeight: 1, color: 'var(--paper)' }}
+          style={{ fontSize: 38, lineHeight: 0.92, color: 'var(--paper)' }}
         >
           {loading ? '…' : value}
         </span>

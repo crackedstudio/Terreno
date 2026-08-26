@@ -326,7 +326,7 @@ export default function RanksPage() {
             >
               {!isLoading && (
                 <>
-                  <span className="font-display" style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.05 }}>
+                  <span className="font-display" style={{ fontSize: 34, color: 'var(--ink)', lineHeight: 0.92 }}>
                     NO CLAIMS YET
                   </span>
                   <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 9, letterSpacing: '0.16em', color: 'var(--mute-on-paper)' }}>
@@ -403,7 +403,7 @@ export default function RanksPage() {
                     boxShadow: '4px 4px 0 var(--rot)',
                   }}
                 >
-                  <div className="font-display" style={{ fontSize: 17, color: 'var(--ink)', lineHeight: 1.1 }}>
+                  <div className="font-display" style={{ fontSize: 26, color: 'var(--ink)', lineHeight: 0.92 }}>
                     {"YOU ARE NOT ON THIS LEDGER."}
                   </div>
                   <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 9, letterSpacing: '0.14em', color: 'var(--mute-on-paper)', marginTop: 5 }}>

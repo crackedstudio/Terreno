@@ -10,7 +10,6 @@ interface LeaderboardTabsProps {
   scope?: LeaderboardScope
 }
 
-const MONO = "'Space Mono', monospace"
 
 // Labels come from BOARD_LABELS so the tabs, the FAQ and the drift test can
 // never disagree on what a board is called.
@@ -68,10 +67,11 @@ export default function LeaderboardTabs({ activeTab, onTabChange, scope = 'local
               onClick={() => onTabChange(tab.key)}
               aria-current={isActive ? 'page' : undefined}
               style={{
-                fontFamily: MONO,
-                fontWeight: 700,
-                fontSize: 11,
-                letterSpacing: '0.16em',
+                fontFamily: 'var(--font-ui)',
+                fontWeight: 400,
+                fontSize: 'var(--ui-sm)',
+                letterSpacing: 'var(--tracking-ui)',
+                textTransform: 'uppercase',
                 cursor: 'pointer',
                 background: isActive ? BOARD_ACCENT[tab.key] : 'var(--paper)',
                 color: isActive ? BOARD_ACCENT_TEXT[tab.key] : 'var(--mute-on-paper)',
@@ -89,7 +89,7 @@ export default function LeaderboardTabs({ activeTab, onTabChange, scope = 'local
         <div style={{ padding: '14px 16px 0' }}>
           <div
             className="font-display"
-            style={{ fontSize: 22, lineHeight: 1.05, color: 'var(--ink)' }}
+            style={{ fontSize: 34, lineHeight: 0.92, color: 'var(--ink)' }}
           >
             {activeDescription}
           </div>
