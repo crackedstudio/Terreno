@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react'
 import { useBuyPixels } from '@/hooks/useBuyPixels'
 import { OVER_SPEND_CAP_MESSAGE, PRICE_MOVED_MESSAGE } from '@/lib/buyLimits'
 import { GENERIC_RETRY_MESSAGE } from '@/lib/buyErrors'
+import { BUILDER_CODE_DATA_SUFFIX } from '@/lib/attribution'
 
 // Knob-driven doubles, hoisted above the vi.mock factories (which are
 // themselves hoisted). Every knob is reset in beforeEach so each test starts
@@ -123,6 +124,10 @@ const approveCalls = () =>
   )
 const trackedEvents = (name: string) =>
   h.track.mock.calls.filter((c) => c[0] === name)
+const estimateCalls = (functionName: string) =>
+  h.estimateContractGas.mock.calls.filter(
+    (c) => (c[0] as { functionName: string }).functionName === functionName,
+  )
 
 /* ------------------------------------------------------------------ *
  * Realistic viem error fixtures — the shapes wagmi's writeContractAsync
@@ -539,5 +544,84 @@ describe('useBuyPixels error handling', () => {
     expect(result.current.error).toBe(
       'Price moved above your limit — please review and try again',
     )
+  })
+})
+
+describe('useBuyPixels Base Builder Code attribution', () => {
+  it('attributes the buy — on the send AND on the estimate that sizes its gas limit', async () => {
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      await result.current.execute([7, 8], 2_000_000n)
+    })
+
+    const buyArgs = buyCalls()[0][0] as { dataSuffix?: string }
+    expect(buyArgs.dataSuffix).toBe(BUILDER_CODE_DATA_SUFFIX)
+
+    // The limit passed to the wallet comes from this estimate. Estimating
+    // without the suffix under-measures the calldata that actually gets
+    // broadcast, so the two must carry the identical suffix — that equality,
+    // not the presence of a suffix, is what this pins.
+    const estimateArgs = estimateCalls('buyPixels')[0][0] as {
+      dataSuffix?: string
+    }
+    expect(estimateArgs.dataSuffix).toBe(buyArgs.dataSuffix)
+  })
+
+  it('attributes the approve on the same terms', async () => {
+    h.allowance.value = 0n
+    h.writeContractAsync.mockReset()
+    h.writeContractAsync
+      .mockResolvedValueOnce(APPROVE_HASH)
+      .mockResolvedValueOnce(BUY_HASH)
+    vi.useFakeTimers()
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      const p = result.current.execute([1], 1_000_000n)
+      await vi.runAllTimersAsync()
+      await vi.runAllTimersAsync()
+      await p
+    })
+
+    const approveArgs = approveCalls()[0][0] as { dataSuffix?: string }
+    expect(approveArgs.dataSuffix).toBe(BUILDER_CODE_DATA_SUFFIX)
+    const estimateArgs = estimateCalls('approve')[0][0] as {
+      dataSuffix?: string
+    }
+    expect(estimateArgs.dataSuffix).toBe(approveArgs.dataSuffix)
+  })
+
+  it('replays the suffix when re-simulating a reverted buy for its reason', async () => {
+    // The re-simulation exists to reproduce the transaction that reverted.
+    // Dropping the suffix there simulates different calldata than the one
+    // that failed, which is how a "reason" stops being the real reason.
+    h.waitForTransactionReceipt.mockResolvedValue({ status: 'reverted' })
+    h.simulateContract.mockRejectedValue(slippageSimulationError())
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      await result.current.execute([1], 1_000_000n)
+    })
+
+    expect(h.simulateContract).toHaveBeenCalledTimes(1)
+    const simArgs = h.simulateContract.mock.calls[0][0] as {
+      dataSuffix?: string
+    }
+    expect(simArgs.dataSuffix).toBe(BUILDER_CODE_DATA_SUFFIX)
+  })
+
+  it('CONTROL: the gas ceiling path still sends an attributed buy', async () => {
+    // A failed estimate skips the call the assertions above read from. The
+    // send must still carry attribution — otherwise every buy made on a
+    // flaky RPC would go unattributed and no test would notice.
+    h.estimateContractGas.mockRejectedValue(new Error('estimate unavailable'))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { result } = renderHook(() => useBuyPixels(0))
+    await act(async () => {
+      await result.current.execute([7], 1_000_000n)
+    })
+    warn.mockRestore()
+
+    const buyArgs = buyCalls()[0][0] as { dataSuffix?: string; gas?: bigint }
+    expect(buyArgs.gas).toBe(380_000n) // ceiling: 300k + 1 * 80k
+    expect(buyArgs.dataSuffix).toBe(BUILDER_CODE_DATA_SUFFIX)
   })
 })

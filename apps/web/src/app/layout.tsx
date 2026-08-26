@@ -21,6 +21,10 @@ const DESCRIPTION = 'Own the world, one pixel at a time. Live on Nimiq Pay, buil
 // the /s route's generateMetadata (see app/s/page.tsx).
 const DEFAULT_OG_IMAGE = `${APP_URL}/api/og?k=invite`
 
+// base.dev app identifier, from dashboard.base.org/apps. Used only for the
+// domain-verification meta tag emitted below.
+const BASE_APP_ID = '6a8dad7b934c036b21810d7d'
+
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: 'Terreno',
@@ -44,6 +48,15 @@ export const metadata: Metadata = {
   },
   other: {
     'talentapp:project_verification': 'a80e900fa7d73b76b19ceb2f9d6a5c7c7ea7a1c44a2e83a1008417c256b302e30a7961e29790868f11ebce8ca3477d21b934f544f4b1a676e1a097df4487dded',
+    // base.dev domain verification. base.dev fetches this URL and looks for
+    // the tag, so it has to be served on the apex the dashboard has
+    // registered — every route is `force-dynamic` below, so it renders on
+    // demand rather than depending on a prerender.
+    //
+    // NOT the Builder Code: this is base.dev's app identifier, and the
+    // ERC-8021 attribution code is a separate short string (see
+    // lib/attribution.ts). Same dashboard, two different values.
+    'base:app_id': BASE_APP_ID,
   },
 };
 

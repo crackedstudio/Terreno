@@ -29,17 +29,25 @@ import { Attribution } from 'ox/erc8021'
 /**
  * The Builder Code minted to this app, from base.dev → Settings → Builder Code.
  *
- * NOTE: this is the value supplied as `base:app_id` — base.dev's app
- * identifier. base.dev issues the Builder Code as a separate short string
- * (its docs show the shape `bc_b7k3p9da`). If the two differ for this app,
- * update NEXT_PUBLIC_BASE_BUILDER_CODE in .env.local with the Builder Code;
- * nothing else needs to change, and attribution is a no-op until it matches
- * a minted code.
+ * The hardcoded fallback is base.dev's *app id* — the value that goes in the
+ * `base:app_id` domain-verification meta tag in app/layout.tsx, NOT a Builder
+ * Code. They are two different identifiers issued by the same dashboard; the
+ * Builder Code is a short minted string shaped like `bc_b7k3p9da`. Until one
+ * of the two sources below carries the real code, every write still sends a
+ * well-formed ERC-8021 suffix naming a code that was never minted: Base
+ * attributes nothing and the ~672 gas is spent for no return.
  *
- * Defaults to empty string if not configured; the attribution module handles
- * no-op gracefully.
+ * There is no empty/disabled branch — an unset env var lands on the fallback,
+ * and `toDataSuffix` encodes whatever string it is given. So the fallback is
+ * the value that ships unless the env var is set.
+ *
+ * `NEXT_PUBLIC_*` is inlined at build time: setting it in the Vercel dashboard
+ * does nothing until the next build, and a stray newline (`echo` vs `printf`)
+ * silently corrupts the code. Changing the fallback here is the path that
+ * cannot half-apply.
  */
-export const BASE_BUILDER_CODE = process.env.NEXT_PUBLIC_BASE_BUILDER_CODE ?? '6a8dad7b934c036b21810d7d'
+export const BASE_BUILDER_CODE =
+  process.env.NEXT_PUBLIC_BASE_BUILDER_CODE ?? '6a8dad7b934c036b21810d7d'
 
 /**
  * ERC-8021 schema-0 suffix: ASCII codes ∥ codes length (1 byte) ∥ schema id

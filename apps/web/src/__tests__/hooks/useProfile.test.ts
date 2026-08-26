@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useProfile } from '@/hooks/useProfile'
 import { PROFILE_DEFAULT_PALETTE } from '@/constants/map'
+import { BUILDER_CODE_DATA_SUFFIX } from '@/lib/attribution'
 
 // Shared, per-test-configurable mocks. base.id (8453) is used as the connected
 // chain so save() skips the chain-switch branch by default.
@@ -144,5 +145,21 @@ describe('useProfile', () => {
     })
     expect(mocks.writeContractAsync).not.toHaveBeenCalled()
     expect(result.current.saveState).toBe('idle')
+  })
+
+  it('attributes the profile write with the Base Builder Code suffix', async () => {
+    const { result } = renderHook(() => useProfile(ADDR))
+    act(() => result.current.setName('lena'))
+
+    await act(async () => {
+      await result.current.save()
+    })
+
+    const call = mocks.writeContractAsync.mock.calls[0][0]
+    expect(call.dataSuffix).toBe(BUILDER_CODE_DATA_SUFFIX)
+    // The gas limit sent to the wallet is sized from this estimate, so it has
+    // to price the same calldata — suffix included.
+    const estimate = mocks.estimateContractGas.mock.calls[0][0]
+    expect(estimate.dataSuffix).toBe(call.dataSuffix)
   })
 })
