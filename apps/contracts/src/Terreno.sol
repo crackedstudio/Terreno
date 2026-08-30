@@ -69,9 +69,31 @@ contract Terreno is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuard {
     mapping(address => TokenConfig) public tokenConfig;
     address[] public acceptedTokens;
 
+    /// @notice Nimiq transaction hashes already settled by `settleNimPurchase`.
+    /// @dev    APPENDED after the original layout — every variable above keeps its
+    ///         slot, which is what makes the upgrade that introduced this safe.
+    ///         Anything added later must go BELOW this line for the same reason.
+    ///
+    ///         This lives on chain rather than in a settler's database because it is
+    ///         the one place a replay guard cannot be lost, forged or diverge between
+    ///         instances: whoever settles, and however many times they retry, a given
+    ///         NIM payment can buy land exactly once. It also makes every cross-chain
+    ///         settlement auditable by anyone holding the Nimiq transaction hash.
+    mapping(bytes32 => bool) public settledNimTx;
+
     // --- Events ---
     /// @param totalCost paid amount in base PRICE_DECIMALS units (scale per-token by decimals)
     event PixelsPurchased(address indexed buyer, address indexed token, uint256[] ids, uint256 totalCost);
+    /// @notice A NIM-funded purchase settled on Base. `nimTxHash` is the Nimiq
+    ///         transaction that paid for it, and can be looked up on the Nimiq chain.
+    event NimPurchaseSettled(
+        bytes32 indexed nimTxHash, address indexed recipient, uint256[] ids, uint256 totalCost
+    );
+    /// @notice A buy paid by one address and assigned to another (third-party settlement).
+    ///         `PixelsPurchased` still names the recipient; this records who funded it.
+    event PixelsPurchasedFor(
+        address indexed payer, address indexed recipient, uint256[] ids, uint256 totalCost
+    );
     event ProfileUpdated(address indexed user, uint24 color, bytes label, bytes url);
     event AcceptedTokenAdded(address indexed token, uint8 decimals);
     event AcceptedTokenRemoved(address indexed token);
@@ -90,6 +112,9 @@ contract Terreno is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuard {
     error InvalidMaskLength();
     error InvalidFeeRate();
     error InvalidToken();
+    error InvalidRecipient();
+    error NimTxAlreadySettled(bytes32 nimTxHash);
+    error InvalidNimTxHash();
     error NoTokens();
     error TokenNotAccepted(address token);
     error TokenAlreadyAccepted(address token);
@@ -148,6 +173,80 @@ contract Terreno is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuard {
         external
         nonReentrant
     {
+        _buyPixels(msg.sender, ids, token, maxTotalCost, deadline);
+    }
+
+    /// @notice Buy pixels and assign them to `recipient`, paying from the caller's balance.
+    /// @dev    Exists so a payment settled in another currency — notably NIM on the Nimiq
+    ///         chain, which cannot reach this contract — can still put the land in the
+    ///         player's own hands. Without it a settling relayer becomes `msg.sender` and
+    ///         therefore the owner of record, and the `PixelsPurchased` event would
+    ///         attribute the buy to the relayer on every leaderboard.
+    ///
+    ///         The split is deliberate and narrow: `recipient` receives the pixels and is
+    ///         named in the event; the CALLER still pays, and the caller's allowance is
+    ///         still what is spent. This grants no ability to move somebody else's pixels
+    ///         or to spend somebody else's tokens — it only lets a payer direct what they
+    ///         are buying to another address. Anyone may call it; a caller who pays for a
+    ///         stranger's pixels has simply made them a gift.
+    ///
+    ///         Storage layout is untouched: this appends a function, not state.
+    /// @param recipient Address that will own the purchased pixels. Must not be zero.
+    function buyPixelsFor(
+        address recipient,
+        uint256[] calldata ids,
+        address token,
+        uint256 maxTotalCost,
+        uint256 deadline
+    ) external nonReentrant {
+        if (recipient == address(0)) revert InvalidRecipient();
+        _buyPixels(recipient, ids, token, maxTotalCost, deadline);
+    }
+
+    /// @notice Settle a purchase that was paid for in NIM on the Nimiq chain.
+    /// @dev    Identical to `buyPixelsFor`, plus a one-shot guard keyed on the Nimiq
+    ///         transaction that funded it. NIM cannot reach this contract, so a
+    ///         settler pays here in an accepted stablecoin on behalf of the player;
+    ///         the guard is what stops the same NIM payment being settled twice —
+    ///         by a retry, by two settler instances, or by a replayed request.
+    ///
+    ///         The guard is set BEFORE any external call, so a reentrant attempt to
+    ///         settle the same hash finds it already consumed. A reverting settlement
+    ///         un-sets it with the rest of the transaction, so a genuine failure can
+    ///         be retried.
+    ///
+    ///         This contract cannot verify that the Nimiq payment happened, or that
+    ///         it was for the right amount — no EVM contract can read another chain.
+    ///         That check belongs to the settler, and this function's guarantee is
+    ///         narrower and worth stating plainly: whatever the settler decides, it
+    ///         can only act on a given NIM transaction ONCE.
+    /// @param nimTxHash The funding transaction's hash on the Nimiq chain.
+    function settleNimPurchase(
+        bytes32 nimTxHash,
+        address recipient,
+        uint256[] calldata ids,
+        address token,
+        uint256 maxTotalCost,
+        uint256 deadline
+    ) external nonReentrant {
+        if (nimTxHash == bytes32(0)) revert InvalidNimTxHash();
+        if (recipient == address(0)) revert InvalidRecipient();
+        if (settledNimTx[nimTxHash]) revert NimTxAlreadySettled(nimTxHash);
+        settledNimTx[nimTxHash] = true;
+
+        uint256 totalCost = _buyPixels(recipient, ids, token, maxTotalCost, deadline);
+        emit NimPurchaseSettled(nimTxHash, recipient, ids, totalCost);
+    }
+
+    /// @dev Shared body. `recipient` receives the pixels; `msg.sender` always pays.
+    ///      Returns the batch total so callers can include it in their own events.
+    function _buyPixels(
+        address recipient,
+        uint256[] calldata ids,
+        address token,
+        uint256 maxTotalCost,
+        uint256 deadline
+    ) internal returns (uint256) {
         if (block.timestamp > deadline) revert DeadlineExpired(deadline);
 
         TokenConfig memory tc = tokenConfig[token];
@@ -225,9 +324,9 @@ contract Terreno is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuard {
             // Update pixel state. owner and saleCount share one slot, so write the whole
             // struct at once (single SSTORE) rather than two read-modify-write field stores.
             if (sc < 255) {
-                pixels[id] = PixelData({owner: msg.sender, saleCount: sc + 1});
+                pixels[id] = PixelData({owner: recipient, saleCount: sc + 1});
             } else {
-                px.owner = msg.sender;
+                px.owner = recipient;
             }
 
             unchecked {
@@ -259,7 +358,11 @@ contract Terreno is UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuard {
             t.safeTransferFrom(msg.sender, address(this), _scaleToToken(amounts[0], tc.decimals));
         }
 
-        emit PixelsPurchased(msg.sender, token, ids, totalCost);
+        emit PixelsPurchased(recipient, token, ids, totalCost);
+        // Audit trail for third-party settlement. Emitted only when payer and
+        // owner differ, so the ordinary path is unchanged and costs no extra gas.
+        if (recipient != msg.sender) emit PixelsPurchasedFor(msg.sender, recipient, ids, totalCost);
+        return totalCost;
     }
 
     function updateProfile(uint24 color, string calldata label, string calldata url) external {
