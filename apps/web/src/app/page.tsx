@@ -11,6 +11,7 @@ import HeatmapLegend from '@/components/Map/HeatmapLegend'
 import DealsLegend from '@/components/Map/DealsLegend'
 import ZoomHintToast from '@/components/Layout/ZoomHintToast'
 import ActivityToast from '@/components/Layout/ActivityToast'
+import RaidAlert from '@/components/Layout/RaidAlert'
 import CampaignBanner from '@/components/Layout/CampaignBanner'
 import BridgeBanner from '@/components/Layout/BridgeBanner'
 import BottomNav from '@/components/Layout/BottomNav'
@@ -669,6 +670,10 @@ export default function Home() {
       {/* Live purchase feed — "someone just bought N pixels" toasts for the
           current map. Self-contained; quiet until the subgraph URL is set. */}
       <ActivityToast mapId={currentMapId} />
+
+      {/* The other side of that feed: somebody took YOUR land and paid you
+          for it. Quiet until the subgraph URL is set, and until it happens. */}
+      <RaidAlert address={address} mapId={currentMapId} />
 
       {/* Tap-while-zoomed-out hint: explains that selection needs paint-mode
           zoom. Shown briefly after a tap zooms the player in. */}
