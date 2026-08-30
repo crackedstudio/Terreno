@@ -167,6 +167,54 @@ export async function signWithNimiq(message: string): Promise<SignatureResult> {
   return { publicKey, signature }
 }
 
+/**
+ * Send NIM with data attached. **Shows a native confirmation dialog.**
+ *
+ * `value` is in Luna (1 NIM = 100,000 Luna) and the SDK types it as a JS
+ * number, so it is range-checked here rather than silently losing precision: a
+ * purchase quoted above `Number.MAX_SAFE_INTEGER` Luna would otherwise be sent
+ * as a different amount than the one that was quoted.
+ *
+ * `data` rides along as the transaction's recipient data and is what ties this
+ * payment to one specific order — the settler reads it back off the Nimiq chain
+ * as `recipientData`. Keep it short; a basic transaction's data field is small.
+ *
+ * Returns the transaction hash, which is the receipt the settler verifies.
+ */
+export async function sendNimWithData(params: {
+  recipient: string
+  luna: bigint
+  data: string
+}): Promise<string> {
+  const { recipient, luna, data } = params
+
+  if (!recipient.trim()) throw new NimiqProviderError('No Nimiq recipient address.')
+  if (luna <= 0n) throw new NimiqProviderError('Refusing to send a zero payment.')
+  if (luna > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new NimiqProviderError('That amount is too large to send in one payment.')
+  }
+  if (!data.trim()) throw new NimiqProviderError('Refusing to send a payment with no reference.')
+
+  const provider = await loadNimiqProvider()
+  if (!provider) throw new NimiqProviderError('Not running inside Nimiq Pay.')
+
+  const result = rejectErrorResponse(
+    await provider.sendBasicTransactionWithData({
+      recipient,
+      value: Number(luna),
+      data,
+    }),
+    'The payment was declined.',
+  )
+
+  // The SDK types this as `string | ErrorResponse`; anything else means the
+  // host answered in a shape that cannot be treated as a receipt.
+  if (typeof result !== 'string' || result.length === 0) {
+    throw new NimiqProviderError('Nimiq Pay returned no transaction hash.')
+  }
+  return result
+}
+
 /** Test seam: drop the memoized provider so each case starts clean. */
 export function resetNimiqProviderForTests(): void {
   providerPromise = null

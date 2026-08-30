@@ -11,7 +11,7 @@ Sepolia).
 | | |
 |---|---|
 | World proxy | [`0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79`](https://basescan.org/address/0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79) |
-| World implementation | [`0x7FbA520d7C7935300B750a64eaBBc77Af1500411`](https://basescan.org/address/0x7FbA520d7C7935300B750a64eaBBc77Af1500411) |
+| World implementation | [`0x30cda206a42Cadcc42540553926e701d04C0b107`](https://basescan.org/address/0x30cda206a42Cadcc42540553926e701d04C0b107) |
 | Deployed | block 50404393 |
 | Accepted token | USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (6 decimals) |
 | Continents | not deployed — each on the undeployed sentinel |

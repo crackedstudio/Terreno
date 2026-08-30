@@ -3,6 +3,7 @@
 import React, { useMemo, useEffect, useRef } from 'react'
 import type { PixelView } from '@/lib/mock'
 import type { TxStep } from '@/hooks/useBuyPixels'
+import NimPayPanel from './NimPayPanel'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { formatUSDT } from '@/lib/colorUtils'
 import { generateUsername } from '@/lib/username'
@@ -464,6 +465,14 @@ export default function SelectionDrawer({
           {/* Sign / discard. Pinned below the scroll area so the primary
               action never scrolls out of reach on a long form. */}
           <div style={{ flexShrink: 0, padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9, borderTop: '3px solid var(--ink)', background: 'var(--paper)' }}>
+            {/* Second way to pay for the same basket. Renders nothing outside
+                Nimiq Pay, so the stablecoin path is untouched for everyone else. */}
+            <NimPayPanel
+              mapId={currentMapId}
+              pixelIds={Array.from(selectedIds)}
+              recipient={userAddress}
+            />
+
             <div style={{ ...LABEL_MUTED, textAlign: 'center' }}>THE REGISTRY DOES NOT FORGET</div>
             <button
               onClick={onBuy}

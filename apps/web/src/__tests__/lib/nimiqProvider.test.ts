@@ -4,6 +4,7 @@ import {
   listNimiqAccounts,
   loadNimiqProvider,
   resetNimiqProviderForTests,
+  sendNimWithData,
   signWithNimiq,
 } from '@/lib/nimiqProvider'
 import { isNimiqPay } from '@/lib/nimiq'
@@ -15,9 +16,10 @@ vi.mock('@/lib/nimiq', () => ({ isNimiqPay: vi.fn(() => true) }))
 const h = vi.hoisted(() => ({
   listAccounts: vi.fn(),
   sign: vi.fn(),
+  sendBasicTransactionWithData: vi.fn(),
   init: vi.fn(),
 }))
-const { listAccounts, sign, init } = h
+const { listAccounts, sign, sendBasicTransactionWithData, init } = h
 
 vi.mock('@nimiq/mini-app-sdk', () => ({ init: h.init }))
 
@@ -27,7 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   resetNimiqProviderForTests()
   vi.mocked(isNimiqPay).mockReturnValue(true)
-  init.mockResolvedValue({ listAccounts, sign })
+  init.mockResolvedValue({ listAccounts, sign, sendBasicTransactionWithData })
 })
 
 describe('loadNimiqProvider', () => {
@@ -120,5 +122,57 @@ describe('signWithNimiq', () => {
   it('refuses to raise a dialog for an empty message', async () => {
     await expect(signWithNimiq('   ')).rejects.toThrow('empty message')
     expect(sign).not.toHaveBeenCalled()
+  })
+})
+
+describe('sendNimWithData', () => {
+  const OK = { recipient: 'NQ67 LF4H CV7N B9R0 CAEX PMJK LHNF CD3Y L7B4', luna: 71_725_000n, data: 'tag' }
+
+  it('sends the quoted amount in Luna with the order reference attached', async () => {
+    sendBasicTransactionWithData.mockResolvedValue('0xnimtx')
+    expect(await sendNimWithData(OK)).toBe('0xnimtx')
+    expect(sendBasicTransactionWithData).toHaveBeenCalledWith({
+      recipient: OK.recipient,
+      value: 71_725_000,
+      data: 'tag',
+    })
+  })
+
+  // A declined payment resolves the error envelope rather than rejecting, so
+  // without narrowing the caller would treat a refusal as a receipt.
+  it('throws when the user declines the payment dialog', async () => {
+    sendBasicTransactionWithData.mockResolvedValue({
+      error: { type: 'USER_REJECTED', message: 'User cancelled the payment' },
+    })
+    await expect(sendNimWithData(OK)).rejects.toThrow('User cancelled the payment')
+  })
+
+  it('rejects a response that is not a transaction hash', async () => {
+    sendBasicTransactionWithData.mockResolvedValue({})
+    await expect(sendNimWithData(OK)).rejects.toThrow('no transaction hash')
+  })
+
+  // Luna is a JS number in the SDK; sending an amount that cannot be
+  // represented exactly would transfer a different sum than was quoted.
+  it('refuses an amount too large to represent exactly', async () => {
+    await expect(
+      sendNimWithData({ ...OK, luna: BigInt(Number.MAX_SAFE_INTEGER) + 1n }),
+    ).rejects.toThrow('too large')
+    expect(sendBasicTransactionWithData).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['a zero amount', { luna: 0n }],
+    ['a negative amount', { luna: -1n }],
+    ['no recipient', { recipient: '  ' }],
+    ['no order reference', { data: '' }],
+  ])('refuses to raise a dialog for %s', async (_l, patch) => {
+    await expect(sendNimWithData({ ...OK, ...patch })).rejects.toThrow()
+    expect(sendBasicTransactionWithData).not.toHaveBeenCalled()
+  })
+
+  it('throws outside Nimiq Pay', async () => {
+    vi.mocked(isNimiqPay).mockReturnValue(false)
+    await expect(sendNimWithData(OK)).rejects.toThrow('Not running inside Nimiq Pay.')
   })
 })
