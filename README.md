@@ -108,9 +108,10 @@ Implementation (logic) contract behind the UUPS proxy:
 
 | Map | Implementation |
 |-----|----------------|
-| World | [`0x7FbA520d7C7935300B750a64eaBBc77Af1500411`](https://basescan.org/address/0x7FbA520d7C7935300B750a64eaBBc77Af1500411) |
+| World | [`0x30cda206a42Cadcc42540553926e701d04C0b107`](https://basescan.org/address/0x30cda206a42Cadcc42540553926e701d04C0b107) |
 
-Both are source-verified on Basescan. See
+The proxy is source-verified on Basescan. The implementation above was
+deployed by the `settleNimPurchase` upgrade and still needs verifying. See
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for deploying the remaining maps.
 
 To add or change a map: update the `MAPS` array in the registry (id, slug, displayName, address, grid dims), drop the continent's mask JSON into `apps/contracts/map/` and run `pnpm -F web build:masks`. No other code change is required — rendering, leaderboards, and the active-pointer mechanism all read the registry.

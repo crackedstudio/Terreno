@@ -9,9 +9,11 @@ import {
   NIM_MAX_ORDER_USD_MICROS,
   NIM_PRICE_URL,
   NIM_QUOTE_TTL_SECONDS,
+  NIM_SETTLEMENT_TOKEN,
   NIM_TREASURY_ADDRESS,
   nimPaymentsConfigured,
 } from '@/lib/nim/config'
+import { capacityShortfall, settlerCapacity } from '@/lib/nim/settler'
 import { logger } from '@/lib/logger'
 import { randomBytes } from 'node:crypto'
 import type { MapId } from '@/lib/maps/types'
@@ -31,6 +33,21 @@ import type { MapId } from '@/lib/maps/types'
 export const dynamic = 'force-dynamic'
 
 const MAX_PIXELS_PER_ORDER = 200
+
+/**
+ * What a player is told when the settler cannot pay. Deliberately generic — the
+ * settler's address, balance and allowance are operational detail, and a public
+ * endpoint that reports them turns into a float monitor for anyone curious.
+ */
+const NIM_UNAVAILABLE = 'NIM payments are unavailable right now. Pay with USDC or USDT instead.'
+
+/** The settlement currency, matching what `/api/nim/settle` will use. */
+function pickSettlementToken(
+  accepted: readonly `0x${string}`[],
+): `0x${string}` | undefined {
+  const preferred = NIM_SETTLEMENT_TOKEN.toLowerCase()
+  return preferred ? accepted.find((t) => t.toLowerCase() === preferred) : accepted[0]
+}
 
 async function nimUsd(): Promise<number> {
   const res = await fetch(NIM_PRICE_URL, { signal: AbortSignal.timeout(10_000) })
@@ -81,7 +98,7 @@ export async function POST(request: Request) {
   try {
     const contract = getMapContractById(mapId as MapId)
 
-    const [usdMicros, price] = await Promise.all([
+    const [usdMicros, price, accepted] = await Promise.all([
       fallbackReadClient.readContract({
         address: contract.address,
         abi: TERRENO_ABI,
@@ -89,6 +106,11 @@ export async function POST(request: Request) {
         args: [ids.map((n) => BigInt(n))],
       }) as Promise<bigint>,
       nimUsd(),
+      fallbackReadClient.readContract({
+        address: contract.address,
+        abi: TERRENO_ABI,
+        functionName: 'getAcceptedTokens',
+      }) as Promise<readonly `0x${string}`[]>,
     ])
 
     if (usdMicros > NIM_MAX_ORDER_USD_MICROS) {
@@ -97,6 +119,28 @@ export async function POST(request: Request) {
         { error: 'That basket is too large to pay for in NIM. Buy fewer pixels.' },
         { status: 400 },
       )
+    }
+
+    // Refuse to quote a basket the settler cannot pay for. The player sends
+    // NIM before settlement happens, so quoting beyond the settler's means is
+    // how somebody ends up having paid for land that cannot be delivered.
+    // Checked here, where the answer is "not right now", rather than after
+    // their money has moved.
+    const token = pickSettlementToken(accepted)
+    if (!token) {
+      logger.error('nim quote: contract accepts no tokens', { mapId })
+      return NextResponse.json({ error: NIM_UNAVAILABLE }, { status: 503 })
+    }
+    const capacity = await settlerCapacity(contract.address, token)
+    const shortfall = capacityShortfall(capacity, usdMicros)
+    if (shortfall) {
+      // Logged with the operational detail; the player sees none of it.
+      logger.error('nim quote refused: settler cannot cover the basket', {
+        shortfall,
+        mapId,
+        usdMicros: usdMicros.toString(),
+      })
+      return NextResponse.json({ error: NIM_UNAVAILABLE }, { status: 503 })
     }
 
     const nimUsdScaled = parseNimUsdPrice(price)

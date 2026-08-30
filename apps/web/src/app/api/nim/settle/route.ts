@@ -13,6 +13,7 @@ import {
   nimPaymentsConfigured,
   settlerPrivateKey,
 } from '@/lib/nim/config'
+import { capacityShortfall, settlerCapacity } from '@/lib/nim/settler'
 import { logger } from '@/lib/logger'
 import type { MapId } from '@/lib/maps/types'
 
@@ -123,6 +124,26 @@ export async function POST(request: Request) {
         preferred
           ? `NIM_SETTLEMENT_TOKEN ${preferred} is not accepted by the contract`
           : 'the contract accepts no tokens',
+      )
+    }
+
+    // Re-checked here even though the quote already did: the two are minutes
+    // apart, and in between the float can be drained by other settlements or an
+    // approval can be revoked. Better a clear 503 than a reverted transaction
+    // that burns gas and reports nothing useful about why.
+    const shortfall = capacityShortfall(await settlerCapacity(contract.address, token), usdMicros)
+    if (shortfall) {
+      logger.error('nim settlement blocked: settler cannot cover the purchase', {
+        shortfall,
+        nimTxHash,
+        usdMicros: order.usdMicros,
+      })
+      return NextResponse.json(
+        {
+          error: 'Settlement is temporarily unavailable. Your payment is safe — retry shortly.',
+          settled: false,
+        },
+        { status: 503 },
       )
     }
 

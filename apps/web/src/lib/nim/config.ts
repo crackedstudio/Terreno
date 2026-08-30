@@ -76,13 +76,27 @@ export function orderSecret(): string {
   return s
 }
 
-/** The settler's Base key. No default — it spends real money. */
+/**
+ * The settler's Base key. No default — it spends real money.
+ *
+ * Accepts the key with or without an `0x` prefix. Key material gets pasted
+ * between tools that disagree about the prefix, and rejecting a perfectly good
+ * key over two characters disables payments with an error that reads like the
+ * key is wrong. viem needs the prefix, so it is added rather than demanded.
+ *
+ * Everything else is still strict: wrong length or a non-hex character is a
+ * malformed key, and this throws rather than letting a broken settler start.
+ */
 export function settlerPrivateKey(): `0x${string}` {
-  const k = process.env.NIM_SETTLER_PRIVATE_KEY
-  if (!k || !/^0x[0-9a-fA-F]{64}$/.test(k)) {
-    throw new Error('NIM_SETTLER_PRIVATE_KEY is unset or malformed. NIM settlement is disabled.')
+  const raw = (process.env.NIM_SETTLER_PRIVATE_KEY ?? '').trim()
+  const hex = raw.startsWith('0x') ? raw.slice(2) : raw
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    throw new Error(
+      'NIM_SETTLER_PRIVATE_KEY is unset or malformed (needs 64 hex characters). ' +
+        'NIM settlement is disabled.',
+    )
   }
-  return k as `0x${string}`
+  return `0x${hex}` as `0x${string}`
 }
 
 /**

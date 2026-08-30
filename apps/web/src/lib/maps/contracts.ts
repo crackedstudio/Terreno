@@ -89,7 +89,7 @@ const MAPS: readonly MapContract[] = [
     displayName: 'WORLD',
     // Base mainnet, deployed 2026-08-24 in block 50404393. UUPS proxy —
     // this is the address users interact with, not the implementation
-    // (0x7FbA520d7C7935300B750a64eaBBc77Af1500411).
+    // (0x30cda206a42Cadcc42540553926e701d04C0b107).
     address: '0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79',
     chainId: base.id,
     width: 170,
