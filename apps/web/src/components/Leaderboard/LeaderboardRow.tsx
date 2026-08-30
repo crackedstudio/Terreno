@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { LeaderboardEntry, LeaderboardTab } from '@/hooks/useLeaderboard'
 import { generateUsername } from '@/lib/username'
 import { BOARD_ACCENT, BOARD_ACCENT_SUBTEXT, BOARD_ACCENT_TEXT } from './boardAccents'
@@ -51,7 +52,13 @@ export default function LeaderboardRow({
   const subFg = isYou ? BOARD_ACCENT_SUBTEXT[board] : 'var(--mute-on-paper)'
 
   return (
-    <div
+    // The row is a link to the holder's record. The board could say who was
+    // winning but not who they were; this is the drill-down. `textDecoration:
+    // none` and inherited colour keep it looking exactly like the block it
+    // already was — the affordance is the whole row, not a blue word inside it.
+    <Link
+      href={`/holder/${entry.owner}`}
+      aria-label={`View ${entry.label || generateUsername(entry.owner)}'s record`}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -63,6 +70,8 @@ export default function LeaderboardRow({
         maxWidth: 500,
         margin: '0 auto 10px',
         width: '100%',
+        textDecoration: 'none',
+        color: 'inherit',
       }}
     >
       {/* Rank — the figure, not an ordinal string. Archivo Black at 30px is
@@ -183,6 +192,6 @@ export default function LeaderboardRow({
           {entry.unit}
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
