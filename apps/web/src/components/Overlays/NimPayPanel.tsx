@@ -2,6 +2,7 @@
 
 import { useNimPayment } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
+import { nimPayPreviewEnabled } from '@/lib/nim/config'
 import { useEffect, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
@@ -44,8 +45,10 @@ export default function NimPayPanel({
   recipient,
   onSettled,
 }: NimPayPanelProps) {
+  // Read after mount so SSR and the first client render agree; `isNimiqPay()`
+  // is false on the server.
   const [supported, setSupported] = useState(false)
-  useEffect(() => setSupported(isNimiqPay()), [])
+  useEffect(() => setSupported(isNimiqPay() || nimPayPreviewEnabled()), [])
 
   const { status, quote, error, progress, nimTxHash, busy, getQuote, payAndSettle, reset } =
     useNimPayment(mapId, recipient)

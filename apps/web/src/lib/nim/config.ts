@@ -85,6 +85,25 @@ export function settlerPrivateKey(): `0x${string}` {
   return k as `0x${string}`
 }
 
+/**
+ * Show the NIM panel outside Nimiq Pay, for development.
+ *
+ * The panel is normally hidden in a browser because there is no Nimiq provider
+ * there to pay with — offering a control that cannot work is worse than
+ * offering none. That also makes it invisible on a laptop, which is where the
+ * layout and the quote are easiest to check, so this opens it for previewing.
+ *
+ * Gated on the environment as well as the flag: `VERCEL_ENV === 'production'`
+ * disables it no matter what the flag says, so a stray env var in the
+ * production project cannot put a dead button in front of players. Paying still
+ * fails without a provider — the preview covers the quote and the layout, not
+ * the payment.
+ */
+export function nimPayPreviewEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') return false
+  return process.env.NEXT_PUBLIC_NIM_PAY_PREVIEW === '1'
+}
+
 /** True when the whole NIM path is configured well enough to offer it. */
 export function nimPaymentsConfigured(): boolean {
   try {
