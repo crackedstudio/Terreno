@@ -543,3 +543,110 @@ export async function fetchProfilesFor(
   )
   return data.ownerProfiles ?? []
 }
+
+/* ------------------------------------------------------------------ *
+ * Weekly board (plots gained inside the settlement window)
+ * ------------------------------------------------------------------ */
+
+interface WeeklyPurchaseRow {
+  buyer: string
+  timestamp: string
+}
+
+const WEEKLY_GAINS_QUERY = `
+  query WeeklyGains($mapId: Int!, $since: BigInt!, $first: Int!, $skip: Int!) {
+    purchases(
+      where: { mapId: $mapId, timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: desc
+      first: $first
+      skip: $skip
+    ) {
+      buyer
+      timestamp
+    }
+  }
+`
+
+/**
+ * Plots gained by each wallet since `sinceTs` (unix seconds) — the rolling
+ * board the weekly settlement pays out on.
+ *
+ * Counted per PURCHASE, not per batch: a batch that took four plots moved a
+ * wallet four plots up the board, and the board is about plots.
+ *
+ * Deliberately "gained", not "net held". A wallet that gained 40 and was
+ * raided for 5 still gained 40 this week, and subtracting the raid would
+ * penalise exactly the players the market is meant to reward for holding
+ * contested land. The all-time AREA board already answers "how much do you
+ * hold right now"; this one answers "who moved this week".
+ *
+ * The tie-break mirrors `lastGainAt` on the all-time board: on equal counts
+ * the wallet that *reached* the count earlier ranks higher, which is its most
+ * recent gain inside the window — so `tiebreak` is the newest timestamp seen
+ * for that buyer, and `compareLeaderEntries` ranks the smaller one first.
+ *
+ * Paged exactly like `fetchBatchesSince`, and bounded by MAX_SKIP for the same
+ * reason: the window is bounded at the query rather than collected and sliced.
+ */
+export async function fetchWeeklyGains(
+  mapId: MapId,
+  sinceTs: number,
+): Promise<LeaderEntry[]> {
+  const rows: WeeklyPurchaseRow[] = []
+
+  const first = await querySubgraph<{ purchases: WeeklyPurchaseRow[] }>(
+    WEEKLY_GAINS_QUERY,
+    { mapId, since: String(sinceTs), first: PAGE, skip: 0 },
+  )
+  rows.push(...(first.purchases ?? []))
+
+  if (rows.length >= PAGE) {
+    const skips: number[] = []
+    for (let skip = PAGE; skip <= MAX_SKIP; skip += PAGE) skips.push(skip)
+    const pages = await Promise.all(
+      skips.map((skip) =>
+        querySubgraph<{ purchases: WeeklyPurchaseRow[] }>(WEEKLY_GAINS_QUERY, {
+          mapId,
+          since: String(sinceTs),
+          first: PAGE,
+          skip,
+        }).then((d) => d.purchases ?? []),
+      ),
+    )
+    for (const page of pages) rows.push(...page)
+  }
+
+  return aggregateWeeklyGains(rows)
+}
+
+/**
+ * Fold raw purchase rows into a ranked board. Split out from the fetch so the
+ * counting and tie-break rules are testable without a network double.
+ */
+export function aggregateWeeklyGains(
+  rows: readonly { buyer: string; timestamp: string }[],
+): LeaderEntry[] {
+  const gains = new Map<string, { value: number; lastGainAt: number }>()
+
+  for (const row of rows) {
+    const ts = Number(row.timestamp)
+    if (!Number.isFinite(ts)) continue
+    const key = row.buyer.toLowerCase()
+    const existing = gains.get(key)
+    if (existing) {
+      existing.value += 1
+      if (ts > existing.lastGainAt) existing.lastGainAt = ts
+    } else {
+      gains.set(key, { value: 1, lastGainAt: ts })
+    }
+  }
+
+  return Array.from(gains.entries())
+    .map(([address, g]) => ({
+      address: address as Address,
+      value: g.value,
+      tiebreak: g.lastGainAt,
+    }))
+    .sort(compareLeaderEntries)
+}

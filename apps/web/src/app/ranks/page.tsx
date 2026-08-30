@@ -7,6 +7,9 @@ import BottomNav from '@/components/Layout/BottomNav'
 import LeaderboardTabs from '@/components/Leaderboard/LeaderboardTabs'
 import LeaderboardRow from '@/components/Leaderboard/LeaderboardRow'
 import BoardSelector from '@/components/Leaderboard/BoardSelector'
+import { useWeeklyBoard } from '@/hooks/useWeeklyBoard'
+import SettlementStrip from '@/components/Leaderboard/SettlementStrip'
+import WindowToggle from '@/components/Leaderboard/WindowToggle'
 import {
   useLeaderboard,
   type LeaderboardTab,
@@ -95,6 +98,7 @@ export default function RanksPage() {
   const [pixelData, setPixelData] = useState<PixelView[]>([])
   const [profilesMap, setProfilesMap] = useState<Map<string, OwnerProfileData>>(new Map())
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('AREA')
+  const [windowMode, setWindowMode] = useState<'ALL' | 'WEEK'>('ALL')
   const [showAll, setShowAll] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -227,8 +231,16 @@ export default function RanksPage() {
     },
   )
 
+  // LAND, windowed to the settlement week. Only LAND has a weekly form today:
+  // "biggest block built this week" and "best profit this week" need data the
+  // subgraph does not aggregate yet, so the toggle is hidden on those boards
+  // rather than shown with an all-time list behind it.
+  const weekly = useWeeklyBoard(selectedMapId, profilesMap)
+  const weeklyAvailable = activeTab === 'AREA' && weekly.available
+  const showingWeek = weeklyAvailable && windowMode === 'WEEK'
+
   const dataMap: Record<LeaderboardTab, typeof area> = {
-    AREA: area,
+    AREA: showingWeek ? weekly.entries : area,
     EMPIRE: empire,
     TYCOONS: tycoons,
   }
@@ -245,7 +257,7 @@ export default function RanksPage() {
   // already in the visible slice it gets highlighted inline; otherwise a
   // copy of it is pinned at the bottom of the list viewport.
   const addrLower = address?.toLowerCase()
-  const youStanding = addrLower ? youMap[activeTab] : null
+  const youStanding = addrLower && !showingWeek ? youMap[activeTab] : null
   // The player's BEST standing across all three boards (lowest rank number),
   // tagged with its board — so the share always brags the strongest position and
   // names which board it's on, no matter which tab is being viewed.
@@ -262,7 +274,7 @@ export default function RanksPage() {
   const youInView =
     !!youStanding &&
     displayData.some((e) => e.owner.toLowerCase() === addrLower)
-  const isLoading = loading || boardsLoading
+  const isLoading = showingWeek ? weekly.loading : loading || boardsLoading
 
   return (
     <div
@@ -280,7 +292,14 @@ export default function RanksPage() {
           }}
         />
       )}
+      <SettlementStrip />
       <LeaderboardTabs activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
+      {weeklyAvailable && (
+        <WindowToggle
+          value={windowMode}
+          onChange={(mode) => { setWindowMode(mode); setShowAll(false) }}
+        />
+      )}
       <div
         style={{
           flex: 1,
