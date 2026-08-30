@@ -456,6 +456,81 @@ const ACTIVITY_PROFILES_QUERY = `
   }
 `
 
+/* ------------------------------------------------------------------ *
+ * Raids — purchases seen from the LOSING side
+ * ------------------------------------------------------------------ */
+
+/** One pixel taken off a wallet, with the batch it was taken in. */
+export interface RaidPurchaseRow {
+  id: string
+  pixelId: string
+  buyer: string
+  timestamp: string
+  txHash: string
+  /** Exact per-pixel price, present only for single-pixel batches. */
+  pricePaid: string | null
+  batch: {
+    id: string
+    totalCost: string
+    pixelCountInBatch: number
+  }
+}
+
+// `previousOwner` is the raid record — the wallet that held the pixel before
+// this buyer took it. Every other query in this file reads the buyer's side;
+// this is the only one that reads the seller's, which is what makes a "you
+// were raided" surface possible without new indexing.
+//
+// `batch { totalCost pixelCountInBatch }` comes along because `pricePaid` is
+// null for multi-pixel batches (the contract emits only a batch total), so the
+// per-pixel figure has to be reconstructed by even split — the same split
+// `mapping.ts` already uses to credit `totalEarned`.
+const RAIDS_AGAINST_QUERY = `
+  query RaidsAgainst($mapId: Int!, $victim: Bytes!, $first: Int!, $skip: Int!) {
+    purchases(
+      where: { mapId: $mapId, previousOwner: $victim }
+      orderBy: timestamp
+      orderDirection: desc
+      first: $first
+      skip: $skip
+    ) {
+      id
+      pixelId
+      buyer
+      timestamp
+      txHash
+      pricePaid
+      batch {
+        id
+        totalCost
+        pixelCountInBatch
+      }
+    }
+  }
+`
+
+/**
+ * Pixels taken off `address` on `mapId`, newest first.
+ *
+ * Bounded at the query rather than collected and sliced: a wallet that has been
+ * raided thousands of times must not be able to pull an unbounded result set
+ * through the route.
+ */
+export async function fetchRaidsAgainst(
+  mapId: MapId,
+  address: string,
+  limit: number,
+): Promise<RaidPurchaseRow[]> {
+  const victim = address.toLowerCase()
+  const first = Math.min(Math.max(limit, 0), PAGE)
+  if (first === 0) return []
+  const data = await querySubgraph<{ purchases: RaidPurchaseRow[] }>(
+    RAIDS_AGAINST_QUERY,
+    { mapId, victim, first, skip: 0 },
+  )
+  return data.purchases ?? []
+}
+
 /** On-chain profiles for the given buyers on a map (for name + color). */
 export async function fetchProfilesFor(
   mapId: MapId,

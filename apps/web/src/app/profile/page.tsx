@@ -9,6 +9,7 @@ import AvatarBlock from '@/components/Profile/AvatarBlock'
 import StatsRow from '@/components/Profile/StatsRow'
 import ColorPicker from '@/components/Profile/ColorPicker'
 import ChainsBlock from '@/components/Profile/ChainsBlock'
+import RaidLedger from '@/components/Profile/RaidLedger'
 import { useProfile } from '@/hooks/useProfile'
 import { useStablecoinBalance } from '@/hooks/useStablecoinBalance'
 import { useMaps } from '@/hooks/useMaps'
@@ -561,6 +562,11 @@ export default function ProfilePage() {
               Below FILE CHANGES because the on-chain profile edit above is the
               deed's primary action; linking a Nimiq address is a side note that
               changes nothing on chain. */}
+          {/* What was taken from you, and what you were paid for it. Placed
+              above CHAINS because it is the reason to come back — the deed's
+              other numbers are state, this is news. */}
+          <RaidLedger baseAddress={addrStr} mapId={currentMapId} />
+
           <ChainsBlock baseAddress={addrStr} />
 
           {/* Share actions — grouped and secondary to FILE CHANGES, so they
