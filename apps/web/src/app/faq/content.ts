@@ -83,7 +83,7 @@ export const FAQ_GROUPS: QaGroup[] = [
         id: 'campaign-updates',
         q: 'Where do I find out about campaigns?',
         a: 'Watch the banner on the map — it appears whenever a campaign is live. Campaigns are also announced on X.',
-        link: { href: X_PROFILE_URL, label: '@terreno on X' },
+        link: { href: X_PROFILE_URL, label: '@PlayTerreno on X' },
       },
     ],
   },
