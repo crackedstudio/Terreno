@@ -3,7 +3,7 @@
 import { useNimPayment } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
 const MONO = "'Space Mono', monospace"
@@ -20,8 +20,22 @@ interface NimPayPanelProps {
   pixelIds: number[]
   /** Base address the land will be assigned to. */
   recipient?: string
-  /** Called once settlement lands, so the map can refresh. */
-  onSettled?: () => void
+  /**
+   * Called once settlement lands, so the parent can close the claim form and
+   * show the receipt. Fires exactly ONCE per settlement — the effect below
+   * latches, because a parent passing an inline arrow re-runs the effect on
+   * every render, and a callback that sets parent state would then loop.
+   */
+  onSettled?: (receipt: NimReceipt) => void
+}
+
+/** What a settled NIM purchase leaves behind, for the parent to show. */
+export interface NimReceipt {
+  /** Formatted NIM the player actually sent, e.g. "1,234.5". */
+  nim: string
+  /** The Base transaction that assigned the land. Null on an already-settled
+   *  retry, where the settling transaction belongs to the earlier attempt. */
+  baseTxHash: string | null
 }
 
 /**
@@ -50,12 +64,32 @@ export default function NimPayPanel({
   const [supported, setSupported] = useState(false)
   useEffect(() => setSupported(isNimiqPay() || nimPayPreviewEnabled()), [])
 
-  const { status, quote, error, progress, nimTxHash, busy, getQuote, payAndSettle, reset } =
-    useNimPayment(mapId, recipient)
+  const {
+    status,
+    quote,
+    error,
+    progress,
+    nimTxHash,
+    baseTxHash,
+    busy,
+    getQuote,
+    payAndSettle,
+    reset,
+  } = useNimPayment(mapId, recipient)
 
+  // Latched so a settlement is announced once and only once. Cleared whenever
+  // the flow leaves 'settled', so a second purchase in the same session still
+  // announces itself.
+  const announced = useRef(false)
   useEffect(() => {
-    if (status === 'settled') onSettled?.()
-  }, [status, onSettled])
+    if (status !== 'settled') {
+      announced.current = false
+      return
+    }
+    if (announced.current) return
+    announced.current = true
+    onSettled?.({ nim: quote?.nim ?? '', baseTxHash })
+  }, [status, quote, baseTxHash, onSettled])
 
   // Any change to the basket invalidates a quote priced against the old one.
   useEffect(() => {
