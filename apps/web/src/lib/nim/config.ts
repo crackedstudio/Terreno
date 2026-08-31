@@ -47,15 +47,76 @@ export const NIM_BUFFER_BPS = Number(process.env.NIM_BUFFER_BPS ?? 300) // 3%
 /** How long a quote stays honourable. Short, because the buffer is finite. */
 export const NIM_QUOTE_TTL_SECONDS = Number(process.env.NIM_QUOTE_TTL_SECONDS ?? 900) // 15 min
 
+/** Default ceiling on a single NIM-funded purchase: $50, in 6-decimal USD. */
+const DEFAULT_MAX_ORDER_USD_MICROS = 50_000_000n
+
+/**
+ * The smallest ceiling that can possibly be meant, in 6-decimal USD.
+ *
+ * Sized against what land actually costs. `initialPrice` is $0.03 on every
+ * live map and each sale DOUBLES it, so an ordinary plot that has changed
+ * hands a few times runs $0.06, $0.12, $0.24, $0.48, $0.96. A ceiling under
+ * $1 therefore does not limit NIM purchases, it silently removes the traded
+ * land — the most contested plots on the map — from the NIM path entirely.
+ *
+ * Two units mistakes both land under this floor and both have a signature
+ * worth recognising:
+ *
+ *   - Written in DOLLARS (`=11` meaning $11, read as $0.000011): every
+ *     basket is refused, including a fresh three-cent pixel.
+ *   - Written just under the real prices (`=50000` meaning $0.05): a FRESH
+ *     pixel at $0.03 is fine and every re-buy at $0.053+ is refused. Land
+ *     nobody has bought works; land somebody wants does not.
+ *
+ * The second is the dangerous one. It looks like a pricing rule rather than a
+ * broken config, it only shows up on the resale path, and the message the
+ * player gets blames the size of their basket.
+ */
+export const NIM_MIN_SENSIBLE_CEILING_MICROS = 1_000_000n // $1.00
+
 /**
  * Hard ceiling on a single NIM-funded purchase, in 6-decimal USD.
  *
  * The settler pays from a hot float, so this bounds what one request can draw
  * from it. It is a blast-radius limit, not a product rule.
+ *
+ * A function rather than a const, and validated rather than coerced, because
+ * `BigInt(process.env.X ?? default)` has two bad failure modes on a money
+ * path: a non-numeric value throws at MODULE LOAD, taking down the route
+ * rather than the feature; and a plausible-looking wrong value is accepted in
+ * silence. Both are the silent-config-fallback failure this codebase already
+ * refuses elsewhere — see `parseNimUsdPrice`, which will not quote against a
+ * nonsensical price rather than default to one.
+ *
+ * Throwing here means `nimPaymentsConfigured()` returns false, so a
+ * misconfigured ceiling disables NIM with "not enabled" and a log an operator
+ * can act on — instead of refusing every basket with a message that blames
+ * the player's selection.
  */
-export const NIM_MAX_ORDER_USD_MICROS = BigInt(
-  process.env.NIM_MAX_ORDER_USD_MICROS ?? '50000000', // $50
-)
+export function maxOrderUsdMicros(): bigint {
+  const raw = (process.env.NIM_MAX_ORDER_USD_MICROS ?? '').trim()
+  if (raw === '') return DEFAULT_MAX_ORDER_USD_MICROS
+
+  // Digits only. `BigInt()` accepts '0x2a' and ' 42 '; neither is a number
+  // anybody meant to write into a spending limit.
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(
+      `NIM_MAX_ORDER_USD_MICROS must be a whole number of 6-decimal USD micros, got "${raw}". ` +
+        'NIM payments are disabled.',
+    )
+  }
+
+  const value = BigInt(raw)
+  if (value < NIM_MIN_SENSIBLE_CEILING_MICROS) {
+    throw new Error(
+      `NIM_MAX_ORDER_USD_MICROS is ${raw} micros ($${(Number(value) / 1e6).toFixed(6)}), ` +
+        'which is below the price of the cheapest possible plot — every purchase would be ' +
+        'refused as too large. It is in MICROS, not dollars: $50 is 50000000, $11 is 11000000. ' +
+        'NIM payments are disabled.',
+    )
+  }
+  return value
+}
 
 /**
  * Stablecoin the settler pays with, if set. Must be one the contract accepts —
@@ -123,6 +184,10 @@ export function nimPaymentsConfigured(): boolean {
   try {
     orderSecret()
     settlerPrivateKey()
+    // A ceiling that refuses every basket is not a working payment path, so it
+    // belongs in the same check as a missing key rather than surfacing later
+    // as a per-purchase rejection.
+    maxOrderUsdMicros()
     return NIM_TREASURY_ADDRESS.length > 0
   } catch {
     return false
