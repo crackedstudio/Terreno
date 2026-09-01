@@ -51,11 +51,15 @@ export default function NimPayPanel({
 }: NimPayPanelProps) {
   // Read after mount so SSR and the first client render agree; `isNimiqPay()`
   // is false on the server.
-  const [supported, setSupported] = useState(false)
-  useEffect(
-    () => setSupported(isNimiqPay() || canUseNimiqHub() || nimPayPreviewEnabled()),
-    [],
-  )
+  // Which wallet the player will actually see, resolved after mount so SSR and
+  // the first client render agree. 'none' keeps the panel hidden where there
+  // is no transport at all.
+  const [supportedHost, setSupportedHost] = useState<'none' | 'pay' | 'web'>('none')
+  useEffect(() => {
+    if (isNimiqPay()) setSupportedHost('pay')
+    else if (canUseNimiqHub() || nimPayPreviewEnabled()) setSupportedHost('web')
+  }, [])
+  const supported = supportedHost !== 'none'
 
   const { status, quote, error, progress, nimTxHash, busy, getQuote, payAndSettle, reset } =
     useNimPayment(mapId, recipient)
@@ -137,7 +141,13 @@ export default function NimPayPanel({
           color: error ? 'var(--rot)' : 'var(--mute-on-paper)',
         }}
       >
-        {error ?? progress ?? (quote ? 'One confirmation in Nimiq Pay.' : '')}
+        {error ??
+          progress ??
+          (quote
+            ? supportedHost === 'pay'
+              ? 'One confirmation in Nimiq Pay.'
+              : 'Opens the Nimiq Wallet in a new window.'
+            : '')}
       </p>
 
       {nimTxHash && status !== 'settled' && (
