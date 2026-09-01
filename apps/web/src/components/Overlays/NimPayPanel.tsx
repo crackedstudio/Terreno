@@ -2,6 +2,7 @@
 
 import { useNimPayment } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
+import { canUseNimiqHub } from '@/lib/nimiqHub'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
 import { useEffect, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
@@ -32,8 +33,11 @@ interface NimPayPanelProps {
  * identical — the pixels land in their own wallet on Base, because settlement
  * goes through `settleNimPurchase`, which names them as the recipient.
  *
- * Only shown inside Nimiq Pay. A browser has no Nimiq provider, so offering it
- * there would be a control that cannot work.
+ * Shown in both places NIM can actually be paid from. Inside Nimiq Pay that is
+ * the native dialog; in a browser it is the Web Wallet through the Hub popup.
+ * The panel does not care which — `sendNimWithData` picks the transport and
+ * both return the same receipt — so the only thing gated here is whether a
+ * transport exists at all. It renders nothing during SSR, where neither does.
  *
  * The quoted amount includes a small buffer over the dollar price. That is
  * stated on screen rather than folded into the rate — a player comparing the
@@ -48,7 +52,10 @@ export default function NimPayPanel({
   // Read after mount so SSR and the first client render agree; `isNimiqPay()`
   // is false on the server.
   const [supported, setSupported] = useState(false)
-  useEffect(() => setSupported(isNimiqPay() || nimPayPreviewEnabled()), [])
+  useEffect(
+    () => setSupported(isNimiqPay() || canUseNimiqHub() || nimPayPreviewEnabled()),
+    [],
+  )
 
   const { status, quote, error, progress, nimTxHash, busy, getQuote, payAndSettle, reset } =
     useNimPayment(mapId, recipient)
