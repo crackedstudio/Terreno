@@ -180,6 +180,14 @@ export async function signWithNimiq(message: string): Promise<SignatureResult> {
  * as `recipientData`. Keep it short; a basic transaction's data field is small.
  *
  * Returns the transaction hash, which is the receipt the settler verifies.
+ *
+ * **Two transports, chosen by environment.** Inside Nimiq Pay this is the
+ * mini-app SDK and a native dialog. In an ordinary browser there is no
+ * injected Nimiq provider, so it is the Web Wallet through the Hub popup
+ * (`lib/nimiqHub.ts`) — dynamically imported there, so neither audience
+ * carries the other's SDK. Both return a hash and both throw
+ * `NimiqProviderError`, and `/api/nim/settle` cannot tell them apart: it
+ * verifies the funding transaction against a Nimiq node either way.
  */
 export async function sendNimWithData(params: {
   recipient: string
@@ -194,6 +202,14 @@ export async function sendNimWithData(params: {
     throw new NimiqProviderError('That amount is too large to send in one payment.')
   }
   if (!data.trim()) throw new NimiqProviderError('Refusing to send a payment with no reference.')
+
+  // Outside Nimiq Pay, hand off to the Web Wallet. Imported dynamically so the
+  // Hub bundle never reaches a Nimiq Pay client, mirroring the rule that keeps
+  // the mini-app SDK out of a browser's bundle.
+  if (!isNimiqPay()) {
+    const { sendNimViaHub } = await import('./nimiqHub')
+    return sendNimViaHub(params)
+  }
 
   const provider = await loadNimiqProvider()
   if (!provider) throw new NimiqProviderError('Not running inside Nimiq Pay.')
