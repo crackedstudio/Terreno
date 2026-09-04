@@ -94,7 +94,12 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'free-land',
         q: 'Is my first land really free?',
-        a: 'Yes. If you have never owned land here, Terreno buys your first plot for you — about 500 NIM worth — and the land is yours on Base from the first block. You pay nothing, you need no balance, and you sign nothing. If somebody later buys one of those plots off you, the money goes to you exactly as it would for land you paid for.',
+        // Deliberately states no NIM amount. The size is a campaign setting
+        // (GRANT_NIM_AMOUNT) and the claim panel prints whatever the server
+        // resolves, so a number written here is one that goes stale the first
+        // time the campaign is retuned — and a stale number in the FAQ is a
+        // number support has to argue with.
+        a: 'Yes. If you have never owned land here, Terreno buys your first plot for you, and the land is yours on Base from the first block. The claim panel shows exactly how much you are getting. You pay nothing, you need no balance, and you sign nothing. If somebody later buys one of those plots off you, the money goes to you exactly as it would for land you paid for.',
       },
       {
         id: 'no-free-land',
