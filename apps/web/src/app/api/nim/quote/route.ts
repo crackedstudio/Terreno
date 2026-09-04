@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server'
 import { getMapContractById } from '@/lib/maps/contracts'
 import { fallbackReadClient } from '@/lib/chain'
 import { TERRENO_ABI } from '@/lib/contract'
-import { parseNimUsdPrice, usdMicrosToLuna, formatNim } from '@/lib/nim/units'
+import { usdMicrosToLuna, formatNim } from '@/lib/nim/units'
+import { fetchNimUsdScaled } from '@/lib/nim/price'
 import { formatUSDT } from '@/lib/colorUtils'
 import { signOrder, type NimOrder } from '@/lib/nim/order'
 import {
   NIM_BUFFER_BPS,
-  NIM_PRICE_URL,
   NIM_QUOTE_TTL_SECONDS,
   NIM_SETTLEMENT_TOKEN,
   NIM_TREASURY_ADDRESS,
@@ -50,18 +50,6 @@ function pickSettlementToken(
   return preferred ? accepted.find((t) => t.toLowerCase() === preferred) : accepted[0]
 }
 
-async function nimUsd(): Promise<number> {
-  const res = await fetch(NIM_PRICE_URL, { signal: AbortSignal.timeout(10_000) })
-  if (!res.ok) throw new Error(`price feed HTTP ${res.status}`)
-  const body = (await res.json()) as Record<string, { usd?: number }>
-  // CoinGecko shape: { "nimiq-2": { "usd": 0.00032067 } }. Read the first
-  // entry rather than hardcoding the key, so a different feed id still works.
-  const first = Object.values(body)[0]
-  const usd = first?.usd
-  if (typeof usd !== 'number') throw new Error('price feed returned no usd value')
-  return usd
-}
-
 export async function POST(request: Request) {
   if (!nimPaymentsConfigured()) {
     // Fails closed: without an order secret anyone could mint their own "paid"
@@ -99,14 +87,14 @@ export async function POST(request: Request) {
   try {
     const contract = getMapContractById(mapId as MapId)
 
-    const [usdMicros, price, accepted] = await Promise.all([
+    const [usdMicros, nimUsdScaled, accepted] = await Promise.all([
       fallbackReadClient.readContract({
         address: contract.address,
         abi: TERRENO_ABI,
         functionName: 'selectionPrice',
         args: [ids.map((n) => BigInt(n))],
       }) as Promise<bigint>,
-      nimUsd(),
+      fetchNimUsdScaled(),
       fallbackReadClient.readContract({
         address: contract.address,
         abi: TERRENO_ABI,
@@ -175,7 +163,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: NIM_UNAVAILABLE }, { status: 503 })
     }
 
-    const nimUsdScaled = parseNimUsdPrice(price)
     const luna = usdMicrosToLuna(usdMicros, nimUsdScaled, NIM_BUFFER_BPS)
 
     const order: NimOrder = {

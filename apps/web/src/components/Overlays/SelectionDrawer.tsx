@@ -4,6 +4,7 @@ import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import type { PixelView } from '@/lib/mock'
 import type { TxStep } from '@/hooks/useBuyPixels'
 import NimPayPanel, { type NimReceipt } from './NimPayPanel'
+import GrantPanel from './GrantPanel'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { formatUSDT } from '@/lib/colorUtils'
 import { generateUsername } from '@/lib/username'
@@ -498,6 +499,16 @@ export default function SelectionDrawer({
           <div style={{ flexShrink: 0, padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9, borderTop: '3px solid var(--ink)', background: 'var(--paper)' }}>
             {/* Second way to pay for the same basket. Renders nothing outside
                 Nimiq Pay, so the stablecoin path is untouched for everyone else. */}
+            {/* Shown only to a wallet that has never owned land, and only
+                while a campaign is funded — see GrantPanel. Sits above the
+                paid paths because a new player has no balance to pay with. */}
+            <GrantPanel
+              mapId={currentMapId}
+              pixelIds={Array.from(selectedIds)}
+              recipient={userAddress}
+              onGranted={onClear}
+            />
+
             <NimPayPanel
               mapId={currentMapId}
               pixelIds={Array.from(selectedIds)}
