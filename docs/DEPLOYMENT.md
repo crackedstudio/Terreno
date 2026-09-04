@@ -104,43 +104,60 @@ the sponsor wallet pays in stablecoin on Base through `buyPixelsFor`, and the
 player is the recipient, so the land and the leaderboard credit are theirs.
 Code lives in `apps/web/src/lib/grant/` and `app/api/grant/*`.
 
-Turning it on, in order:
+### Turning it on
 
-1. **Create a wallet that is only ever the sponsor.** Not the NIM settler's
-   key. The settler owes land to players who have already sent NIM; a giveaway
-   that overran into that float would strand purchases somebody paid for.
-2. **Fund it with the campaign budget in USDC on Base.** Its balance *is* the
-   budget — there is no spend counter anywhere, deliberately, because the app
-   has no writable store and a counter that resets when a serverless instance
-   recycles enforces nothing. At ~$0.0004/NIM a 500 NIM grant is about $0.19,
-   so $200 covers roughly a thousand new players. Add a little ETH for gas.
-3. **Approve the map contract to spend that USDC.** This is the step that
-   bites. `_buyPixels` pulls with `transferFrom`, so a sponsor holding plenty
-   of USDC with no approval reverts every single grant, and the revert says
-   nothing about approvals. `capacityShortfall()` exists to catch it before a
-   player is ever shown a button — an unapproved sponsor makes the offer
-   silently not appear, which looks exactly like "campaign off".
-4. **Set the env vars** on the Vercel project:
+**One variable:**
 
-   | Variable | Meaning |
-   |---|---|
-   | `GRANT_ENABLED` | `1` and nothing else turns the campaign on |
-   | `GRANT_SPONSOR_PRIVATE_KEY` | the sponsor's Base key, 64 hex (`0x` optional) |
-   | `GRANT_NIM_AMOUNT` | headline size in whole NIM (default `500`) |
-   | `GRANT_MAX_USD_MICROS` | per-claim blast-radius ceiling, in **micros** (default `2000000` = $2) |
-   | `GRANT_MAX_PIXELS` | most pixels one grant may buy (default `25`) |
-   | `GRANT_TOKEN` | stablecoin to pay with; unset means the contract's first accepted token |
+```
+GRANT_ENABLED=1
+```
 
-5. **`NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL` must be set and name a Base
-   deployment.** Eligibility is "has this wallet ever acquired land", read from
-   the subgraph's `Owner.totalSpent` — the one figure that is monotonic and
-   global across maps. Without the subgraph there is no safe answer, so grants
-   refuse rather than guess. This is a hard dependency, not a fallback.
+That is the whole setup. The sponsor wallet defaults to the NIM settler, which
+is already funded and already approved to spend through the contract, so there
+is no second wallet to create, fund or approve. Everything else has a default:
 
-Ending a campaign: unset `GRANT_ENABLED`, or just let the sponsor run dry. Both
-stop the offer appearing; the second needs no deploy.
+| Variable | Meaning |
+|---|---|
+| `GRANT_ENABLED` | `1` and nothing else turns the campaign on |
+| `GRANT_SPONSOR_PRIVATE_KEY` | pays for grants; **unset means the NIM settler** |
+| `GRANT_NIM_AMOUNT` | headline size in whole NIM (default `500`) |
+| `GRANT_MAX_USD_MICROS` | per-claim blast-radius ceiling, in **micros** (default `2000000` = $2) |
+| `GRANT_MAX_PIXELS` | most pixels one grant may buy (default `25`) |
+| `GRANT_TOKEN` | stablecoin to pay with; unset means the contract's first accepted token |
 
-Two things worth knowing before you scale it up:
+One hard dependency, no default: **`NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL` must be
+set and name a Base deployment.** Eligibility is "has this wallet ever acquired
+land", read from the subgraph's `Owner.totalSpent` — the one figure that is
+monotonic and global across maps. Without the subgraph there is no safe answer,
+so grants refuse rather than guess.
+
+Ending a campaign: unset `GRANT_ENABLED`, or let the sponsor run dry. Both stop
+the offer appearing; the second needs no deploy.
+
+### The cost of sharing the settler's wallet
+
+The default is convenient and it is not free. The settler owes land to players
+who have **already sent NIM** and cannot easily be refunded. A giveaway drawing
+on the same float can leave one of those players unable to receive what they
+paid for — their NIM is safe and settlement stays retryable, but it is stuck
+until somebody refills the wallet.
+
+`GRANT_MAX_USD_MICROS` bounds a single claim. Nothing bounds the campaign
+total, because the float *is* the budget and it is now shared with settlement.
+
+There is a quieter second cost: both routes send from the same EOA with no
+explicit nonce management, so a grant and a NIM settlement landing in the same
+moment can collide on the nonce and one will fail. Invisible at test volume,
+real at campaign volume.
+
+Every process that pays a grant from the settler logs once at warn:
+`land grants are paid from the NIM settler wallet`. Before the campaign goes
+wide, set `GRANT_SPONSOR_PRIVATE_KEY` to a separate, separately-funded wallet —
+approve it against the map contract first, since `_buyPixels` pulls with
+`transferFrom` and an unapproved sponsor reverts every grant while the offer
+silently stops appearing.
+
+### Two things worth knowing before you scale it up
 
 - **It gates per wallet, not per person.** A fresh Base address costs nothing.
   The defences are economic — the grant is worth cents and the sponsor balance
@@ -151,6 +168,17 @@ Two things worth knowing before you scale it up:
   indexing it, the same wallet still reads as eligible. An in-process guard
   closes the double-tap case and nothing more. Bounded by the per-claim ceiling
   and the sponsor float; closing it properly needs a durable claim record.
+
+### Verifying the first real grant
+
+Nothing in the test suite proves stablecoin actually leaves the wallet, so the
+first claim is the real test. Claim once, then check **on BaseScan**, not in
+the UI — the UI is one of the things under test:
+
+- the pixels are owned by the claiming wallet, not the sponsor's
+- the sponsor's USDC balance fell by the quoted amount
+
+Do this while the sponsor holds a small float, so a mistake costs cents.
 
 ## Still open
 

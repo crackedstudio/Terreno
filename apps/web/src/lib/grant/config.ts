@@ -1,3 +1,5 @@
+import { settlerPrivateKey } from '@/lib/nim/config'
+
 /**
  * First-land grant configuration.
  *
@@ -148,12 +150,29 @@ export function grantMaxPixels(): number {
 }
 
 /**
- * The sponsor's Base key. No default, and deliberately NOT the settler's.
+ * The wallet that pays for grants. Falls back to the NIM settler's key.
  *
- * Two wallets, two budgets. The settler owes land to players who have already
- * sent NIM and cannot be refunded easily; the sponsor is giving land away. A
- * campaign that overruns must not be able to strand a paid purchase, and the
- * only way to guarantee that is separate float.
+ * The fallback exists so a campaign needs no new wallet, no new funding and no
+ * new ERC-20 approval: the settler is already funded and already approved to
+ * spend through the contract, so grants work the moment `GRANT_ENABLED` is set.
+ *
+ * It is a real trade, and the cost lands somewhere specific. The settler owes
+ * land to players who have ALREADY sent NIM and cannot easily be refunded. A
+ * giveaway drawing on that same float can leave one of those players unable to
+ * receive what they paid for — their NIM is safe and settlement stays
+ * retryable, but it is stuck until an operator refills the wallet. Two wallets
+ * make that impossible; one wallet makes it a question of how big the campaign
+ * gets. `GRANT_MAX_USD_MICROS` bounds a single claim, nothing bounds the
+ * total, and the sharing is invisible at runtime — which is why
+ * `sponsorAddress()` logs when the two resolve to the same wallet.
+ *
+ * There is a second, quieter cost: both routes send transactions from the same
+ * EOA with no explicit nonce management, so a grant and a NIM settlement
+ * landing in the same moment can collide on the nonce and one will fail. At
+ * test volume this never shows up; at campaign volume it will.
+ *
+ * Set `GRANT_SPONSOR_PRIVATE_KEY` to a separate, separately-funded wallet
+ * before a campaign goes wide, and both problems go away.
  *
  * Prefix handling matches `settlerPrivateKey()`: accepted with or without
  * `0x`, because key material gets pasted between tools that disagree about
@@ -162,14 +181,26 @@ export function grantMaxPixels(): number {
  */
 export function grantSponsorPrivateKey(): `0x${string}` {
   const raw = (process.env.GRANT_SPONSOR_PRIVATE_KEY ?? '').trim()
+
+  // Unset means "use the settler". A MALFORMED value never falls through to
+  // it: somebody who wrote a sponsor key meant to use a different wallet, and
+  // silently spending from the settler instead because of a typo is the exact
+  // shape of a money-path default this codebase refuses.
+  if (raw === '') return settlerPrivateKey()
+
   const hex = raw.startsWith('0x') ? raw.slice(2) : raw
   if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
     throw new Error(
-      'GRANT_SPONSOR_PRIVATE_KEY is unset or malformed (needs 64 hex characters). ' +
-        'Land grants are disabled.',
+      'GRANT_SPONSOR_PRIVATE_KEY is set but malformed (needs 64 hex characters). ' +
+        'Land grants are disabled. Unset it entirely to fall back to the NIM settler.',
     )
   }
   return `0x${hex}` as `0x${string}`
+}
+
+/** True when grants are drawing on the NIM settler's float rather than their own. */
+export function grantSponsorIsSettler(): boolean {
+  return (process.env.GRANT_SPONSOR_PRIVATE_KEY ?? '').trim() === ''
 }
 
 /**

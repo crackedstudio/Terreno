@@ -13,18 +13,22 @@ import {
   grantMaxPixels,
   grantMaxUsdMicros,
   grantNimAmount,
+  grantSponsorIsSettler,
   grantSponsorPrivateKey,
   grantsConfigured,
   grantsEnabled,
 } from '@/lib/grant/config'
 
 const KEY = '1'.repeat(64)
+/** The NIM settler's key, which the sponsor falls back to when unset. */
+const SETTLER_KEY = '2'.repeat(64)
 const SAVED = { ...process.env }
 
 beforeEach(() => {
   for (const k of Object.keys(process.env)) {
     if (k.startsWith('GRANT_')) delete process.env[k]
   }
+  process.env.NIM_SETTLER_PRIVATE_KEY = `0x${SETTLER_KEY}`
 })
 afterEach(() => {
   process.env = { ...SAVED }
@@ -132,14 +136,35 @@ describe('grantSponsorPrivateKey', () => {
     expect(grantSponsorPrivateKey()).toBe(`0x${KEY}`)
   })
 
-  it.each([['unset', undefined], ['short', '1'.repeat(63)], ['non-hex', 'z'.repeat(64)]])(
-    'refuses a %s key',
+  // Unset falls back to the NIM settler so a campaign needs no second wallet,
+  // no second funding, and no second ERC-20 approval.
+  it('falls back to the settler when unset', () => {
+    delete process.env.GRANT_SPONSOR_PRIVATE_KEY
+    expect(grantSponsorPrivateKey()).toBe(`0x${SETTLER_KEY}`)
+    expect(grantSponsorIsSettler()).toBe(true)
+  })
+
+  it('falls back when set to whitespace, which is how a cleared dashboard field arrives', () => {
+    process.env.GRANT_SPONSOR_PRIVATE_KEY = '   '
+    expect(grantSponsorPrivateKey()).toBe(`0x${SETTLER_KEY}`)
+    expect(grantSponsorIsSettler()).toBe(true)
+  })
+
+  // A MALFORMED key must never fall through to the settler. Somebody who wrote
+  // a sponsor key meant a different wallet; quietly spending the settler's
+  // float because of a typo is the money-path default this repo refuses.
+  it.each([['short', '1'.repeat(63)], ['non-hex', 'z'.repeat(64)]])(
+    'refuses a %s key rather than falling back to the settler',
     (_label, raw) => {
-      if (raw === undefined) delete process.env.GRANT_SPONSOR_PRIVATE_KEY
-      else process.env.GRANT_SPONSOR_PRIVATE_KEY = raw
+      process.env.GRANT_SPONSOR_PRIVATE_KEY = raw
       expect(() => grantSponsorPrivateKey()).toThrow()
     },
   )
+
+  it('reports a separately-configured sponsor as not the settler', () => {
+    process.env.GRANT_SPONSOR_PRIVATE_KEY = KEY
+    expect(grantSponsorIsSettler()).toBe(false)
+  })
 
   it('never puts the key in the error message', () => {
     process.env.GRANT_SPONSOR_PRIVATE_KEY = 'z'.repeat(64)
@@ -155,8 +180,18 @@ describe('grantsConfigured', () => {
     expect(grantsConfigured()).toBe(false)
   })
 
-  it('is false with the campaign on but no sponsor key', () => {
+  // With the settler fallback, GRANT_ENABLED=1 is the whole setup — which is
+  // the point: a campaign needs one variable, not six.
+  it('is true with the campaign on and no sponsor key, via the settler', () => {
     process.env.GRANT_ENABLED = '1'
+    expect(grantsConfigured()).toBe(true)
+  })
+
+  // ...but only because the settler key itself is present. With neither key
+  // there is nothing to spend from, and grants disable rather than guess.
+  it('is false when neither a sponsor nor a settler key exists', () => {
+    process.env.GRANT_ENABLED = '1'
+    delete process.env.NIM_SETTLER_PRIVATE_KEY
     expect(grantsConfigured()).toBe(false)
   })
 
