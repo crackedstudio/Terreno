@@ -92,6 +92,16 @@ export const FAQ_GROUPS: QaGroup[] = [
     title: 'MONEY AND PRICES',
     items: [
       {
+        id: 'free-land',
+        q: 'Is my first land really free?',
+        a: 'Yes. If you have never owned land here, Terreno buys your first plot for you — about 500 NIM worth — and the land is yours on Base from the first block. You pay nothing, you need no balance, and you sign nothing. If somebody later buys one of those plots off you, the money goes to you exactly as it would for land you paid for.',
+      },
+      {
+        id: 'no-free-land',
+        q: 'Why can I not see the free land offer?',
+        a: 'It shows only for a wallet that has never owned land on any map — it is a starter grant, so one wallet gets it once, and buying even a single pixel uses it up. It is also a limited campaign: when the budget for it runs out the offer stops appearing. If you have never bought anything and still cannot see it, try again shortly — we may not have been able to check your wallet at that moment.',
+      },
+      {
         id: 'currency',
         q: 'Which coins can I pay with?',
         a: 'Terreno accepts USDC and USDT on Base. One buy uses one coin, so if you are short, top up that coin or select fewer pixels.',

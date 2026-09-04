@@ -106,3 +106,49 @@ export function formatNim(luna: bigint, decimals = 2): string {
   const fracStr = frac.toString().padStart(5, '0').slice(0, Math.min(decimals, 5))
   return `${whole.toString()}.${fracStr}`
 }
+
+/**
+ * The USD a given amount of Luna is worth, in 6-decimal microcents.
+ *
+ * The inverse of `usdMicrosToLuna`, and it rounds the OTHER WAY — down.
+ *
+ * The asymmetry is not an inconsistency, it is the same rule applied to a
+ * different direction of travel. `usdMicrosToLuna` computes what a player must
+ * SEND, so it rounds up: quoting a fraction too little strands a payment that
+ * cannot settle. This computes what the operator will SPEND on a player's
+ * behalf, so it rounds down: granting a fraction more than promised is the
+ * operator's money leaving on a rounding error, repeated once per new player.
+ *
+ * No buffer, for the same reason. A buffer protects a payment that has to
+ * survive a price move between quote and settlement; a grant is priced and
+ * spent in one request, with nothing in between to move.
+ */
+export function lunaToUsdMicros(luna: bigint, nimUsdScaled: bigint): bigint {
+  if (luna < 0n) throw new Error('Negative Luna')
+  if (nimUsdScaled <= 0n) throw new Error('Non-positive NIM price')
+
+  // usdMicros = luna / LUNA_PER_NIM * (nimUsdScaled / PRICE_SCALE) * USD_SCALE
+  //           = luna * nimUsdScaled * USD_SCALE / (LUNA_PER_NIM * PRICE_SCALE)
+  return (luna * nimUsdScaled * USD_SCALE) / (LUNA_PER_NIM * PRICE_SCALE)
+}
+
+/** Whole NIM → Luna. The grant is configured in NIM; the maths happens in Luna. */
+export function nimToLuna(nim: bigint): bigint {
+  if (nim < 0n) throw new Error('Negative NIM')
+  return nim * LUNA_PER_NIM
+}
+
+/**
+ * Whole NIM that `usdMicros` is worth, rounded down.
+ *
+ * Used only to describe a grant the per-claim ceiling has cut short. The
+ * headline says "500 NIM of land"; when the ceiling binds, the player is
+ * getting less than that and the screen has to say the smaller number rather
+ * than the configured one. Flooring keeps that number a promise the sponsor
+ * can always cover.
+ */
+export function usdMicrosToNimFloor(usdMicros: bigint, nimUsdScaled: bigint): bigint {
+  if (usdMicros < 0n) throw new Error('Negative price')
+  if (nimUsdScaled <= 0n) throw new Error('Non-positive NIM price')
+  return (usdMicros * PRICE_SCALE) / (USD_SCALE * nimUsdScaled)
+}

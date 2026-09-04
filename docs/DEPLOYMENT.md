@@ -97,6 +97,61 @@ Sepolia).
 - **`initialPrice` has no setter.** It is fixed at deployment forever — a setter
   would retroactively reprice the map out from under existing owners.
 
+## Running a first-land grant campaign
+
+The starter grant gives a wallet that has never owned land its first plot free:
+the sponsor wallet pays in stablecoin on Base through `buyPixelsFor`, and the
+player is the recipient, so the land and the leaderboard credit are theirs.
+Code lives in `apps/web/src/lib/grant/` and `app/api/grant/*`.
+
+Turning it on, in order:
+
+1. **Create a wallet that is only ever the sponsor.** Not the NIM settler's
+   key. The settler owes land to players who have already sent NIM; a giveaway
+   that overran into that float would strand purchases somebody paid for.
+2. **Fund it with the campaign budget in USDC on Base.** Its balance *is* the
+   budget — there is no spend counter anywhere, deliberately, because the app
+   has no writable store and a counter that resets when a serverless instance
+   recycles enforces nothing. At ~$0.0004/NIM a 500 NIM grant is about $0.19,
+   so $200 covers roughly a thousand new players. Add a little ETH for gas.
+3. **Approve the map contract to spend that USDC.** This is the step that
+   bites. `_buyPixels` pulls with `transferFrom`, so a sponsor holding plenty
+   of USDC with no approval reverts every single grant, and the revert says
+   nothing about approvals. `capacityShortfall()` exists to catch it before a
+   player is ever shown a button — an unapproved sponsor makes the offer
+   silently not appear, which looks exactly like "campaign off".
+4. **Set the env vars** on the Vercel project:
+
+   | Variable | Meaning |
+   |---|---|
+   | `GRANT_ENABLED` | `1` and nothing else turns the campaign on |
+   | `GRANT_SPONSOR_PRIVATE_KEY` | the sponsor's Base key, 64 hex (`0x` optional) |
+   | `GRANT_NIM_AMOUNT` | headline size in whole NIM (default `500`) |
+   | `GRANT_MAX_USD_MICROS` | per-claim blast-radius ceiling, in **micros** (default `2000000` = $2) |
+   | `GRANT_MAX_PIXELS` | most pixels one grant may buy (default `25`) |
+   | `GRANT_TOKEN` | stablecoin to pay with; unset means the contract's first accepted token |
+
+5. **`NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL` must be set and name a Base
+   deployment.** Eligibility is "has this wallet ever acquired land", read from
+   the subgraph's `Owner.totalSpent` — the one figure that is monotonic and
+   global across maps. Without the subgraph there is no safe answer, so grants
+   refuse rather than guess. This is a hard dependency, not a fallback.
+
+Ending a campaign: unset `GRANT_ENABLED`, or just let the sponsor run dry. Both
+stop the offer appearing; the second needs no deploy.
+
+Two things worth knowing before you scale it up:
+
+- **It gates per wallet, not per person.** A fresh Base address costs nothing.
+  The defences are economic — the grant is worth cents and the sponsor balance
+  caps the whole campaign — not cryptographic. Nimiq Pay's
+  `getDeviceIdentifier()` is the right second signal but needs somewhere to
+  persist one value per device, which the app does not have yet.
+- **There is an indexing window.** Between a grant landing on Base and Goldsky
+  indexing it, the same wallet still reads as eligible. An in-process guard
+  closes the double-tap case and nothing more. Bounded by the per-claim ceiling
+  and the sponsor float; closing it properly needs a durable claim record.
+
 ## Still open
 
 - Gas ceilings in `useBuyPixels` / `useProfile` (150k approve, 300k + 80k per
