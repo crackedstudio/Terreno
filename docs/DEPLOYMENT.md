@@ -190,6 +190,23 @@ Do this while the sponsor holds a small float, so a mistake costs cents.
   minimums.
 - `NEXT_PUBLIC_TOPUP_URL` is unset — no verified Nimiq Pay funding deeplink, so
   the top-up CTA stays hidden.
-- The legal pages (`app/terms`, `app/privacy`) still name a third-party operator
-  and contact address inherited from the previous host. They need counsel, not a
-  find-and-replace.
+- **Neither legal page has been reviewed by counsel.** Both `app/terms` and
+  `app/privacy` have been rewritten as Cracked Studios' own documents — the
+  cLabs / Celo Core Co. text, `privacy@celo.org` and the MiniQuiz/MiniStreak
+  references are gone from both — but a lawyer has not read either. Open
+  questions, recorded here rather than settled quietly:
+  - **Minimum age.** Terms §4 and Privacy §12 both say 18, because Terreno takes
+    real payments. The Blokaz terms say 13. If the studio wants one age across
+    all its games, this is where it breaks.
+  - **Registered legal name.** Both pages now say "Cracked Studios", plural,
+    matching the `crackedstudios.xyz` support domain. The Blokaz Terms of Use say
+    "Cracked Studio", singular, and the GitHub org is `crackedstudio`. One of
+    those is the registered entity and the others need correcting — it is the
+    single most load-bearing word in a binding contract.
+  - **GDPR representative.** Privacy §8 and §11 assert a controller established
+    in Nigeria offering services into the EEA/UK without naming an Art. 27
+    representative.
+- Privacy §6 claims no cookies or tracking storage. That holds only because
+  PostHog runs with `persistence: 'memory'`, `autocapture: false` and
+  `disable_session_recording: true` (see `posthog-provider.tsx`). Changing any of
+  those makes the Policy untrue.
