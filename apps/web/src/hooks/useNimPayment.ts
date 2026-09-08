@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { NimiqProviderError, sendNimWithData } from '@/lib/nimiqProvider'
+import { NimiqProviderError, listNimiqAccounts, sendNimWithData } from '@/lib/nimiqProvider'
 import { isNimiqPay } from '@/lib/nimiq'
 import type { MapId } from '@/lib/maps/types'
 
@@ -12,8 +12,17 @@ import type { MapId } from '@/lib/maps/types'
  *   PAY     one confirmation — the player sends NIM to the treasury
  *   SETTLE  server verifies the payment on the Nimiq chain, then buys on Base
  *
- * Only the middle step raises a dialog, so the mini-app rule against queuing
- * confirmations is satisfied by construction rather than by sequencing.
+ * QUOTE also asks Nimiq Pay which address the player holds, so the panel can
+ * say "you are short" before they commit to a payment dialog. That is a second
+ * confirmation, and the mini-app rule is that confirmations must be separated
+ * by clear user intent rather than queued — they are: one is raised by tapping
+ * GET NIM PRICE, the other by tapping PAY, with the price on screen in
+ * between. Two dialogs inside a single tap would be the anti-pattern.
+ *
+ * The balance check is best-effort throughout. Declining the address prompt,
+ * a node that will not answer, or being in a browser (where there is no
+ * provider to ask) all leave `shortfall` null and the pay button exactly as it
+ * was. It can only ever add a warning, never remove the ability to pay.
  *
  * Settlement is polled rather than awaited in one call: the payment has to be
  * buried under confirmations first, which takes longer than a request should
@@ -53,6 +62,8 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
   const [progress, setProgress] = useState<string | null>(null)
   const [nimTxHash, setNimTxHash] = useState<string | null>(null)
   const [baseTxHash, setBaseTxHash] = useState<string | null>(null)
+  /** Luna the player is short by; 0n means covered, null means unknown. */
+  const [shortfall, setShortfall] = useState<bigint | null>(null)
   const cancelled = useRef(false)
 
   const reset = useCallback(() => {
@@ -63,6 +74,32 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
     setProgress(null)
     setNimTxHash(null)
     setBaseTxHash(null)
+    setShortfall(null)
+  }, [])
+
+  /**
+   * How much more NIM the player needs, or null when we cannot tell.
+   *
+   * Never throws and never changes `status`: this is decoration on a path that
+   * has to keep working without it. Outside Nimiq Pay there is no provider to
+   * ask, and a declined prompt resolves as an error envelope rather than a
+   * rejection — both end here as "cannot tell", which renders as nothing.
+   */
+  const checkBalance = useCallback(async (requiredLuna: bigint) => {
+    setShortfall(null)
+    if (!isNimiqPay()) return
+    try {
+      const [address] = await listNimiqAccounts()
+      if (!address) return
+      const res = await fetch(`/api/nim/balance?address=${encodeURIComponent(address)}`)
+      if (!res.ok) return
+      const { luna } = (await res.json()) as { luna?: string }
+      if (typeof luna !== 'string' || !/^\d+$/.test(luna)) return
+      const held = BigInt(luna)
+      setShortfall(held >= requiredLuna ? 0n : requiredLuna - held)
+    } catch {
+      // Declined, offline, or a node that would not answer. Say nothing.
+    }
   }, [])
 
   const getQuote = useCallback(
@@ -84,12 +121,13 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
         if (!res.ok) throw new Error(data?.error || 'Could not get a NIM price.')
         setQuote(data as NimQuote)
         setStatus('quoted')
+        void checkBalance(BigInt((data as NimQuote).luna))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Could not get a NIM price.')
         setStatus('idle')
       }
     },
-    [mapId, recipient],
+    [mapId, recipient, checkBalance],
   )
 
   /** Step 2 + 3. Tap only — this is what raises the native dialog. */
@@ -182,6 +220,7 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
     progress,
     nimTxHash,
     baseTxHash,
+    shortfall,
     busy: status === 'quoting' || status === 'awaiting-payment' || status === 'settling',
     getQuote,
     payAndSettle,

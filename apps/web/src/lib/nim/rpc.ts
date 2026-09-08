@@ -132,3 +132,56 @@ export function checkPayment(
   }
   return { ok: true }
 }
+
+/** `getAccountByAddress` result, narrowed to what a balance check needs. */
+export interface NimAccount {
+  address: string
+  /** Luna. The RPC returns a JSON number, so it is bounded by 2^53. */
+  balance: number
+  type: string
+}
+
+/**
+ * A Nimiq address, loosely. `NQ` followed by 34 base-32 characters, with the
+ * spaces the wallet renders optional.
+ *
+ * Deliberately not a checksum validation: this only decides whether an address
+ * is worth sending to a node, and the node is the authority on whether it
+ * exists. Rejecting the obviously-malformed keeps a public endpoint from
+ * forwarding arbitrary strings to a third-party RPC.
+ */
+const NIM_ADDRESS = /^NQ[0-9A-Z]{34}$/i
+
+export function isNimAddressShape(address: string): boolean {
+  // Spaces stripped first: the wallet renders addresses in groups of four and
+  // players copy them that way, so "NQ67 LF4H …" and "NQ67LF4H…" are the same
+  // address and both have to pass.
+  return NIM_ADDRESS.test(address.replace(/\s/g, ''))
+}
+
+/**
+ * A wallet's spendable NIM, in Luna.
+ *
+ * The mini-app SDK has no balance method — the Nimiq provider exposes accounts,
+ * signing, consensus and payments, and nothing that reports a balance — so this
+ * asks a node instead, through the same client settlement already trusts.
+ *
+ * Returned as a bigint even though the RPC sends a JSON number, so it can be
+ * compared against a quoted Luna amount without either side being converted to
+ * a float. Every other amount in this codebase is a bigint for the same reason.
+ *
+ * An address the chain has never seen is not an error: Nimiq reports it as a
+ * `basic` account with a zero balance, which is exactly the answer a
+ * pre-flight check wants.
+ */
+export async function getNimBalance(address: string): Promise<bigint> {
+  if (!isNimAddressShape(address)) {
+    throw new NimRpcError('Not a Nimiq address.')
+  }
+  const account = await rpc<NimAccount>('getAccountByAddress', [address.trim()])
+  if (typeof account?.balance !== 'number' || !Number.isFinite(account.balance)) {
+    throw new NimRpcError('Nimiq RPC returned no balance.')
+  }
+  if (account.balance < 0) throw new NimRpcError('Nimiq RPC returned a negative balance.')
+  return BigInt(Math.floor(account.balance))
+}
