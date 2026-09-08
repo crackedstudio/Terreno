@@ -29,7 +29,7 @@ export default function NotFound() {
       }}
     >
       <img
-        src="/brand/terreno-symbol.gif"
+        src="/brand/logo/logo-mark-color.svg"
         alt=""
         width={96}
         height={96}
