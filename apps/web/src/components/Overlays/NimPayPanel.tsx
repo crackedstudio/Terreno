@@ -4,6 +4,7 @@ import { useNimPayment } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
 import { canUseNimiqHub } from '@/lib/nimiqHub'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
+import { formatNim } from '@/lib/nim/units'
 import { useEffect, useRef, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
@@ -82,6 +83,7 @@ export default function NimPayPanel({
     progress,
     nimTxHash,
     baseTxHash,
+    shortfall,
     busy,
     getQuote,
     payAndSettle,
@@ -107,6 +109,10 @@ export default function NimPayPanel({
     if (status === 'quoted') reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixelIds.join(',')])
+
+  // Known to be short — as opposed to unknown, which is what a declined
+  // prompt or an unreachable node produces.
+  const short = shortfall !== null && shortfall > 0n
 
   if (!supported || pixelIds.length === 0) return null
 
@@ -149,16 +155,21 @@ export default function NimPayPanel({
             type="button"
             className="pixel-btn pixel-btn-sm"
             style={{ width: '100%', minHeight: 44, fontSize: 10, justifyContent: 'center' }}
-            disabled={busy || !recipient}
+            // `short` blocks only when the balance was actually read. A null
+            // shortfall is "we could not tell", which must never stop a player
+            // paying — the wallet is the authority on what they can afford.
+            disabled={busy || !recipient || short}
             onClick={() => (quote ? void payAndSettle() : void getQuote(pixelIds))}
           >
             {busy
               ? 'WORKING…'
-              : quote
-                ? 'PAY WITH NIM'
-                : recipient
-                  ? 'GET NIM PRICE'
-                  : 'CONNECT WALLET FIRST'}
+              : short
+                ? 'NOT ENOUGH NIM'
+                : quote
+                  ? 'PAY WITH NIM'
+                  : recipient
+                    ? 'GET NIM PRICE'
+                    : 'CONNECT WALLET FIRST'}
           </button>
         </>
       )}
@@ -177,11 +188,13 @@ export default function NimPayPanel({
       >
         {error ??
           progress ??
-          (quote
-            ? supportedHost === 'pay'
-              ? 'One confirmation in Nimiq Pay.'
-              : 'Opens the Nimiq Wallet in a new window.'
-            : '')}
+          (short
+            ? `You need ${formatNim(shortfall!)} more NIM. Top up, or pay with USDC instead.`
+            : quote
+              ? supportedHost === 'pay'
+                ? 'One confirmation in Nimiq Pay.'
+                : 'Opens the Nimiq Wallet in a new window.'
+              : '')}
       </p>
 
       {nimTxHash && status !== 'settled' && (

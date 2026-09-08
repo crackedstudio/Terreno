@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('@/lib/nim/config', () => ({
   NIMIQ_RPC_URL: 'https://rpc.test',
@@ -12,6 +12,8 @@ import {
   decodeRecipientData,
   sameNimAddress,
   type NimTransaction,
+  getNimBalance,
+  isNimAddressShape,
 } from '@/lib/nim/rpc'
 
 const TAG = 'a1b2c3d4e5f60718293a4b5c6d7e8f90'
@@ -132,5 +134,98 @@ describe('checkPayment', () => {
   it('never leaks the expected amount in the rejection reason', () => {
     const r = checkPayment(tx({ value: 1 }), TAG, REQUIRED)
     expect(r.reason).not.toContain(REQUIRED.toString())
+  })
+})
+
+/**
+ * Balance lookups for the pre-flight check. A wrong answer here cannot cost
+ * money — the wallet authorises the payment and settlement verifies it — but a
+ * wrong answer can wrongly tell a player they cannot afford something, so the
+ * failure modes are pinned.
+ */
+describe('isNimAddressShape', () => {
+  const ADDR = 'NQ67 LF4H CV7N B9R0 CAEX PMJK LHNF CD3Y L7B4'
+
+  it('accepts a spaced address as the wallet renders it', () => {
+    expect(isNimAddressShape(ADDR)).toBe(true)
+  })
+
+  it('accepts the same address without spaces', () => {
+    expect(isNimAddressShape(ADDR.replace(/\s/g, ''))).toBe(true)
+  })
+
+  it('tolerates surrounding whitespace', () => {
+    expect(isNimAddressShape(`  ${ADDR}  `)).toBe(true)
+  })
+
+  it.each([
+    ['empty', ''],
+    ['an EVM address', '0x8db1EaAd99eF3a4c2AE4479D0570C00E12Be3f79'],
+    ['too short', 'NQ67 LF4H'],
+    ['too long', `${ADDR} EXTRA`],
+    ['lowercase junk', 'not-an-address'],
+  ])('rejects %s', (_label, value) => {
+    expect(isNimAddressShape(value)).toBe(false)
+  })
+})
+
+describe('getNimBalance', () => {
+  const ADDR = 'NQ67 LF4H CV7N B9R0 CAEX PMJK LHNF CD3Y L7B4'
+  const ok = (data: unknown) =>
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ jsonrpc: '2.0', result: { data } }),
+    })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('returns the balance as Luna', async () => {
+    vi.stubGlobal('fetch', ok({ address: ADDR, balance: 71_725_000, type: 'basic' }))
+    await expect(getNimBalance(ADDR)).resolves.toBe(71_725_000n)
+  })
+
+  // An address the chain has never seen is reported as a zero-balance basic
+  // account. That is an answer, not an error — it is exactly what a new
+  // player's wallet looks like, and the case the check exists to catch.
+  it('reads a never-used address as zero rather than failing', async () => {
+    vi.stubGlobal('fetch', ok({ address: ADDR, balance: 0, type: 'basic' }))
+    await expect(getNimBalance(ADDR)).resolves.toBe(0n)
+  })
+
+  it('refuses a malformed address before making a request', async () => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    await expect(getNimBalance('0xnope')).rejects.toThrow()
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  // A bigint, so the comparison against a quoted Luna amount never runs
+  // through a float. Every other amount in this codebase is a bigint.
+  it('returns a bigint, not a number', async () => {
+    vi.stubGlobal('fetch', ok({ address: ADDR, balance: 5, type: 'basic' }))
+    expect(typeof (await getNimBalance(ADDR))).toBe('bigint')
+  })
+
+  it.each([
+    ['a missing balance', { address: ADDR, type: 'basic' }],
+    ['a non-numeric balance', { address: ADDR, balance: 'lots', type: 'basic' }],
+    ['a negative balance', { address: ADDR, balance: -1, type: 'basic' }],
+    ['NaN', { address: ADDR, balance: Number.NaN, type: 'basic' }],
+  ])('throws on %s rather than reporting a wrong figure', async (_l, data) => {
+    vi.stubGlobal('fetch', ok(data))
+    await expect(getNimBalance(ADDR)).rejects.toThrow()
+  })
+
+  it('throws when the node reports an error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ jsonrpc: '2.0', error: { message: 'boom' } }),
+      }),
+    )
+    await expect(getNimBalance(ADDR)).rejects.toThrow(/boom/)
   })
 })
