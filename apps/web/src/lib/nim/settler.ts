@@ -1,6 +1,5 @@
-import { erc20Abi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { fallbackReadClient } from '@/lib/chain'
+import { readSpendCapacity, type SpendCapacity } from '@/lib/spendCapacity'
 import { settlerPrivateKey } from './config'
 
 /**
@@ -18,23 +17,13 @@ import { settlerPrivateKey } from './config'
  * an operational mistake into "NIM payments are unavailable right now", which
  * is a sentence a player can act on.
  *
- * Both numbers matter and they fail differently:
- *
- *   - **balance**   — the settler has the money.
- *   - **allowance** — the contract is permitted to take it. `buyPixels` pulls
- *     with `transferFrom`, so a settler holding plenty of USDC with no approval
- *     reverts every single time, and the revert says nothing about approvals.
- *
- * Whichever is smaller is the real limit, so `spendable` is the minimum.
+ * The balance/allowance mechanics moved to `lib/spendCapacity.ts` when the
+ * first-land sponsor turned out to need the identical check; this module keeps
+ * the NIM-specific half — which key, and the reasoning above.
  */
 
-export interface SettlerCapacity {
-  address: `0x${string}`
-  balance: bigint
-  allowance: bigint
-  /** What can actually be spent: min(balance, allowance). */
-  spendable: bigint
-}
+export type SettlerCapacity = SpendCapacity
+export { capacityShortfall } from '@/lib/spendCapacity'
 
 /** The settler's own address, derived from its key. Never logs the key. */
 export function settlerAddress(): `0x${string}` {
@@ -45,50 +34,5 @@ export async function settlerCapacity(
   spender: `0x${string}`,
   token: `0x${string}`,
 ): Promise<SettlerCapacity> {
-  const address = settlerAddress()
-
-  const [balance, allowance] = await Promise.all([
-    fallbackReadClient.readContract({
-      address: token,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [address],
-    }) as Promise<bigint>,
-    fallbackReadClient.readContract({
-      address: token,
-      abi: erc20Abi,
-      functionName: 'allowance',
-      args: [address, spender],
-    }) as Promise<bigint>,
-  ])
-
-  return {
-    address,
-    balance,
-    allowance,
-    spendable: balance < allowance ? balance : allowance,
-  }
-}
-
-/**
- * Why a settler cannot cover `usdMicros`, or null when it can.
- *
- * The returned string is for LOGS, not for players: it names the settler and
- * its balance, which is operational detail a public endpoint has no business
- * disclosing. Callers surface a generic line and log this one.
- */
-export function capacityShortfall(
-  capacity: SettlerCapacity,
-  usdMicros: bigint,
-): string | null {
-  if (capacity.allowance === 0n) {
-    return `settler ${capacity.address} has not approved the contract to spend the settlement token`
-  }
-  if (capacity.balance < usdMicros) {
-    return `settler ${capacity.address} balance ${capacity.balance} < required ${usdMicros}`
-  }
-  if (capacity.allowance < usdMicros) {
-    return `settler ${capacity.address} allowance ${capacity.allowance} < required ${usdMicros}`
-  }
-  return null
+  return readSpendCapacity(settlerAddress(), spender, token, 'settler')
 }

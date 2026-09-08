@@ -8,8 +8,8 @@ import { TERRENO_ABI } from '@/lib/contract'
 import { isNimOrderShape, verifyOrder } from '@/lib/nim/order'
 import { checkPayment, getNimTransaction } from '@/lib/nim/rpc'
 import {
-  NIM_MAX_ORDER_USD_MICROS,
   NIM_SETTLEMENT_TOKEN,
+  maxOrderUsdMicros,
   nimPaymentsConfigured,
   settlerPrivateKey,
 } from '@/lib/nim/config'
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   }
 
   const usdMicros = BigInt(order.usdMicros)
-  if (usdMicros > NIM_MAX_ORDER_USD_MICROS) {
+  if (usdMicros > maxOrderUsdMicros()) {
     return NextResponse.json({ error: 'order exceeds the maximum' }, { status: 400 })
   }
 

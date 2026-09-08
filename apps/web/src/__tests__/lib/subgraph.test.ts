@@ -317,3 +317,77 @@ describe('fetchRecentBatches / fetchProfilesFor', () => {
     expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('aggregateWeeklyGains', () => {
+  const A = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  const B = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+
+  it('counts one gain per purchase, not per batch', async () => {
+    const m = await load(URL)
+    const board = m.aggregateWeeklyGains([
+      { buyer: A, timestamp: '100' },
+      { buyer: A, timestamp: '100' },
+      { buyer: A, timestamp: '100' },
+      { buyer: B, timestamp: '200' },
+    ])
+    expect(board[0]).toMatchObject({ address: A, value: 3 })
+    expect(board[1]).toMatchObject({ address: B, value: 1 })
+  })
+
+  it('is empty for an empty window', async () => {
+    const m = await load(URL)
+    expect(m.aggregateWeeklyGains([])).toEqual([])
+  })
+
+  it('lowercases addresses so one wallet is never two rows', async () => {
+    const m = await load(URL)
+    const board = m.aggregateWeeklyGains([
+      { buyer: A.toUpperCase().replace('0X', '0x'), timestamp: '100' },
+      { buyer: A, timestamp: '150' },
+    ])
+    expect(board).toHaveLength(1)
+    expect(board[0]).toMatchObject({ address: A, value: 2 })
+  })
+
+  it('breaks a tie in favour of whoever reached the count first', async () => {
+    const m = await load(URL)
+    const board = m.aggregateWeeklyGains([
+      { buyer: A, timestamp: '100' },
+      { buyer: A, timestamp: '900' },
+      { buyer: B, timestamp: '100' },
+      { buyer: B, timestamp: '400' },
+    ])
+    // Equal counts (2 each); B's last gain is earlier, so B got there first.
+    expect(board.map((e) => e.address)).toEqual([B, A])
+  })
+
+  it('takes the newest timestamp in the window as the tie-break key', async () => {
+    const m = await load(URL)
+    const board = m.aggregateWeeklyGains([
+      { buyer: A, timestamp: '400' },
+      { buyer: A, timestamp: '100' },
+    ])
+    // Order of arrival must not decide it — the max is the "reached it" moment.
+    expect(board[0].tiebreak).toBe(400)
+  })
+
+  it('skips rows with an unparseable timestamp rather than the whole board', async () => {
+    const m = await load(URL)
+    const board = m.aggregateWeeklyGains([
+      { buyer: A, timestamp: 'nonsense' },
+      { buyer: A, timestamp: '100' },
+    ])
+    expect(board).toHaveLength(1)
+    expect(board[0].value).toBe(1)
+  })
+
+  it('ranks by count before tie-break', async () => {
+    const m = await load(URL)
+    const board = m.aggregateWeeklyGains([
+      { buyer: A, timestamp: '999' },
+      { buyer: A, timestamp: '999' },
+      { buyer: B, timestamp: '1' },
+    ])
+    expect(board.map((e) => e.address)).toEqual([A, B])
+  })
+})

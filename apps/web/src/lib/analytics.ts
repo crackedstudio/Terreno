@@ -26,6 +26,8 @@ import { isNimiqPay } from '@/lib/nimiq'
  *   reward_viewed             { campaignId, amountUsd }               the "you won $X" announcement was shown
  *   support_form_opened       {}
  *   activity_feed_shown       { mapId, batchId }                     a live-purchase toast was surfaced (fires per toast, not per session)
+ *   raid_alert_shown          { mapId, raidCount, pixelCount, earnedUsd }  the viewer was told their own land was taken and paid for
+ *   raid_alert_opened         { mapId, raidCount }                  they tapped it through to the deed
  *   buy_blocked_not_connected { pixelCount }                         selected pixels while signed out
  *   checkout_opened           { mapId, pixelCount, totalPriceUsd }   review drawer opened (buy intent)
  *   checkout_insufficient_funds { mapId, needUsd, balanceUsd, token, pixelCount }  drawer showed "NOT ENOUGH FUNDS"

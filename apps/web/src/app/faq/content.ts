@@ -83,7 +83,7 @@ export const FAQ_GROUPS: QaGroup[] = [
         id: 'campaign-updates',
         q: 'Where do I find out about campaigns?',
         a: 'Watch the banner on the map — it appears whenever a campaign is live. Campaigns are also announced on X.',
-        link: { href: X_PROFILE_URL, label: '@terreno on X' },
+        link: { href: X_PROFILE_URL, label: '@PlayTerreno on X' },
       },
     ],
   },
@@ -91,6 +91,21 @@ export const FAQ_GROUPS: QaGroup[] = [
     id: 'money',
     title: 'MONEY AND PRICES',
     items: [
+      {
+        id: 'free-land',
+        q: 'Is my first land really free?',
+        // Deliberately states no NIM amount. The size is a campaign setting
+        // (GRANT_NIM_AMOUNT) and the claim panel prints whatever the server
+        // resolves, so a number written here is one that goes stale the first
+        // time the campaign is retuned — and a stale number in the FAQ is a
+        // number support has to argue with.
+        a: 'Yes. If you have never owned land here, Terreno buys your first plot for you, and the land is yours on Base from the first block. The claim panel shows exactly how much you are getting. You pay nothing, you need no balance, and you sign nothing. If somebody later buys one of those plots off you, the money goes to you exactly as it would for land you paid for.',
+      },
+      {
+        id: 'no-free-land',
+        q: 'Why can I not see the free land offer?',
+        a: 'It shows only for a wallet that has never owned land on any map — it is a starter grant, so one wallet gets it once, and buying even a single pixel uses it up. It is also a limited campaign: when the budget for it runs out the offer stops appearing. If you have never bought anything and still cannot see it, try again shortly — we may not have been able to check your wallet at that moment.',
+      },
       {
         id: 'currency',
         q: 'Which coins can I pay with?',

@@ -2,15 +2,16 @@ import { NextResponse } from 'next/server'
 import { getMapContractById } from '@/lib/maps/contracts'
 import { fallbackReadClient } from '@/lib/chain'
 import { TERRENO_ABI } from '@/lib/contract'
-import { parseNimUsdPrice, usdMicrosToLuna, formatNim } from '@/lib/nim/units'
+import { usdMicrosToLuna, formatNim } from '@/lib/nim/units'
+import { fetchNimUsdScaled } from '@/lib/nim/price'
+import { formatUSDT } from '@/lib/colorUtils'
 import { signOrder, type NimOrder } from '@/lib/nim/order'
 import {
   NIM_BUFFER_BPS,
-  NIM_MAX_ORDER_USD_MICROS,
-  NIM_PRICE_URL,
   NIM_QUOTE_TTL_SECONDS,
   NIM_SETTLEMENT_TOKEN,
   NIM_TREASURY_ADDRESS,
+  maxOrderUsdMicros,
   nimPaymentsConfigured,
 } from '@/lib/nim/config'
 import { capacityShortfall, settlerCapacity } from '@/lib/nim/settler'
@@ -47,18 +48,6 @@ function pickSettlementToken(
 ): `0x${string}` | undefined {
   const preferred = NIM_SETTLEMENT_TOKEN.toLowerCase()
   return preferred ? accepted.find((t) => t.toLowerCase() === preferred) : accepted[0]
-}
-
-async function nimUsd(): Promise<number> {
-  const res = await fetch(NIM_PRICE_URL, { signal: AbortSignal.timeout(10_000) })
-  if (!res.ok) throw new Error(`price feed HTTP ${res.status}`)
-  const body = (await res.json()) as Record<string, { usd?: number }>
-  // CoinGecko shape: { "nimiq-2": { "usd": 0.00032067 } }. Read the first
-  // entry rather than hardcoding the key, so a different feed id still works.
-  const first = Object.values(body)[0]
-  const usd = first?.usd
-  if (typeof usd !== 'number') throw new Error('price feed returned no usd value')
-  return usd
 }
 
 export async function POST(request: Request) {
@@ -98,14 +87,14 @@ export async function POST(request: Request) {
   try {
     const contract = getMapContractById(mapId as MapId)
 
-    const [usdMicros, price, accepted] = await Promise.all([
+    const [usdMicros, nimUsdScaled, accepted] = await Promise.all([
       fallbackReadClient.readContract({
         address: contract.address,
         abi: TERRENO_ABI,
         functionName: 'selectionPrice',
         args: [ids.map((n) => BigInt(n))],
       }) as Promise<bigint>,
-      nimUsd(),
+      fetchNimUsdScaled(),
       fallbackReadClient.readContract({
         address: contract.address,
         abi: TERRENO_ABI,
@@ -113,10 +102,33 @@ export async function POST(request: Request) {
       }) as Promise<readonly `0x${string}`[]>,
     ])
 
-    if (usdMicros > NIM_MAX_ORDER_USD_MICROS) {
+    const ceiling = maxOrderUsdMicros()
+    if (usdMicros > ceiling) {
       // Bounds what a single request can draw from the settler's float.
+      //
+      // The message names both numbers. The old one said "Buy fewer pixels",
+      // which is not advice when the basket is a single plot — and it blamed
+      // the selection for what is often the ceiling being set wrong. A
+      // misconfigured ceiling and a genuinely expensive plot produced the
+      // identical sentence, so neither the player nor an operator reading a
+      // support report could tell them apart. Both numbers are safe to show:
+      // the price is on chain and the ceiling is a product limit. The
+      // settler's balance is the operational secret, and stays out of it.
+      logger.warn('nim quote refused: over the order ceiling', {
+        mapId,
+        pixels: ids.length,
+        usdMicros: usdMicros.toString(),
+        ceilingMicros: ceiling.toString(),
+      })
+      const cost = `$${formatUSDT(usdMicros)}`
+      const limit = `$${formatUSDT(ceiling)}`
       return NextResponse.json(
-        { error: 'That basket is too large to pay for in NIM. Buy fewer pixels.' },
+        {
+          error:
+            ids.length === 1
+              ? `This plot costs ${cost}, above the ${limit} limit for NIM payments. Pay with USDC instead.`
+              : `Those ${ids.length} plots cost ${cost}, above the ${limit} limit for NIM payments. Select fewer, or pay with USDC.`,
+        },
         { status: 400 },
       )
     }
@@ -135,15 +147,22 @@ export async function POST(request: Request) {
     const shortfall = capacityShortfall(capacity, usdMicros)
     if (shortfall) {
       // Logged with the operational detail; the player sees none of it.
+      // The ceiling is logged beside the shortfall on purpose. A ceiling set
+      // ABOVE what the settler can actually spend is a standing misconfig: it
+      // lets baskets through the cheap local check that the float was never
+      // going to cover, so players meet the vague "unavailable right now"
+      // instead of a limit that told them the truth up front. Seeing both
+      // numbers on one line is what makes that diagnosable.
       logger.error('nim quote refused: settler cannot cover the basket', {
         shortfall,
         mapId,
         usdMicros: usdMicros.toString(),
+        ceilingMicros: ceiling.toString(),
+        ceilingExceedsFloat: ceiling > capacity.spendable,
       })
       return NextResponse.json({ error: NIM_UNAVAILABLE }, { status: 503 })
     }
 
-    const nimUsdScaled = parseNimUsdPrice(price)
     const luna = usdMicrosToLuna(usdMicros, nimUsdScaled, NIM_BUFFER_BPS)
 
     const order: NimOrder = {

@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { NimiqProviderError, sendNimWithData } from '@/lib/nimiqProvider'
+import { isNimiqPay } from '@/lib/nimiq'
 import type { MapId } from '@/lib/maps/types'
 
 /**
@@ -96,7 +97,15 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
     if (!quote) return
     setError(null)
     setStatus('awaiting-payment')
-    setProgress('Confirm the payment in Nimiq Pay…')
+    // Names the wallet the player is actually looking at. In a browser the
+    // Hub opens its own window and spends a while on "Syncing consensus…"
+    // before it can broadcast — an unexplained wait on a payment screen reads
+    // as a hang, so the copy says the window is coming and that it may pause.
+    setProgress(
+      isNimiqPay()
+        ? 'Confirm the payment in Nimiq Pay…'
+        : 'Confirm in the Nimiq Wallet window. It may take a moment to sync.',
+    )
 
     let hash: string
     try {

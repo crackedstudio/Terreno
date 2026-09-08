@@ -178,7 +178,7 @@ export function composeShareMessage(kind: ShareKind, params: ShareParams): strin
 }
 
 /**
- * X/Twitter copy — the @terreno + @nimiq handles are already woven into the
+ * X/Twitter copy — the @PlayTerreno + @nimiq handles are already woven into the
  * brag text (only X resolves them), and the link rides X's separate `url` param.
  */
 export function composeXText(kind: ShareKind, params: ShareParams): string {
@@ -211,7 +211,7 @@ export function whereClause(mapName: string | undefined): string {
 
 /**
  * Arcade-tone share copy — competitive, no emoji, no real-world-colonial
- * framing (per brand voice). The @terreno + @nimiq handles are woven in (X
+ * framing (per brand voice). The @PlayTerreno + @nimiq handles are woven in (X
  * resolves them; elsewhere they read as plain text). The link is appended by
  * the share sheet / intent, so these strings never include the URL themselves.
  */
@@ -220,23 +220,23 @@ export function composeShareText(kind: ShareKind, params: ShareParams): string {
   switch (kind) {
     case 'reward':
       return params.amount
-        ? `Just banked $${params.amount}${where} playing @terreno on @nimiq. Every pixel is up for grabs — come take a shot.`
-        : `Just cashed out a prize${where} playing @terreno on @nimiq. Every pixel is up for grabs — come take a shot.`
+        ? `Just banked $${params.amount}${where} playing @PlayTerreno on @nimiq. Every pixel is up for grabs — come take a shot.`
+        : `Just cashed out a prize${where} playing @PlayTerreno on @nimiq. Every pixel is up for grabs — come take a shot.`
     case 'rank': {
       const board = params.board ?? 'LAND'
       const at = params.rank ? `#${params.rank}` : 'the board'
       const val = params.value ? ` (${params.value}${params.unit ? ' ' + params.unit : ''})` : ''
-      return `I'm ${at} on the ${board} board${where}${val} playing @terreno on @nimiq. Think you can knock me off? Claim your pixels.`
+      return `I'm ${at} on the ${board} board${where}${val} playing @PlayTerreno on @nimiq. Think you can knock me off? Claim your pixels.`
     }
     case 'positions': {
       if (params.ruler && params.mapName) {
-        return `I'm the ruler of ${formatMapName(params.mapName)} playing @terreno on @nimiq. Come take it from me — every pixel is up for grabs.`
+        return `I'm the ruler of ${formatMapName(params.mapName)} playing @PlayTerreno on @nimiq. Come take it from me — every pixel is up for grabs.`
       }
       const px = params.value ? `${params.value} pixels` : 'my turf'
-      return `I hold ${px}${where} playing @terreno on @nimiq. Paint the map before someone paints over you.`
+      return `I hold ${px}${where} playing @PlayTerreno on @nimiq. Paint the map before someone paints over you.`
     }
     case 'invite':
     default:
-      return `Claim your spot before someone else does — come play @terreno on @nimiq. Every pixel is up for grabs.`
+      return `Claim your spot before someone else does — come play @PlayTerreno on @nimiq. Every pixel is up for grabs.`
   }
 }

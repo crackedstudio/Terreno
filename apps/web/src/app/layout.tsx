@@ -29,9 +29,28 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: 'Terreno',
   description: DESCRIPTION,
+  // Ordered most-preferred first. A browser that understands SVG favicons takes
+  // `logo-mark-color.svg` — the Terreno pixel mark, ink #0D0D0D with #FF4A0F
+  // orange. The PNGs are the fallback for browsers that do not (Safari before
+  // 17, older Firefox), with sizes declared so a browser picks the right file
+  // rather than downscaling 32 to 16 and blurring it.
+  //
+  // Both slots used to point at Mondeto-era artwork: a green globe, from before
+  // the rename. Worse, the SVG path did not exist at all, so the site shipped
+  // with no favicon for a while. Anything added here should be checked as a 200
+  // on the deployed URL, not just as a file in public/.
+  //
+  // `apple-touch-icon.png` is rasterised from the same 7x7 grid as the SVG, so
+  // the two cannot drift, and is deliberately OPAQUE on the brand paper
+  // (#E8E6E1, sampled from logo-stacked.png). iOS composites a transparent
+  // home-screen icon onto black, and this mark is near-black.
   icons: {
-    icon: '/brand/logo/Terreno_Globe_Green.svg',
-    apple: '/brand/logo/logo-256.png',
+    icon: [
+      { url: '/brand/logo/logo-mark-color.svg', type: 'image/svg+xml' },
+      { url: '/favicon/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon/favicon-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/favicon/apple-touch-icon.png',
   },
   openGraph: {
     title: TITLE,

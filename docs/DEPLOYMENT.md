@@ -97,6 +97,89 @@ Sepolia).
 - **`initialPrice` has no setter.** It is fixed at deployment forever — a setter
   would retroactively reprice the map out from under existing owners.
 
+## Running a first-land grant campaign
+
+The starter grant gives a wallet that has never owned land its first plot free:
+the sponsor wallet pays in stablecoin on Base through `buyPixelsFor`, and the
+player is the recipient, so the land and the leaderboard credit are theirs.
+Code lives in `apps/web/src/lib/grant/` and `app/api/grant/*`.
+
+### Turning it on
+
+**One variable:**
+
+```
+GRANT_ENABLED=1
+```
+
+That is the whole setup. The sponsor wallet defaults to the NIM settler, which
+is already funded and already approved to spend through the contract, so there
+is no second wallet to create, fund or approve. Everything else has a default:
+
+| Variable | Meaning |
+|---|---|
+| `GRANT_ENABLED` | `1` and nothing else turns the campaign on |
+| `GRANT_SPONSOR_PRIVATE_KEY` | pays for grants; **unset means the NIM settler** |
+| `GRANT_NIM_AMOUNT` | headline size in whole NIM (default `500`) |
+| `GRANT_MAX_USD_MICROS` | per-claim blast-radius ceiling, in **micros** (default `2000000` = $2) |
+| `GRANT_MAX_PIXELS` | most pixels one grant may buy (default `25`) |
+| `GRANT_TOKEN` | stablecoin to pay with; unset means the contract's first accepted token |
+
+One hard dependency, no default: **`NEXT_PUBLIC_GOLDSKY_SUBGRAPH_URL` must be
+set and name a Base deployment.** Eligibility is "has this wallet ever acquired
+land", read from the subgraph's `Owner.totalSpent` — the one figure that is
+monotonic and global across maps. Without the subgraph there is no safe answer,
+so grants refuse rather than guess.
+
+Ending a campaign: unset `GRANT_ENABLED`, or let the sponsor run dry. Both stop
+the offer appearing; the second needs no deploy.
+
+### The cost of sharing the settler's wallet
+
+The default is convenient and it is not free. The settler owes land to players
+who have **already sent NIM** and cannot easily be refunded. A giveaway drawing
+on the same float can leave one of those players unable to receive what they
+paid for — their NIM is safe and settlement stays retryable, but it is stuck
+until somebody refills the wallet.
+
+`GRANT_MAX_USD_MICROS` bounds a single claim. Nothing bounds the campaign
+total, because the float *is* the budget and it is now shared with settlement.
+
+There is a quieter second cost: both routes send from the same EOA with no
+explicit nonce management, so a grant and a NIM settlement landing in the same
+moment can collide on the nonce and one will fail. Invisible at test volume,
+real at campaign volume.
+
+Every process that pays a grant from the settler logs once at warn:
+`land grants are paid from the NIM settler wallet`. Before the campaign goes
+wide, set `GRANT_SPONSOR_PRIVATE_KEY` to a separate, separately-funded wallet —
+approve it against the map contract first, since `_buyPixels` pulls with
+`transferFrom` and an unapproved sponsor reverts every grant while the offer
+silently stops appearing.
+
+### Two things worth knowing before you scale it up
+
+- **It gates per wallet, not per person.** A fresh Base address costs nothing.
+  The defences are economic — the grant is worth cents and the sponsor balance
+  caps the whole campaign — not cryptographic. Nimiq Pay's
+  `getDeviceIdentifier()` is the right second signal but needs somewhere to
+  persist one value per device, which the app does not have yet.
+- **There is an indexing window.** Between a grant landing on Base and Goldsky
+  indexing it, the same wallet still reads as eligible. An in-process guard
+  closes the double-tap case and nothing more. Bounded by the per-claim ceiling
+  and the sponsor float; closing it properly needs a durable claim record.
+
+### Verifying the first real grant
+
+Nothing in the test suite proves stablecoin actually leaves the wallet, so the
+first claim is the real test. Claim once, then check **on BaseScan**, not in
+the UI — the UI is one of the things under test:
+
+- the pixels are owned by the claiming wallet, not the sponsor's
+- the sponsor's USDC balance fell by the quoted amount
+
+Do this while the sponsor holds a small float, so a mistake costs cents.
+
 ## Still open
 
 - Gas ceilings in `useBuyPixels` / `useProfile` (150k approve, 300k + 80k per
@@ -107,6 +190,23 @@ Sepolia).
   minimums.
 - `NEXT_PUBLIC_TOPUP_URL` is unset — no verified Nimiq Pay funding deeplink, so
   the top-up CTA stays hidden.
-- The legal pages (`app/terms`, `app/privacy`) still name a third-party operator
-  and contact address inherited from the previous host. They need counsel, not a
-  find-and-replace.
+- **Neither legal page has been reviewed by counsel.** Both `app/terms` and
+  `app/privacy` have been rewritten as Cracked Studios' own documents — the
+  cLabs / Celo Core Co. text, `privacy@celo.org` and the MiniQuiz/MiniStreak
+  references are gone from both — but a lawyer has not read either. Open
+  questions, recorded here rather than settled quietly:
+  - **Minimum age.** Terms §4 and Privacy §12 both say 18, because Terreno takes
+    real payments. The Blokaz terms say 13. If the studio wants one age across
+    all its games, this is where it breaks.
+  - **Registered legal name.** Both pages now say "Cracked Studios", plural,
+    matching the `crackedstudios.xyz` support domain. The Blokaz Terms of Use say
+    "Cracked Studio", singular, and the GitHub org is `crackedstudio`. One of
+    those is the registered entity and the others need correcting — it is the
+    single most load-bearing word in a binding contract.
+  - **GDPR representative.** Privacy §8 and §11 assert a controller established
+    in Nigeria offering services into the EEA/UK without naming an Art. 27
+    representative.
+- Privacy §6 claims no cookies or tracking storage. That holds only because
+  PostHog runs with `persistence: 'memory'`, `autocapture: false` and
+  `disable_session_recording: true` (see `posthog-provider.tsx`). Changing any of
+  those makes the Policy untrue.

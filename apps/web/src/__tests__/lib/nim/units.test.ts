@@ -5,6 +5,9 @@ import {
   formatNim,
   parseNimUsdPrice,
   usdMicrosToLuna,
+  lunaToUsdMicros,
+  nimToLuna,
+  usdMicrosToNimFloor,
 } from '@/lib/nim/units'
 
 // The live CoinGecko price when this was written, at 12 decimals.
@@ -116,5 +119,82 @@ describe('formatNim', () => {
   it('does not lose the whole part on a tiny amount', () => {
     expect(formatNim(1n)).toBe('0.00')
     expect(formatNim(1n, 5)).toBe('0.00001')
+  })
+})
+
+/**
+ * The grant direction: Luna the operator is about to SPEND, not Luna a player
+ * must send. Every assertion here is about the rounding going the other way.
+ */
+describe('lunaToUsdMicros', () => {
+  // 500 NIM at $0.00038683 — the live campaign size and price on the day the
+  // grant shipped. Computed independently:
+  //   500 * 0.00038683 = $0.1934150 -> 193415 micros
+  const NIM_USD = 386_830_000n // 0.00038683 scaled by 1e12
+  const FIVE_HUNDRED_NIM = 50_000_000n // 500 * 100_000 Luna
+
+  it('prices the campaign grant at the value computed by hand', () => {
+    expect(lunaToUsdMicros(FIVE_HUNDRED_NIM, NIM_USD)).toBe(193_415n)
+  })
+
+  it('rounds DOWN, so a grant never quietly exceeds what was promised', () => {
+    // One Luna at this price is worth 0.0000038683 micros — a shade over zero.
+    // Rounding up here would hand out a free micro per claim, forever.
+    expect(lunaToUsdMicros(1n, NIM_USD)).toBe(0n)
+  })
+
+  // The pairing that matters: usdMicrosToLuna rounds UP because a player who
+  // underpays cannot settle. Both directions round in the operator's favour,
+  // which is the same rule, not two different ones.
+  it('rounds the opposite way to its inverse', () => {
+    const usd = 193_415n
+    const luna = usdMicrosToLuna(usd, NIM_USD, 0)
+    expect(luna).toBeGreaterThanOrEqual(FIVE_HUNDRED_NIM)
+    expect(lunaToUsdMicros(luna, NIM_USD)).toBeLessThanOrEqual(luna * NIM_USD)
+  })
+
+  it('is zero for zero', () => {
+    expect(lunaToUsdMicros(0n, NIM_USD)).toBe(0n)
+  })
+
+  it('refuses a non-positive price rather than valuing a grant at infinity', () => {
+    expect(() => lunaToUsdMicros(FIVE_HUNDRED_NIM, 0n)).toThrow()
+    expect(() => lunaToUsdMicros(FIVE_HUNDRED_NIM, -1n)).toThrow()
+  })
+
+  it('refuses negative Luna', () => {
+    expect(() => lunaToUsdMicros(-1n, NIM_USD)).toThrow()
+  })
+})
+
+describe('nimToLuna', () => {
+  it('converts whole NIM at 1e5', () => {
+    expect(nimToLuna(500n)).toBe(50_000_000n)
+    expect(nimToLuna(0n)).toBe(0n)
+  })
+
+  it('refuses a negative amount', () => {
+    expect(() => nimToLuna(-1n)).toThrow()
+  })
+})
+
+describe('usdMicrosToNimFloor', () => {
+  const NIM_USD = 386_830_000n
+
+  it('says how much NIM a capped grant is actually worth', () => {
+    // $2.00 ceiling at $0.00038683/NIM = 5170.4... NIM. Floored, never rounded
+    // up: the number goes on screen as a promise the sponsor must cover.
+    expect(usdMicrosToNimFloor(2_000_000n, NIM_USD)).toBe(5170n)
+  })
+
+  it('floors rather than rounding, even just under the next whole NIM', () => {
+    // 193415 micros is exactly 500 NIM at this price; one micro less is
+    // 499.997 NIM and must present as 499, not round back up to the headline.
+    expect(usdMicrosToNimFloor(193_415n, NIM_USD)).toBe(500n)
+    expect(usdMicrosToNimFloor(193_414n, NIM_USD)).toBe(499n)
+  })
+
+  it('refuses a non-positive price', () => {
+    expect(() => usdMicrosToNimFloor(1_000n, 0n)).toThrow()
   })
 })

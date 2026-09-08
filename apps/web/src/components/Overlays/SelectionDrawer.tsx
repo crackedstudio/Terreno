@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useMemo, useEffect, useRef } from 'react'
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import type { PixelView } from '@/lib/mock'
 import type { TxStep } from '@/hooks/useBuyPixels'
-import NimPayPanel from './NimPayPanel'
+import NimPayPanel, { type NimReceipt } from './NimPayPanel'
+import GrantPanel from './GrantPanel'
 import { ZERO_ADDRESS } from '@/constants/map'
 import { formatUSDT } from '@/lib/colorUtils'
 import { generateUsername } from '@/lib/username'
@@ -69,6 +70,24 @@ export default function SelectionDrawer({
   onConfirmPurchase,
   onDone,
 }: SelectionDrawerProps) {
+  /**
+   * A settled NIM purchase, once one has happened.
+   *
+   * The stablecoin path reports itself through `txStep`, which comes from
+   * `useBuyPixels`. A NIM purchase never touches that hook — it is settled by
+   * the server on the player's behalf — so `txStep` stays 'idle' throughout,
+   * and without this the claim form simply stayed on screen after a successful
+   * payment as though nothing had happened. Holding the receipt here lets both
+   * ways of paying end at the same stamped receipt and the same way out.
+   */
+  const [nimReceipt, setNimReceipt] = useState<NimReceipt | null>(null)
+
+  // Memoized: `NimPayPanel` announces settlement from an effect that depends on
+  // this callback, so a fresh identity every render would re-run it.
+  const handleNimSettled = useCallback((receipt: NimReceipt) => {
+    setNimReceipt(receipt)
+  }, [])
+
   // 'approved' is included so the progress panel stays up showing FUNDS
   // UNLOCKED — but it is a decision point, not an in-flight state, so the
   // panel swaps its disabled spinner button for a live CONFIRM button.
@@ -237,15 +256,28 @@ export default function SelectionDrawer({
       </div>
       <div className="punch" style={{ flexShrink: 0 }} />
 
+      {/* Success state — a NIM purchase, settled on Base by the server. Takes
+          precedence over the form below, which is otherwise still 'idle'. */}
+      {nimReceipt && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '18px 0' }}>
+          <SuccessState
+            pixelCount={pixelCount}
+            totalPaid={`${nimReceipt.nim} NIM`}
+            txHash={nimReceipt.baseTxHash ?? ''}
+            onDone={onDone}
+          />
+        </div>
+      )}
+
       {/* Success state */}
-      {txStep === 'success' && txHash && (
+      {!nimReceipt && txStep === 'success' && txHash && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '18px 0' }}>
           <SuccessState pixelCount={pixelCount} totalPaid={`${formatUSDT(totalPrice)} ${payToken}`} txHash={txHash} onDone={onDone} />
         </div>
       )}
 
       {/* TX in progress */}
-      {isTxActive && (
+      {!nimReceipt && isTxActive && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 16px 16px', maxWidth: 500, margin: '0 auto', width: '100%' }}>
           <div style={LABEL_MUTED}>FILING</div>
           <div className="font-display" style={{ fontSize: 52, lineHeight: 0.8, color: 'var(--ink)' }}>
@@ -282,7 +314,7 @@ export default function SelectionDrawer({
       )}
 
       {/* Idle / error — the form itself */}
-      {(txStep === 'idle' || txStep === 'error') && (
+      {!nimReceipt && (txStep === 'idle' || txStep === 'error') && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxWidth: 500, margin: '0 auto', width: '100%', position: 'relative' }}>
           {/* An unsigned form is stamped as such. Rotated and bleeding off the
               right edge so it reads as applied to the paper, not printed on it. */}
@@ -467,10 +499,21 @@ export default function SelectionDrawer({
           <div style={{ flexShrink: 0, padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9, borderTop: '3px solid var(--ink)', background: 'var(--paper)' }}>
             {/* Second way to pay for the same basket. Renders nothing outside
                 Nimiq Pay, so the stablecoin path is untouched for everyone else. */}
+            {/* Shown only to a wallet that has never owned land, and only
+                while a campaign is funded — see GrantPanel. Sits above the
+                paid paths because a new player has no balance to pay with. */}
+            <GrantPanel
+              mapId={currentMapId}
+              pixelIds={Array.from(selectedIds)}
+              recipient={userAddress}
+              onGranted={onClear}
+            />
+
             <NimPayPanel
               mapId={currentMapId}
               pixelIds={Array.from(selectedIds)}
               recipient={userAddress}
+              onSettled={handleNimSettled}
             />
 
             <div style={{ ...LABEL_MUTED, textAlign: 'center' }}>THE REGISTRY DOES NOT FORGET</div>

@@ -91,7 +91,13 @@ function formatUSDTFromNumber(value: number): string {
 }
 
 
-function decorate(
+/**
+ * Turn ranked entries into rows: rank, on-chain name (or the generated one),
+ * colour and formatted value. Exported so the weekly board decorates its rows
+ * through the same function the crowns do — two decorators would be two places
+ * for the fallback-username rule to drift.
+ */
+export function decorate(
   entries: LeaderEntry[],
   unit: string,
   formatValue: (v: number) => string,

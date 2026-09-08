@@ -18,15 +18,26 @@ const h = vi.hoisted(() => ({
   sign: vi.fn(),
   sendBasicTransactionWithData: vi.fn(),
   init: vi.fn(),
+  sendViaHub: vi.fn(),
 }))
-const { listAccounts, sign, sendBasicTransactionWithData, init } = h
+const { listAccounts, sign, sendBasicTransactionWithData, init, sendViaHub } = h
 
 vi.mock('@nimiq/mini-app-sdk', () => ({ init: h.init }))
+
+/** The browser transport. Mocked so this file stays about the dispatch. */
+vi.mock('@/lib/nimiqHub', () => ({
+  sendNimViaHub: h.sendViaHub,
+  canUseNimiqHub: () => true,
+}))
+
+/** What the Web Wallet hands back once it has broadcast. */
+const HUB_HASH = 'b'.repeat(64)
 
 const NIM = 'NQ07 0000 0000 0000 0000 0000 0000 0000 0001'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  sendViaHub.mockResolvedValue(HUB_HASH)
   resetNimiqProviderForTests()
   vi.mocked(isNimiqPay).mockReturnValue(true)
   init.mockResolvedValue({ listAccounts, sign, sendBasicTransactionWithData })
@@ -171,8 +182,24 @@ describe('sendNimWithData', () => {
     expect(sendBasicTransactionWithData).not.toHaveBeenCalled()
   })
 
-  it('throws outside Nimiq Pay', async () => {
+  /**
+   * Deliberately changed. This used to assert "Not running inside Nimiq Pay",
+   * which was correct while the mini-app SDK was the only way to pay in NIM.
+   * A browser now pays through the Web Wallet, so refusing here would disable
+   * the transport that most traffic — anyone arriving from a share link on a
+   * desktop — actually has. The dialog is still never raised by the mini-app
+   * provider outside Nimiq Pay, which is what the second assertion pins.
+   */
+  it('hands off to the Web Wallet outside Nimiq Pay, instead of refusing', async () => {
     vi.mocked(isNimiqPay).mockReturnValue(false)
-    await expect(sendNimWithData(OK)).rejects.toThrow('Not running inside Nimiq Pay.')
+    await expect(sendNimWithData(OK)).resolves.toBe(HUB_HASH)
+    expect(sendBasicTransactionWithData).not.toHaveBeenCalled()
+  })
+
+  it('still validates before reaching either transport', async () => {
+    vi.mocked(isNimiqPay).mockReturnValue(false)
+    await expect(sendNimWithData({ ...OK, luna: 0n })).rejects.toThrow('zero payment')
+    expect(sendViaHub).not.toHaveBeenCalled()
+    expect(sendBasicTransactionWithData).not.toHaveBeenCalled()
   })
 })

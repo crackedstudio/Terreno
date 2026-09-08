@@ -2,8 +2,9 @@
 
 import { useNimPayment } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
+import { canUseNimiqHub } from '@/lib/nimiqHub'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
 const MONO = "'Space Mono', monospace"
@@ -20,8 +21,22 @@ interface NimPayPanelProps {
   pixelIds: number[]
   /** Base address the land will be assigned to. */
   recipient?: string
-  /** Called once settlement lands, so the map can refresh. */
-  onSettled?: () => void
+  /**
+   * Called once settlement lands, so the parent can close the claim form and
+   * show the receipt. Fires exactly ONCE per settlement — the effect below
+   * latches, because a parent passing an inline arrow re-runs the effect on
+   * every render, and a callback that sets parent state would then loop.
+   */
+  onSettled?: (receipt: NimReceipt) => void
+}
+
+/** What a settled NIM purchase leaves behind, for the parent to show. */
+export interface NimReceipt {
+  /** Formatted NIM the player actually sent, e.g. "1,234.5". */
+  nim: string
+  /** The Base transaction that assigned the land. Null on an already-settled
+   *  retry, where the settling transaction belongs to the earlier attempt. */
+  baseTxHash: string | null
 }
 
 /**
@@ -32,8 +47,11 @@ interface NimPayPanelProps {
  * identical — the pixels land in their own wallet on Base, because settlement
  * goes through `settleNimPurchase`, which names them as the recipient.
  *
- * Only shown inside Nimiq Pay. A browser has no Nimiq provider, so offering it
- * there would be a control that cannot work.
+ * Shown in both places NIM can actually be paid from. Inside Nimiq Pay that is
+ * the native dialog; in a browser it is the Web Wallet through the Hub popup.
+ * The panel does not care which — `sendNimWithData` picks the transport and
+ * both return the same receipt — so the only thing gated here is whether a
+ * transport exists at all. It renders nothing during SSR, where neither does.
  *
  * The quoted amount includes a small buffer over the dollar price. That is
  * stated on screen rather than folded into the rate — a player comparing the
@@ -47,15 +65,42 @@ export default function NimPayPanel({
 }: NimPayPanelProps) {
   // Read after mount so SSR and the first client render agree; `isNimiqPay()`
   // is false on the server.
-  const [supported, setSupported] = useState(false)
-  useEffect(() => setSupported(isNimiqPay() || nimPayPreviewEnabled()), [])
-
-  const { status, quote, error, progress, nimTxHash, busy, getQuote, payAndSettle, reset } =
-    useNimPayment(mapId, recipient)
-
+  // Which wallet the player will actually see, resolved after mount so SSR and
+  // the first client render agree. 'none' keeps the panel hidden where there
+  // is no transport at all.
+  const [supportedHost, setSupportedHost] = useState<'none' | 'pay' | 'web'>('none')
   useEffect(() => {
-    if (status === 'settled') onSettled?.()
-  }, [status, onSettled])
+    if (isNimiqPay()) setSupportedHost('pay')
+    else if (canUseNimiqHub() || nimPayPreviewEnabled()) setSupportedHost('web')
+  }, [])
+  const supported = supportedHost !== 'none'
+
+  const {
+    status,
+    quote,
+    error,
+    progress,
+    nimTxHash,
+    baseTxHash,
+    busy,
+    getQuote,
+    payAndSettle,
+    reset,
+  } = useNimPayment(mapId, recipient)
+
+  // Latched so a settlement is announced once and only once. Cleared whenever
+  // the flow leaves 'settled', so a second purchase in the same session still
+  // announces itself.
+  const announced = useRef(false)
+  useEffect(() => {
+    if (status !== 'settled') {
+      announced.current = false
+      return
+    }
+    if (announced.current) return
+    announced.current = true
+    onSettled?.({ nim: quote?.nim ?? '', baseTxHash })
+  }, [status, quote, baseTxHash, onSettled])
 
   // Any change to the basket invalidates a quote priced against the old one.
   useEffect(() => {
@@ -130,7 +175,13 @@ export default function NimPayPanel({
           color: error ? 'var(--rot)' : 'var(--mute-on-paper)',
         }}
       >
-        {error ?? progress ?? (quote ? 'One confirmation in Nimiq Pay.' : '')}
+        {error ??
+          progress ??
+          (quote
+            ? supportedHost === 'pay'
+              ? 'One confirmation in Nimiq Pay.'
+              : 'Opens the Nimiq Wallet in a new window.'
+            : '')}
       </p>
 
       {nimTxHash && status !== 'settled' && (
