@@ -186,7 +186,7 @@ export const FAQ_GROUPS: QaGroup[] = [
       {
         id: 'who-runs',
         q: 'Who runs Terreno?',
-        a: 'Terreno is operated by Celo Core Co. It is not operated by, affiliated with, or endorsed by Opera or MiniPay — MiniPay is just the wallet that makes Terreno accessible inside their app.',
+        a: 'Terreno is operated by Cracked Studios. It is not operated by, affiliated with, or endorsed by Nimiq — Nimiq Pay is just the wallet that makes Terreno accessible inside their app.',
       },
     ],
   },
