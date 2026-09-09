@@ -117,6 +117,25 @@ export async function loadNimiqProvider(): Promise<NimiqProvider | null> {
 }
 
 /**
+ * Warm the mini-app SDK ahead of the tap that needs it.
+ *
+ * Same reasoning as `preloadNimiqHub`: `sendNimWithData` awaits the provider
+ * before it can send, and on the first payment of a session that await is a
+ * dynamic import plus an `init()` handshake with the host. Doing that inside
+ * the tap is what made the first attempt fail and a later one succeed.
+ *
+ * Resolves when the provider is ready, or when it is clear it will not be. It
+ * never rejects — a failed warm must not lock a player out of trying, and the
+ * real attempt reports its own errors.
+ */
+export function preloadNimiqProvider(): Promise<void> {
+  return loadNimiqProvider().then(
+    () => undefined,
+    () => undefined,
+  )
+}
+
+/**
  * The user's Nimiq addresses. **Shows a native confirmation dialog.**
  *
  * Never call this from a mount effect. Account access is a confirmed action,

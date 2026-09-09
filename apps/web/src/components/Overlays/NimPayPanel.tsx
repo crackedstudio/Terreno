@@ -3,6 +3,7 @@
 import { useNimPayment, type NimPayStatus, type NimQuote } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
 import { canUseNimiqHub, preloadNimiqHub } from '@/lib/nimiqHub'
+import { preloadNimiqProvider } from '@/lib/nimiqProvider'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
 import { isQuotePayable, quoteMsRemaining, SETTLEMENT_WINDOW_MS } from '@/lib/nim/quote'
 import { formatUSDT } from '@/lib/colorUtils'
@@ -10,6 +11,13 @@ import { useEffect, useRef, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
 const MONO = "'Space Mono', monospace"
+
+/**
+ * How long to wait for a wallet transport to warm before offering the button
+ * anyway. Longer than a warm ever takes in practice; short enough that a
+ * wedged host does not strand the player.
+ */
+const WARM_TIMEOUT_MS = 8_000
 
 const LABEL: React.CSSProperties = {
   fontFamily: MONO,
@@ -74,16 +82,47 @@ export default function NimPayPanel({
   // the first client render agree ('isNimiqPay()' is false on the server).
   // 'none' keeps the panel hidden where there is no transport at all.
   const [supportedHost, setSupportedHost] = useState<'none' | NimHost>('none')
+  /**
+   * False until the wallet transport can actually be used inside a tap.
+   *
+   * The first payment of a session used to fail — sometimes twice — because
+   * `sendNimWithData` had to load the Hub or the mini-app SDK before it could
+   * send, and doing that inside the tap ended the user gesture the wallet
+   * needs. Warming it on mount fixed the common case but not the race: a
+   * player who tapped before the warm finished still hit it.
+   *
+   * So the button waits for the warm rather than racing it. This is a
+   * readiness signal, not a timer — it clears the moment the transport is
+   * usable, which is normally faster than any delay worth guessing at.
+   */
+  const [transportReady, setTransportReady] = useState(false)
+
   useEffect(() => {
-    if (isNimiqPay()) setSupportedHost('pay')
-    else if (canUseNimiqHub() || nimPayPreviewEnabled()) {
+    let cancelled = false
+    // Whatever happens — loaded, failed, or slow — the button must not stay
+    // disabled forever. A warm that fails still leaves a payment worth
+    // attempting, and the attempt reports its own errors properly.
+    const ready = () => {
+      if (!cancelled) setTransportReady(true)
+    }
+
+    if (isNimiqPay()) {
+      setSupportedHost('pay')
+      void preloadNimiqProvider().then(ready)
+    } else if (canUseNimiqHub() || nimPayPreviewEnabled()) {
       setSupportedHost('web')
-      // Warm the Hub bundle now, not on the tap that pays. `checkout()` opens a
-      // popup, which a browser only allows from inside a user gesture, and
-      // fetching the module mid-tap ends that gesture — so the first payment
-      // was blocked and only a later retry worked. A script fetch raises no
-      // dialog, so this is safe to do on mount.
-      preloadNimiqHub()
+      void preloadNimiqHub().then(ready)
+    } else {
+      // No transport at all; the panel renders nothing, so readiness is moot.
+      ready()
+    }
+
+    // Backstop. If a warm neither resolves nor rejects — a host that never
+    // answers `init()` — the player still gets their button back.
+    const timer = setTimeout(ready, WARM_TIMEOUT_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
     }
   }, [])
 
@@ -142,6 +181,7 @@ export default function NimPayPanel({
       nimTxHash={nimTxHash}
       pixelCount={pixelIds.length}
       hasRecipient={!!recipient}
+      transportReady={transportReady}
       busy={busy}
       onPrimary={() =>
         quote && isQuotePayable(quote) ? void payAndSettle() : void getQuote(pixelIds)
@@ -160,6 +200,15 @@ export interface NimPayPanelViewProps {
   nimTxHash: string | null
   pixelCount: number
   hasRecipient: boolean
+  /**
+   * Whether the wallet transport is loaded and usable inside a tap.
+   *
+   * The pay button is held until this is true. Every "I had to tap three
+   * times" report was a tap landing before the Hub or the mini-app SDK had
+   * loaded: `sendNimWithData` then had to fetch it mid-tap, which ends the
+   * user gesture the wallet needs, and the payment failed for that alone.
+   */
+  transportReady: boolean
   busy: boolean
   /** Get a price, or pay one — the button decides from the state it is given. */
   onPrimary: () => void
@@ -194,6 +243,7 @@ export function NimPayPanelView({
   nimTxHash,
   pixelCount,
   hasRecipient,
+  transportReady,
   busy,
   onPrimary,
   onDiscard,
@@ -296,21 +346,28 @@ export function NimPayPanelView({
                 minHeight: 44,
                 fontSize: 10,
                 justifyContent: 'center',
-                opacity: busy || !hasRecipient ? 0.5 : 1,
+                opacity: busy || !hasRecipient || !transportReady ? 0.5 : 1,
               }}
-              disabled={busy || !hasRecipient}
-              aria-busy={busy}
+              // Held until the wallet transport is warm. This is the fix for
+              // "I have to tap three times": each of those taps landed before
+              // the Hub or the mini-app SDK had loaded, and failed for that
+              // reason alone. A button that is briefly not ready beats one
+              // that looks ready and fails.
+              disabled={busy || !hasRecipient || !transportReady}
+              aria-busy={busy || !transportReady}
               onClick={onPrimary}
             >
               {busy
                 ? busyLabel(status)
                 : !hasRecipient
                   ? 'CONNECT WALLET FIRST'
-                  : stale
-                    ? 'REFRESH THE PRICE'
-                    : quote
-                      ? `PAY ${quote.nim} NIM`
-                      : 'GET NIM PRICE'}
+                  : !transportReady
+                    ? 'PREPARING WALLET…'
+                    : stale
+                      ? 'REFRESH THE PRICE'
+                      : quote
+                        ? `PAY ${quote.nim} NIM`
+                        : 'GET NIM PRICE'}
             </button>
 
             {/* A live quote is a decision, so there is a way out of it that is
@@ -370,11 +427,13 @@ export function NimPayPanelView({
           }}
         >
           {progress ??
-            (quote
-              ? host === 'pay'
-                ? 'One confirmation in Nimiq Pay.'
-                : 'Opens the Nimiq Wallet in a new window.'
-              : '')}
+            (!transportReady
+              ? 'Getting the wallet ready…'
+              : quote
+                ? host === 'pay'
+                  ? 'One confirmation in Nimiq Pay.'
+                  : 'Opens the Nimiq Wallet in a new window.'
+                : '')}
         </p>
 
         {nimTxHash && status !== 'settled' && (

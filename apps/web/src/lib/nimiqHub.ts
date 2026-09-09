@@ -123,12 +123,19 @@ export function canUseNimiqHub(): boolean {
  * path. It is a script fetch, not a provider call, so it raises no dialog and
  * does not fall foul of the rule against confirmations on load.
  *
- * Deliberately swallows every error: this is an optimisation, a failed warm
- * must not surface anywhere, and the real attempt reports its own failures.
+ * Resolves when the transport is ready to be used inside a tap — or when it is
+ * clear it never will be. It NEVER rejects: a failed warm must not surface
+ * anywhere, and the real attempt reports its own failures. Callers use it to
+ * decide when a pay button is safe to offer, so resolving on failure matters
+ * as much as resolving on success — a player must never be locked out of
+ * trying because a warm went wrong.
  */
-export function preloadNimiqHub(): void {
-  if (!canUseNimiqHub()) return
-  void loadHub().catch(() => {})
+export function preloadNimiqHub(): Promise<void> {
+  if (!canUseNimiqHub()) return Promise.resolve()
+  return loadHub().then(
+    () => undefined,
+    () => undefined,
+  )
 }
 
 /**

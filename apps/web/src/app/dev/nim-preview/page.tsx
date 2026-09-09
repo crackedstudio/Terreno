@@ -41,6 +41,7 @@ const BASE = {
   nimTxHash: null,
   pixelCount: 2,
   hasRecipient: true,
+  transportReady: true,
   busy: false,
   onPrimary: () => {},
   onDiscard: () => {},
@@ -54,6 +55,13 @@ type PreviewState = { name: string; props: Parameters<typeof NimPayPanelView>[0]
 const buildStates = (): PreviewState[] => [
   { name: 'no wallet connected', props: { ...BASE, status: 'idle', hasRecipient: false } },
   { name: 'idle', props: { ...BASE, status: 'idle' } },
+  // The state a player sees for the first fraction of a second, before the
+  // Hub or the mini-app SDK has loaded. Previewed because it is now a real
+  // screen and not just a flicker on a slow connection.
+  {
+    name: 'preparing the wallet',
+    props: { ...BASE, status: 'idle', transportReady: false },
+  },
   { name: 'quoting', props: { ...BASE, status: 'quoting', busy: true } },
   { name: 'quoted — fresh', props: { ...BASE, status: 'quoted', quote: quote() } },
   {
