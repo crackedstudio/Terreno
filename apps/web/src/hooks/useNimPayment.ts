@@ -52,6 +52,13 @@ export interface NimQuote {
   expiresAt: number
 }
 
+/**
+ * Most accounts to price-check before giving up. A wallet with more than this
+ * is unusual, and the check is advisory — a bound matters more than covering
+ * every last account.
+ */
+const MAX_ACCOUNTS_CHECKED = 8
+
 const POLL_MS = 4_000
 const MAX_POLLS = 45 // ~3 minutes
 
@@ -80,23 +87,48 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
   /**
    * How much more NIM the player needs, or null when we cannot tell.
    *
-   * Never throws and never changes `status`: this is decoration on a path that
-   * has to keep working without it. Outside Nimiq Pay there is no provider to
-   * ask, and a declined prompt resolves as an error envelope rather than a
-   * rejection — both end here as "cannot tell", which renders as nothing.
+   * Reads EVERY address the wallet reports, not the first one. A Nimiq Pay user
+   * can hold several accounts, `listAccounts()` returns them all, and the order
+   * says nothing about which one holds the money or which the wallet will spend
+   * from. An earlier version of this took `[0]` and told a player with 4,937 NIM
+   * across other accounts that they had none — the exact false negative this
+   * comment exists to stop coming back.
+   *
+   * A Nimiq transaction is funded by ONE address, so the test is whether the
+   * LARGEST single balance covers the amount. Summing would claim a player can
+   * pay when no single account of theirs can.
+   *
+   * Even then the answer is advisory. The wallet chooses the sending account
+   * and is the only authority on what a payment can do; this can be stale, can
+   * miss an account the wallet knows about, and must therefore never be allowed
+   * to stop somebody paying. It renders a warning and nothing more.
+   *
+   * Never throws and never changes `status`. Outside Nimiq Pay there is no
+   * provider to ask, and a declined prompt resolves as an error envelope rather
+   * than a rejection — both end here as "cannot tell", which renders as nothing.
    */
   const checkBalance = useCallback(async (requiredLuna: bigint) => {
     setShortfall(null)
     if (!isNimiqPay()) return
     try {
-      const [address] = await listNimiqAccounts()
-      if (!address) return
-      const res = await fetch(`/api/nim/balance?address=${encodeURIComponent(address)}`)
-      if (!res.ok) return
-      const { luna } = (await res.json()) as { luna?: string }
-      if (typeof luna !== 'string' || !/^\d+$/.test(luna)) return
-      const held = BigInt(luna)
-      setShortfall(held >= requiredLuna ? 0n : requiredLuna - held)
+      const addresses = (await listNimiqAccounts()).slice(0, MAX_ACCOUNTS_CHECKED)
+      if (addresses.length === 0) return
+
+      const balances = await Promise.all(
+        addresses.map(async (address) => {
+          const res = await fetch(`/api/nim/balance?address=${encodeURIComponent(address)}`)
+          if (!res.ok) return null
+          const { luna } = (await res.json()) as { luna?: string }
+          return typeof luna === 'string' && /^\d+$/.test(luna) ? BigInt(luna) : null
+        }),
+      )
+
+      const known = balances.filter((b): b is bigint => b !== null)
+      // Every lookup failed: that is "cannot tell", not "has nothing".
+      if (known.length === 0) return
+
+      const richest = known.reduce((a, b) => (b > a ? b : a), 0n)
+      setShortfall(richest >= requiredLuna ? 0n : requiredLuna - richest)
     } catch {
       // Declined, offline, or a node that would not answer. Say nothing.
     }

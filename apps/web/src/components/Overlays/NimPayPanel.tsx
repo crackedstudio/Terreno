@@ -155,21 +155,23 @@ export default function NimPayPanel({
             type="button"
             className="pixel-btn pixel-btn-sm"
             style={{ width: '100%', minHeight: 44, fontSize: 10, justifyContent: 'center' }}
-            // `short` blocks only when the balance was actually read. A null
-            // shortfall is "we could not tell", which must never stop a player
-            // paying — the wallet is the authority on what they can afford.
-            disabled={busy || !recipient || short}
+            // Deliberately NOT disabled on a suspected shortfall. This check
+            // reads the accounts the wallet chose to report, at one moment,
+            // from one node — the wallet decides which account funds a payment
+            // and is the only authority on whether it can. An earlier version
+            // disabled the button here and stopped a player with 4,937 NIM from
+            // paying. A warning costs a wasted tap when it is right; a block
+            // costs a sale every time it is wrong.
+            disabled={busy || !recipient}
             onClick={() => (quote ? void payAndSettle() : void getQuote(pixelIds))}
           >
             {busy
               ? 'WORKING…'
-              : short
-                ? 'NOT ENOUGH NIM'
-                : quote
-                  ? 'PAY WITH NIM'
-                  : recipient
-                    ? 'GET NIM PRICE'
-                    : 'CONNECT WALLET FIRST'}
+              : quote
+                ? 'PAY WITH NIM'
+                : recipient
+                  ? 'GET NIM PRICE'
+                  : 'CONNECT WALLET FIRST'}
           </button>
         </>
       )}
@@ -189,7 +191,7 @@ export default function NimPayPanel({
         {error ??
           progress ??
           (short
-            ? `You need ${formatNim(shortfall!)} more NIM. Top up, or pay with USDC instead.`
+            ? `Looks like you may be about ${formatNim(shortfall!)} NIM short — try anyway, or pay with USDC.`
             : quote
               ? supportedHost === 'pay'
                 ? 'One confirmation in Nimiq Pay.'
