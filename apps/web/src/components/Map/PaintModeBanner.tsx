@@ -142,7 +142,7 @@ export default function PaintModeBanner({
           {isAtLimit && (
             <span
               style={{
-                fontSize: 8,
+                fontSize: 9,
                 background: 'var(--ink)',
                 color: 'var(--rot)',
                 padding: '2px 5px',

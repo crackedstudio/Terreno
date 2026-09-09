@@ -102,7 +102,7 @@ export default function StatsRow({
                 style={{
                   fontFamily: MONO,
                   fontWeight: 700,
-                  fontSize: 8,
+                  fontSize: 9,
                   letterSpacing: '0.1em',
                   lineHeight: 1.5,
                   color: 'var(--rot)',
@@ -116,7 +116,7 @@ export default function StatsRow({
               style={{
                 fontFamily: MONO,
                 fontWeight: 700,
-                fontSize: 8,
+                fontSize: 9,
                 letterSpacing: '0.14em',
                 color: 'var(--mute-on-paper)',
                 marginTop: 4,

@@ -112,7 +112,7 @@ export default function ChainsBlock({ baseAddress }: ChainsBlockProps) {
               CONNECTED, not VERIFIED — being connected shows which wallet is
               in the session, which is not the same as proving control of it. */}
           {proven ? (
-            <span style={{ ...LABEL, fontSize: 8, color: 'var(--held)' }}>✓ SIGNED</span>
+            <span style={{ ...LABEL, fontSize: 9, color: 'var(--held)' }}>✓ SIGNED</span>
           ) : status === 'base-signing' ? (
             <button type="button" className="pixel-btn pixel-btn-sm" style={ACTION} disabled>
               WAIT…
@@ -127,7 +127,7 @@ export default function ChainsBlock({ baseAddress }: ChainsBlockProps) {
               {failedStep === 'base-signature' ? 'RETRY' : 'CONFIRM'}
             </button>
           ) : shortBase ? (
-            <span style={{ ...LABEL, fontSize: 8, color: 'var(--muted)' }}>CONNECTED</span>
+            <span style={{ ...LABEL, fontSize: 9, color: 'var(--muted)' }}>CONNECTED</span>
           ) : null}
         </div>
 
@@ -166,7 +166,7 @@ export default function ChainsBlock({ baseAddress }: ChainsBlockProps) {
           </span>
 
           {(status === 'nim-signed' || status === 'linked') && (
-            <span style={{ ...LABEL, fontSize: 8, color: 'var(--held)' }}>✓ SIGNED</span>
+            <span style={{ ...LABEL, fontSize: 9, color: 'var(--held)' }}>✓ SIGNED</span>
           )}
 
           {/* One control per state. `busy` disables rather than hides, so the

@@ -113,7 +113,7 @@ export default function LeaderboardRow({
             <span
               style={{
                 flexShrink: 0,
-                fontSize: 8,
+                fontSize: 9,
                 letterSpacing: '0.14em',
                 padding: '2px 5px',
                 color: fg,
@@ -127,7 +127,7 @@ export default function LeaderboardRow({
             <span
               style={{
                 flexShrink: 0,
-                fontSize: 8,
+                fontSize: 9,
                 letterSpacing: '0.14em',
                 padding: '2px 5px',
                 color: accent,
@@ -183,7 +183,7 @@ export default function LeaderboardRow({
           style={{
             fontFamily: MONO,
             fontWeight: 700,
-            fontSize: 8,
+            fontSize: 9,
             letterSpacing: '0.14em',
             color: subFg,
             textTransform: 'uppercase',

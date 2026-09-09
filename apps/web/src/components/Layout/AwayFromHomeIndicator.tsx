@@ -34,7 +34,7 @@ export default function AwayFromHomeIndicator() {
         padding: '5px 10px',
         fontFamily: "'Space Mono', monospace",
         fontWeight: 700,
-        fontSize: 8,
+        fontSize: 9,
         letterSpacing: '0.14em',
         color: 'var(--mute-on-ink)',
         background: 'var(--surface-2)',
@@ -48,7 +48,7 @@ export default function AwayFromHomeIndicator() {
         style={{
           fontFamily: "'Space Mono', monospace",
           fontWeight: 700,
-          fontSize: 8,
+          fontSize: 9,
           letterSpacing: '0.14em',
           color: 'var(--fresh)',
           background: 'transparent',

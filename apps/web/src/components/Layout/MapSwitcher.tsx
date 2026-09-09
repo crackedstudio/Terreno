@@ -117,7 +117,7 @@ export default function MapSwitcher() {
                     {isHome && (
                       <span
                         style={{
-                          fontSize: 8,
+                          fontSize: 9,
                           letterSpacing: '0.14em',
                           padding: '2px 5px',
                           border: '2px solid currentColor',
