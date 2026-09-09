@@ -171,6 +171,15 @@ export default function Home() {
   const [currentScale, setCurrentScale] = useState(1)
   const [activeOverlay, setActiveOverlay] = useState<'none' | 'drawer' | 'info'>('none')
   const [tappedPixelId, setTappedPixelId] = useState<number | null>(null)
+  /**
+   * A purchase has landed on chain and the receipt is (or was) on screen.
+   *
+   * Tracked here rather than read off `buy.step`, because a NIM purchase never
+   * touches `useBuyPixels` — it settles on the server and `buy.step` stays
+   * 'idle' for the whole flow. Without this the drawer could not tell "nothing
+   * has happened yet" from "the land is already bought".
+   */
+  const [purchaseLanded, setPurchaseLanded] = useState(false)
   const [userBalance, setUserBalance] = useState(0n)
   // Transient "zoom in to select" hint, shown when the player taps the map
   // while it's too zoomed out to target an individual pixel.
@@ -407,7 +416,43 @@ export default function Home() {
     canvasRef.current?.drawInspectRing(id)
   }, [])
 
+  /**
+   * Pull the map's state again after a purchase has landed on chain.
+   *
+   * Twice: immediately, and again after 2s to catch RPC propagation delay.
+   *
+   * Deliberately does NOT clear the selection or close the drawer, so it can
+   * run while a receipt is still on screen. A NIM purchase settles on the
+   * server, and if the only refresh lived in the dismiss handler the player
+   * would see the plot they just bought still unowned until they tapped ATLAS.
+   */
+  const refreshAfterPurchase = useCallback(() => {
+    setPurchaseLanded(true)
+    refresh()
+    setTimeout(() => refresh(), 2000)
+  }, [refresh])
+
+  /** Finish with a completed purchase: clear the form, close, refresh. */
+  const handleDone = useCallback(() => {
+    clearSelection()
+    setActiveOverlay('none')
+    buy.reset()
+    setPurchaseLanded(false)
+    refresh()
+    setTimeout(() => refresh(), 2000)
+  }, [clearSelection, buy, refresh])
+
   const handleDismissOverlay = useCallback(() => {
+    // Once a purchase has landed the form is spent, so ANY way out of it has
+    // to finish the job — clear the selection, refresh the map, drop the
+    // receipt. Tapping the map is a perfectly natural way to dismiss a
+    // receipt, and before this it left the old selection in place, so
+    // reopening the drawer showed a stale claim form for land already bought.
+    if (purchaseLanded || buy.step === 'success') {
+      handleDone()
+      return
+    }
+
     // Backdrop tap on the buy drawer, pre-transaction, is an abandonment —
     // record it so the checkout_opened → pixel_buy_started drop-off can be
     // split from the insufficient-funds / cleared cases.
@@ -424,7 +469,7 @@ export default function Home() {
     setTappedPixelId(null)
     canvasRef.current?.clearInspectRing()
     buy.reset()
-  }, [buy, activeOverlay, currentMapId, selectedIds, totalPrice])
+  }, [buy, activeOverlay, currentMapId, selectedIds, totalPrice, purchaseLanded, handleDone])
 
   const handleBuy = useCallback(() => {
     buy.execute([...selectedIds], totalPrice)
@@ -435,29 +480,6 @@ export default function Home() {
   const handleConfirmPurchase = useCallback(() => {
     buy.confirmPurchase()
   }, [buy])
-
-  /**
-   * Pull the map's state again after a purchase has landed on chain.
-   *
-   * Twice: immediately, and again after 2s to catch RPC propagation delay.
-   *
-   * Deliberately does NOT clear the selection or close the drawer, so it can
-   * run while a receipt is still on screen. That is the whole reason it is
-   * split out of `handleDone` — a NIM purchase settles on the server, and if
-   * the only refresh lives in the dismiss handler the player sees the plot
-   * they just bought still unowned until they happen to tap ATLAS.
-   */
-  const refreshAfterPurchase = useCallback(() => {
-    refresh()
-    setTimeout(() => refresh(), 2000)
-  }, [refresh])
-
-  const handleDone = useCallback(() => {
-    clearSelection()
-    setActiveOverlay('none')
-    buy.reset()
-    refreshAfterPurchase()
-  }, [clearSelection, buy, refreshAfterPurchase])
 
   const handleRemovePixels = useCallback((ids: number[]) => {
     for (const id of ids) removePixel(id)

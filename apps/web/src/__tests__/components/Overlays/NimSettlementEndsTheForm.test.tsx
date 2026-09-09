@@ -188,6 +188,20 @@ describe('the map after a NIM purchase settles', () => {
     expect(onDone).not.toHaveBeenCalled()
   })
 
+  // The receipt is not the only way out: the map is visible above the drawer
+  // and tapping it dismisses via the dim layer. Both routes have to finish the
+  // purchase, which is asserted at the page level in `handleDismissOverlay` —
+  // here we pin the signal that page relies on to know a purchase happened,
+  // since a NIM settlement never touches `useBuyPixels` and `txStep` stays
+  // 'idle' for the whole flow.
+  it('signals the landing that lets any dismissal finish the form', () => {
+    settle()
+    const { onPurchaseLanded } = renderDrawer()
+    // Fired without any dismissal at all: the page uses it to decide that a
+    // later backdrop tap should clear the selection rather than abandon it.
+    expect(onPurchaseLanded).toHaveBeenCalled()
+  })
+
   it('still refreshes when the player does dismiss it', () => {
     settle()
     const { onPurchaseLanded, onDone } = renderDrawer()

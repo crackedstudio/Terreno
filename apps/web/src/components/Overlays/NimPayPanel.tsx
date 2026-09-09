@@ -4,7 +4,6 @@ import { useNimPayment } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
 import { canUseNimiqHub } from '@/lib/nimiqHub'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
-import { formatNim } from '@/lib/nim/units'
 import { useEffect, useRef, useState } from 'react'
 import type { MapId } from '@/lib/maps/types'
 
@@ -83,7 +82,6 @@ export default function NimPayPanel({
     progress,
     nimTxHash,
     baseTxHash,
-    shortfall,
     busy,
     getQuote,
     payAndSettle,
@@ -110,9 +108,6 @@ export default function NimPayPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixelIds.join(',')])
 
-  // Known to be short — as opposed to unknown, which is what a declined
-  // prompt or an unreachable node produces.
-  const short = shortfall !== null && shortfall > 0n
 
   if (!supported || pixelIds.length === 0) return null
 
@@ -155,13 +150,6 @@ export default function NimPayPanel({
             type="button"
             className="pixel-btn pixel-btn-sm"
             style={{ width: '100%', minHeight: 44, fontSize: 10, justifyContent: 'center' }}
-            // Deliberately NOT disabled on a suspected shortfall. This check
-            // reads the accounts the wallet chose to report, at one moment,
-            // from one node — the wallet decides which account funds a payment
-            // and is the only authority on whether it can. An earlier version
-            // disabled the button here and stopped a player with 4,937 NIM from
-            // paying. A warning costs a wasted tap when it is right; a block
-            // costs a sale every time it is wrong.
             disabled={busy || !recipient}
             onClick={() => (quote ? void payAndSettle() : void getQuote(pixelIds))}
           >
@@ -190,13 +178,11 @@ export default function NimPayPanel({
       >
         {error ??
           progress ??
-          (short
-            ? `Looks like you may be about ${formatNim(shortfall!)} NIM short — try anyway, or pay with USDC.`
-            : quote
-              ? supportedHost === 'pay'
-                ? 'One confirmation in Nimiq Pay.'
-                : 'Opens the Nimiq Wallet in a new window.'
-              : '')}
+          (quote
+            ? supportedHost === 'pay'
+              ? 'One confirmation in Nimiq Pay.'
+              : 'Opens the Nimiq Wallet in a new window.'
+            : '')}
       </p>
 
       {nimTxHash && status !== 'settled' && (
