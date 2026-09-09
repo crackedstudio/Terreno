@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
-import { sendNimViaHub, canUseNimiqHub, resetNimiqHubForTests, NIMIQ_HUB_URL } from '@/lib/nimiqHub'
+import {
+  sendNimViaHub,
+  canUseNimiqHub,
+  preloadNimiqHub,
+  resetNimiqHubForTests,
+  NIMIQ_HUB_URL,
+} from '@/lib/nimiqHub'
 import { NimiqProviderError } from '@/lib/nimiqProvider'
 
 /**
@@ -25,9 +31,13 @@ import { NimiqProviderError } from '@/lib/nimiqProvider'
 const HASH = 'a'.repeat(64)
 
 const checkout = vi.fn()
+/** Counts Hub constructions, so memoization and warming can be observed. */
+const construct = vi.fn()
 vi.mock('@nimiq/hub-api', () => ({
   default: class {
-    constructor(public endpoint: string) {}
+    constructor(public endpoint: string) {
+      construct(endpoint)
+    }
     checkout = checkout
   },
 }))
@@ -35,6 +45,7 @@ vi.mock('@nimiq/hub-api', () => ({
 beforeEach(() => {
   resetNimiqHubForTests()
   checkout.mockReset()
+  construct.mockClear()
 })
 afterEach(() => resetNimiqHubForTests())
 
@@ -68,9 +79,20 @@ describe('sendNimViaHub', () => {
     await expect(sendNimViaHub(ORDER)).rejects.toThrow(/aborted/i)
   })
 
-  it('turns a cancel with no message into a usable one', async () => {
+  // A rejection with no message is far more often a blocked popup than a
+  // deliberate cancel, so the fallback names the thing the player can fix.
+  // "The NIM payment was not completed" told them nothing and was what they
+  // saw when the Hub bundle had not been warmed.
+  it('blames the popup when the Hub rejects with no message', async () => {
     checkout.mockRejectedValue(new Error(''))
-    await expect(sendNimViaHub(ORDER)).rejects.toThrow(/was not completed/i)
+    await expect(sendNimViaHub(ORDER)).rejects.toThrow(/pop-ups/i)
+  })
+
+  // A message from the Hub is already user-facing and must survive intact —
+  // the fallback only fills a genuine gap.
+  it('keeps the Hub own message when it has one', async () => {
+    checkout.mockRejectedValue(new Error('Request was cancelled by the user'))
+    await expect(sendNimViaHub(ORDER)).rejects.toThrow(/cancelled by the user/i)
   })
 
   it('refuses a result with no hash rather than reporting success', async () => {
@@ -134,5 +156,52 @@ describe('the two NIM transports stay out of each other’s bundles', () => {
   it('the Hub SDK is only ever reached through a dynamic import', () => {
     const src = fs.readFileSync(path.join(LIB, 'nimiqHub.ts'), 'utf8')
     expect(src).toMatch(/import\(['"]@nimiq\/hub-api['"]\)/)
+  })
+})
+
+/**
+ * The Hub module has to be ready before the tap that pays.
+ *
+ * The bug, reported from a browser: paying in NIM failed on the first attempt
+ * and worked when tried again a moment later. `sendNimViaHub` awaits
+ * `loadHub()` before calling `checkout()`, and on the first payment that await
+ * is a dynamic import over the network — a task boundary that ends the user
+ * activation the tap granted, so the popup `checkout()` needs is blocked. The
+ * retry found the module cached and kept the gesture.
+ */
+describe('preloadNimiqHub', () => {
+  it('builds the Hub without anybody asking to pay', async () => {
+    preloadNimiqHub()
+    await vi.waitFor(() => expect(construct).toHaveBeenCalledTimes(1))
+    expect(checkout).not.toHaveBeenCalled()
+  })
+
+  // The point of warming: the payment that follows reuses it, so nothing has
+  // to cross the network from inside the gesture.
+  it('leaves nothing for the following payment to load', async () => {
+    preloadNimiqHub()
+    await vi.waitFor(() => expect(construct).toHaveBeenCalledTimes(1))
+
+    checkout.mockResolvedValue({ hash: HASH })
+    await expect(sendNimViaHub(ORDER)).resolves.toBe(HASH)
+
+    // Still one construction — the payment reused the warmed instance.
+    expect(construct).toHaveBeenCalledTimes(1)
+  })
+
+  // Control: without a warm, the payment itself is what builds the Hub. This
+  // is the state the bug happened in, and it proves the assertions above are
+  // the warm doing work rather than memoization alone.
+  it('control: with no warm, paying is what builds the Hub', async () => {
+    expect(construct).not.toHaveBeenCalled()
+    checkout.mockResolvedValue({ hash: HASH })
+    await sendNimViaHub(ORDER)
+    expect(construct).toHaveBeenCalledTimes(1)
+  })
+
+  // A warm is an optimisation; a failure has nobody to tell, and must never
+  // reach the caller as a rejection.
+  it('never throws', () => {
+    expect(() => preloadNimiqHub()).not.toThrow()
   })
 })

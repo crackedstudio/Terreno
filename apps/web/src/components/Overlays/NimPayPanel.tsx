@@ -2,7 +2,7 @@
 
 import { useNimPayment, type NimPayStatus, type NimQuote } from '@/hooks/useNimPayment'
 import { isNimiqPay } from '@/lib/nimiq'
-import { canUseNimiqHub } from '@/lib/nimiqHub'
+import { canUseNimiqHub, preloadNimiqHub } from '@/lib/nimiqHub'
 import { nimPayPreviewEnabled } from '@/lib/nim/config'
 import { isQuotePayable, quoteMsRemaining, SETTLEMENT_WINDOW_MS } from '@/lib/nim/quote'
 import { formatUSDT } from '@/lib/colorUtils'
@@ -76,7 +76,15 @@ export default function NimPayPanel({
   const [supportedHost, setSupportedHost] = useState<'none' | NimHost>('none')
   useEffect(() => {
     if (isNimiqPay()) setSupportedHost('pay')
-    else if (canUseNimiqHub() || nimPayPreviewEnabled()) setSupportedHost('web')
+    else if (canUseNimiqHub() || nimPayPreviewEnabled()) {
+      setSupportedHost('web')
+      // Warm the Hub bundle now, not on the tap that pays. `checkout()` opens a
+      // popup, which a browser only allows from inside a user gesture, and
+      // fetching the module mid-tap ends that gesture — so the first payment
+      // was blocked and only a later retry worked. A script fetch raises no
+      // dialog, so this is safe to do on mount.
+      preloadNimiqHub()
+    }
   }, [])
 
   const {
