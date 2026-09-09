@@ -15,6 +15,7 @@ process.env.NIM_SETTLER_PRIVATE_KEY = '0x' + '1'.repeat(64)
 const h = vi.hoisted(() => ({
   getNimTransaction: vi.fn(),
   readContract: vi.fn(),
+  getBalance: vi.fn(),
   writeContract: vi.fn(),
 }))
 
@@ -23,7 +24,7 @@ vi.mock('@/lib/nim/rpc', async (importOriginal) => ({
   getNimTransaction: h.getNimTransaction,
 }))
 vi.mock('@/lib/chain', () => ({
-  fallbackReadClient: { readContract: h.readContract },
+  fallbackReadClient: { readContract: h.readContract, getBalance: h.getBalance },
 }))
 vi.mock('viem', async (importOriginal) => ({
   ...(await importOriginal<typeof import('viem')>()),
@@ -90,8 +91,13 @@ beforeEach(() => {
   h.readContract.mockImplementation(({ functionName }: { functionName: string }) => {
     if (functionName === 'settledNimTx') return Promise.resolve(false)
     if (functionName === 'getAcceptedTokens') return Promise.resolve([USDC])
-    return Promise.resolve(undefined)
+    // balanceOf / allowance: comfortably above any price under test.
+    return Promise.resolve(10_000_000n)
   })
+  // Native ETH for gas, well above the floor. Stated explicitly rather than
+  // left as an unmocked undefined — a capacity check that only passes because
+  // a comparison against undefined is false is not a check anything verified.
+  h.getBalance.mockResolvedValue(5_000_000_000_000_000n)
   h.writeContract.mockResolvedValue('0xbaseTx')
 })
 
