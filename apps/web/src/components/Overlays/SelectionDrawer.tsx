@@ -49,6 +49,16 @@ interface SelectionDrawerProps {
   /** Second, explicit tap that sends the buy after an approval. */
   onConfirmPurchase: () => void
   onDone: () => void
+  /**
+   * A purchase has landed on chain. Refresh the map, but leave the drawer and
+   * the receipt where they are.
+   *
+   * Separate from `onDone`, which is the player dismissing the receipt and also
+   * clears the selection and closes the drawer. A NIM purchase settles on the
+   * server while the receipt is still on screen, so the map has to be told
+   * about it then — not later, if and when the player happens to tap ATLAS.
+   */
+  onPurchaseLanded?: () => void
 }
 
 export default function SelectionDrawer({
@@ -69,6 +79,7 @@ export default function SelectionDrawer({
   onBuy,
   onConfirmPurchase,
   onDone,
+  onPurchaseLanded,
 }: SelectionDrawerProps) {
   /**
    * A settled NIM purchase, once one has happened.
@@ -84,9 +95,17 @@ export default function SelectionDrawer({
 
   // Memoized: `NimPayPanel` announces settlement from an effect that depends on
   // this callback, so a fresh identity every render would re-run it.
-  const handleNimSettled = useCallback((receipt: NimReceipt) => {
-    setNimReceipt(receipt)
-  }, [])
+  const handleNimSettled = useCallback(
+    (receipt: NimReceipt) => {
+      setNimReceipt(receipt)
+      // The land is already the player's on chain at this point. Without this
+      // the map keeps rendering the pre-purchase state until the receipt is
+      // dismissed, so a player who reads their receipt and then looks at the
+      // map sees the plot they just bought still up for grabs.
+      onPurchaseLanded?.()
+    },
+    [onPurchaseLanded],
+  )
 
   // 'approved' is included so the progress panel stays up showing FUNDS
   // UNLOCKED — but it is a decision point, not an in-flight state, so the

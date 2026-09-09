@@ -436,14 +436,28 @@ export default function Home() {
     buy.confirmPurchase()
   }, [buy])
 
+  /**
+   * Pull the map's state again after a purchase has landed on chain.
+   *
+   * Twice: immediately, and again after 2s to catch RPC propagation delay.
+   *
+   * Deliberately does NOT clear the selection or close the drawer, so it can
+   * run while a receipt is still on screen. That is the whole reason it is
+   * split out of `handleDone` — a NIM purchase settles on the server, and if
+   * the only refresh lives in the dismiss handler the player sees the plot
+   * they just bought still unowned until they happen to tap ATLAS.
+   */
+  const refreshAfterPurchase = useCallback(() => {
+    refresh()
+    setTimeout(() => refresh(), 2000)
+  }, [refresh])
+
   const handleDone = useCallback(() => {
     clearSelection()
     setActiveOverlay('none')
     buy.reset()
-    // Refresh immediately, then again after 2s to catch RPC propagation delay
-    refresh()
-    setTimeout(() => refresh(), 2000)
-  }, [clearSelection, buy, refresh])
+    refreshAfterPurchase()
+  }, [clearSelection, buy, refreshAfterPurchase])
 
   const handleRemovePixels = useCallback((ids: number[]) => {
     for (const id of ids) removePixel(id)
@@ -783,6 +797,7 @@ export default function Home() {
           onBuy={handleBuy}
           onConfirmPurchase={handleConfirmPurchase}
           onDone={handleDone}
+          onPurchaseLanded={refreshAfterPurchase}
         />
       )}
 
