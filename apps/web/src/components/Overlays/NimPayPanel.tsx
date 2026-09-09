@@ -125,7 +125,7 @@ export default function NimPayPanel({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ ...LABEL, color: 'var(--yours)' }}>OR PAY IN NIM</span>
         {quote && (
-          <span style={{ ...LABEL, fontSize: 8, color: 'var(--mute-on-paper)' }}>
+          <span style={{ ...LABEL, fontSize: 9, color: 'var(--mute-on-paper)' }}>
             +{(quote.bufferBps / 100).toFixed(1)}% BUFFER
           </span>
         )}
@@ -186,7 +186,7 @@ export default function NimPayPanel({
       </p>
 
       {nimTxHash && status !== 'settled' && (
-        <div style={{ ...LABEL, fontSize: 8, color: 'var(--mute-on-paper)' }}>
+        <div style={{ ...LABEL, fontSize: 9, color: 'var(--mute-on-paper)' }}>
           NIM TX {nimTxHash.slice(0, 10)}… · YOUR PAYMENT IS SAFE
         </div>
       )}

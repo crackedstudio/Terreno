@@ -135,7 +135,7 @@ export default function RaidLedger({ baseAddress, mapId }: RaidLedgerProps) {
                   >
                     {name.toUpperCase()}
                   </div>
-                  <div style={{ ...LABEL, fontSize: 8, color: 'var(--muted)', marginTop: 3 }}>
+                  <div style={{ ...LABEL, fontSize: 9, color: 'var(--muted)', marginTop: 3 }}>
                     TOOK {r.pixelCount} PX · {ago(r.timestamp)}
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export default function RaidLedger({ baseAddress, mapId }: RaidLedgerProps) {
                   >
                     +${formatUSDT(BigInt(r.earned))}
                   </div>
-                  <div style={{ ...LABEL, fontSize: 8, color: 'var(--muted)', marginTop: 3 }}>
+                  <div style={{ ...LABEL, fontSize: 9, color: 'var(--muted)', marginTop: 3 }}>
                     PAID TO YOU
                   </div>
                 </div>

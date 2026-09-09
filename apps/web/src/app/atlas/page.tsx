@@ -48,7 +48,7 @@ function AtlasRow({ map, fillPct, landCount, isHome, isCurrent, onPick }: RowPro
           {isHome && (
             <span
               style={{
-                fontSize: 8,
+                fontSize: 9,
                 letterSpacing: '0.14em',
                 padding: '2px 5px',
                 border: '2px solid currentColor',
@@ -138,7 +138,7 @@ export default function AtlasPage() {
         {loading && (
           <div
             style={{
-              fontSize: 6,
+              fontSize: 9,
               fontFamily: MONO,
               letterSpacing: 1,
               color: 'var(--text-muted)',

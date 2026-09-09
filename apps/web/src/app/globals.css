@@ -369,6 +369,11 @@
   align-items: center;
   justify-content: center;
   padding: 12px 20px;
+  /* Nimiq's mini-app guidance sets a 44px minimum touch target, and this is
+     the class nearly every button in the app uses — so the floor belongs here
+     rather than being re-declared per component and missed. `inline-flex`
+     with centering above means raising the box never shifts the label. */
+  min-height: 44px;
   background: transparent;
   color: var(--on-surface);
   font-family: var(--font-mono);
@@ -392,7 +397,10 @@
 }
 
 /* Compact variant — top bar and inline actions, where the full block is too
-   tall. Keeps the offset shadow, just smaller. */
+   tall. Keeps the offset shadow, just smaller.
+   Compact is about padding and border weight, NOT about the touch target: it
+   inherits the 44px floor above, because a button being visually small is no
+   reason for it to be hard to hit on a phone. */
 .pixel-btn-sm {
   padding: 7px 12px;
   border-width: 2px;

@@ -187,7 +187,7 @@ export default function PixelInfoPanel({
               <div className="font-display" style={{ fontSize: 34, lineHeight: 0.92, color: 'var(--ink)' }}>
                 {s.value}
               </div>
-              <div style={{ ...LABEL_MUTED, fontSize: 8, marginTop: 3 }}>
+              <div style={{ ...LABEL_MUTED, fontSize: 9, marginTop: 3 }}>
                 {s.label} · {s.unit}
               </div>
             </div>

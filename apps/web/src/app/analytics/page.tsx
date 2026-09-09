@@ -54,7 +54,7 @@ function Stat({
         {unit && (
           <span
             style={{
-              fontSize: 8,
+              fontSize: 9,
               fontFamily: MONO,
               color: 'var(--text-muted)',
               letterSpacing: 1,
@@ -121,7 +121,7 @@ function AdvisoryPanel() {
       >
         <div
           style={{
-            fontSize: 6,
+            fontSize: 9,
             fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 2,
@@ -143,7 +143,7 @@ function AdvisoryPanel() {
         </div>
         <div
           style={{
-            fontSize: 7,
+            fontSize: 9,
             fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 1,
@@ -199,7 +199,7 @@ function AdvisoryPanel() {
             width: '100%',
             borderCollapse: 'collapse',
             fontFamily: MONO,
-            fontSize: 7,
+            fontSize: 9,
             letterSpacing: 1,
             color: 'var(--text)',
             minWidth: 320,
@@ -322,7 +322,7 @@ export default function AnalyticsPage() {
         </div>
         <div
           style={{
-            fontSize: 7,
+            fontSize: 9,
             fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 1,
@@ -335,7 +335,7 @@ export default function AnalyticsPage() {
         {a.error && (
           <div
             style={{
-              fontSize: 8,
+              fontSize: 9,
               color: 'var(--error)',
               border: '1px solid var(--error)',
               borderRadius: 8,
@@ -418,7 +418,7 @@ export default function AnalyticsPage() {
 
         <div
           style={{
-            fontSize: 6,
+            fontSize: 9,
             fontFamily: MONO,
             color: 'var(--text-muted)',
             letterSpacing: 1,
