@@ -104,4 +104,17 @@ describe('FAQ facts', () => {
     expect(allCopy).not.toMatch(/daily reward/i)
     expect(allCopy).not.toMatch(/claim your reward/i)
   })
+
+  it('names the operator and host the app actually has', () => {
+    // The SUPPORT answer still said Terreno was operated by Celo Core Co. and
+    // disclaimed Opera/MiniPay long after the move to Base and Nimiq Pay — so
+    // the one answer a player reads to find out who they are dealing with named
+    // the wrong company and the wrong wallet. Same guard the explainer carries.
+    const whoRuns = allItems.find((i) => i.id === 'who-runs')
+    expect(whoRuns).toBeDefined()
+    expect(whoRuns!.a).toContain('Cracked Studios')
+    expect(allCopy).not.toMatch(/\bCelo\b/)
+    expect(allCopy).not.toMatch(/\bMiniPay\b/)
+    expect(allCopy).not.toMatch(/\bOpera\b/)
+  })
 })
