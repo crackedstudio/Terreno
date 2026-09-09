@@ -43,7 +43,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
     title: '2. Our Games',
     paragraphs: [
       'Cracked Studios develops and operates the following games. These Terms apply to all of them, except where a game-specific term presented within that game says otherwise.',
-      'Blokaz — a play-to-earn game distributed through the MiniPay platform, in which cryptocurrency rewards are earned through gameplay. Blokaz has its own Terms of Use, which govern it in the event of any conflict with these Terms.',
+      'Blokaz — a play-to-earn game in which cryptocurrency rewards are earned through gameplay. Blokaz has its own Terms of Use, which govern it in the event of any conflict with these Terms.',
       'Nukko — a game published by Cracked Studios.',
       'Terreno (terreno.world) — a world map made of pixels, described in Section 7. Terreno runs as a Nimiq Pay mini app on the Base network and is the game these Terms are presented within.',
       'We may add, rename, modify, suspend or discontinue any game or feature at any time. The Services are provided on an "as available" basis and depend on third-party infrastructure, including the platforms and blockchain networks named above.',
