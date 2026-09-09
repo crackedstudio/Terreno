@@ -107,6 +107,38 @@ export function canUseNimiqHub(): boolean {
 }
 
 /**
+ * Fetch the Hub module ahead of the tap that needs it. Safe to call repeatedly.
+ *
+ * `checkout()` opens a popup, and a browser only permits that from inside a
+ * user gesture. `sendNimViaHub` must `await loadHub()` first, and on the very
+ * first payment that await is a dynamic `import()` over the NETWORK — a task
+ * boundary that ends the activation the tap granted. The popup is blocked and
+ * `checkout()` rejects with nothing useful in it.
+ *
+ * That is the reported bug: the first attempt to pay in NIM failed, and trying
+ * again a moment later worked, because by then the module was cached and the
+ * await resolved inside the gesture.
+ *
+ * Warming the module before the tap takes the network hop off the critical
+ * path. It is a script fetch, not a provider call, so it raises no dialog and
+ * does not fall foul of the rule against confirmations on load.
+ *
+ * Resolves when the transport is ready to be used inside a tap — or when it is
+ * clear it never will be. It NEVER rejects: a failed warm must not surface
+ * anywhere, and the real attempt reports its own failures. Callers use it to
+ * decide when a pay button is safe to offer, so resolving on failure matters
+ * as much as resolving on success — a player must never be locked out of
+ * trying because a warm went wrong.
+ */
+export function preloadNimiqHub(): Promise<void> {
+  if (!canUseNimiqHub()) return Promise.resolve()
+  return loadHub().then(
+    () => undefined,
+    () => undefined,
+  )
+}
+
+/**
  * Send NIM through the Web Wallet. **Opens the Hub popup.**
  *
  * Mirrors `sendNimWithData`'s contract exactly — same argument shape, same
@@ -151,8 +183,14 @@ export async function sendNimViaHub(params: {
   } catch (err: unknown) {
     // Cancelling the popup lands here. The message is the Hub's own, which is
     // already user-facing, but a cancel can also arrive with none.
+    // The Hub's own message is already user-facing when there is one. When
+    // there is not, the likeliest cause by far is a blocked popup, so the
+    // fallback names it rather than saying "not completed" and leaving the
+    // player with nothing to act on.
     throw new NimiqProviderError(
-      err instanceof Error && err.message ? err.message : 'The NIM payment was not completed.',
+      err instanceof Error && err.message
+        ? err.message
+        : 'The Nimiq Wallet window did not open. Check that pop-ups are allowed for this site, then try again.',
     )
   }
 
