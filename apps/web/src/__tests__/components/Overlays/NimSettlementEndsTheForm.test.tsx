@@ -48,10 +48,11 @@ vi.mock('@/hooks/useMaps', () => ({
 }))
 vi.mock('@/lib/analytics', () => ({ track: vi.fn(), getReferrer: () => null }))
 
-function renderDrawer(onDone = vi.fn()) {
+function renderDrawer(onDone = vi.fn(), onPurchaseLanded = vi.fn()) {
   const selectedIds = new Set([1127, 1295])
   return {
     onDone,
+    onPurchaseLanded,
     ...render(
       <SelectionDrawer
         visible
@@ -70,6 +71,7 @@ function renderDrawer(onDone = vi.fn()) {
         onBuy={vi.fn()}
         onConfirmPurchase={vi.fn()}
         onDone={onDone}
+        onPurchaseLanded={onPurchaseLanded}
       />,
     ),
   }
@@ -132,5 +134,82 @@ describe('a settled NIM purchase', () => {
     renderDrawer()
     expect(screen.getByText(/PAID 1,687\.4 NIM/i)).toBeTruthy()
     expect(screen.queryByText(/UNSTAMPED/i)).toBeNull()
+  })
+})
+
+/**
+ * A settled NIM purchase has to refresh the map straight away.
+ *
+ * The bug this pins, reported from a device: the only call to `refresh()` lived
+ * in `handleDone`, which runs when the player taps BACK TO THE ATLAS. A NIM
+ * purchase settles on the SERVER while the receipt is on screen, so a player
+ * who read their receipt and then looked at the map behind it saw the plot they
+ * had just paid for still sitting there unowned — and it only corrected itself
+ * if they happened to dismiss the receipt.
+ *
+ * Asserted through the drawer rather than on the callback in isolation,
+ * because the defect was never that the panel refused to call something: it
+ * was that nothing downstream refreshed until a dismissal that is optional.
+ */
+describe('the map after a NIM purchase settles', () => {
+  beforeEach(() => {
+    nimPayment.status = 'idle'
+    nimPayment.quote = null
+    nimPayment.baseTxHash = null
+    vi.clearAllMocks()
+  })
+
+  const settle = () => {
+    nimPayment.status = 'settled'
+    nimPayment.quote = { nim: '58.79', bufferBps: 300 }
+    nimPayment.baseTxHash = '0xdeadbeef'
+  }
+
+  // The control. Without it, "refreshed on settlement" would pass against a
+  // component that refreshed on every render.
+  it('control: nothing is refreshed while the payment is still idle', () => {
+    const { onPurchaseLanded } = renderDrawer()
+    expect(onPurchaseLanded).not.toHaveBeenCalled()
+  })
+
+  it('refreshes as soon as the purchase settles', () => {
+    settle()
+    const { onPurchaseLanded } = renderDrawer()
+    expect(onPurchaseLanded).toHaveBeenCalled()
+  })
+
+  // The actual regression: dismissing is optional, so the refresh cannot
+  // depend on it.
+  it('refreshes without the player dismissing the receipt', () => {
+    settle()
+    const { onPurchaseLanded, onDone } = renderDrawer()
+
+    expect(onPurchaseLanded).toHaveBeenCalled()
+    expect(onDone).not.toHaveBeenCalled()
+  })
+
+  // The receipt is not the only way out: the map is visible above the drawer
+  // and tapping it dismisses via the dim layer. Both routes have to finish the
+  // purchase, which is asserted at the page level in `handleDismissOverlay` —
+  // here we pin the signal that page relies on to know a purchase happened,
+  // since a NIM settlement never touches `useBuyPixels` and `txStep` stays
+  // 'idle' for the whole flow.
+  it('signals the landing that lets any dismissal finish the form', () => {
+    settle()
+    const { onPurchaseLanded } = renderDrawer()
+    // Fired without any dismissal at all: the page uses it to decide that a
+    // later backdrop tap should clear the selection rather than abandon it.
+    expect(onPurchaseLanded).toHaveBeenCalled()
+  })
+
+  it('still refreshes when the player does dismiss it', () => {
+    settle()
+    const { onPurchaseLanded, onDone } = renderDrawer()
+
+    fireEvent.click(screen.getByText(/BACK TO THE ATLAS/i))
+    expect(onDone).toHaveBeenCalled()
+    // `handleDone` refreshes too, so dismissing never leaves a stale map
+    // either — the two paths are independent.
+    expect(onPurchaseLanded).toHaveBeenCalled()
   })
 })

@@ -15,13 +15,16 @@ process.env.GRANT_SPONSOR_PRIVATE_KEY = '0x' + '1'.repeat(64)
 
 const h = vi.hoisted(() => ({
   readContract: vi.fn(),
+  getBalance: vi.fn(),
   writeContract: vi.fn(),
   fetchOwnerPnl: vi.fn(),
   subgraphConfigured: vi.fn(),
   fetchNimUsdScaled: vi.fn(),
 }))
 
-vi.mock('@/lib/chain', () => ({ fallbackReadClient: { readContract: h.readContract } }))
+vi.mock('@/lib/chain', () => ({
+  fallbackReadClient: { readContract: h.readContract, getBalance: h.getBalance },
+}))
 vi.mock('viem', async (importOriginal) => ({
   ...(await importOriginal<typeof import('viem')>()),
   createWalletClient: () => ({ writeContract: h.writeContract }),
@@ -54,9 +57,18 @@ interface Chain {
   balance?: bigint
   allowance?: bigint
   tokens?: string[]
+  /** Native ETH for gas. Defaults well above the floor. */
+  gas?: bigint
 }
 
-function chain({ price = PIXEL, balance = 10_000_000n, allowance = 10_000_000n, tokens = [USDC] }: Chain = {}) {
+function chain({
+  price = PIXEL,
+  balance = 10_000_000n,
+  allowance = 10_000_000n,
+  tokens = [USDC],
+  gas = 5_000_000_000_000_000n,
+}: Chain = {}) {
+  h.getBalance.mockResolvedValue(gas)
   h.readContract.mockImplementation(async ({ functionName }: { functionName: string }) => {
     if (functionName === 'selectionPrice') return price
     if (functionName === 'getAcceptedTokens') return tokens
@@ -237,5 +249,28 @@ describe('when the campaign is off', () => {
     } finally {
       process.env.GRANT_ENABLED = '1'
     }
+  })
+})
+
+/**
+ * Gas. The sponsor defaults to the NIM settler's wallet, so a campaign that
+ * drains its ETH takes NIM settlement down with it — the failure that prompted
+ * this check. A grant must refuse before spending, for the same reason a
+ * settlement must.
+ */
+describe('sponsor gas', () => {
+  it('refuses when the sponsor cannot pay for gas, however much USDC it holds', async () => {
+    chain({ balance: 10_000_000n, allowance: 10_000_000n, gas: 1n })
+    const { status } = await post(claim())
+    expect(status).toBe(503)
+    expect(h.writeContract).not.toHaveBeenCalled()
+  })
+
+  // Control: identical request with gas succeeds, so the refusal above is the
+  // gas floor rather than something else rejecting.
+  it('control: the same claim with gas is paid', async () => {
+    chain({ balance: 10_000_000n, allowance: 10_000_000n })
+    expect((await post(claim())).status).toBe(200)
+    expect(h.writeContract).toHaveBeenCalled()
   })
 })
