@@ -23,6 +23,7 @@ import { isNimiqPay } from '@/lib/nimiq'
  *   profile_saved             { hasUrl }                             fires when the updateProfile tx confirms
  *   profile_save_failed       { reason }                             reason is the raw error, truncated to 100 chars
  *   share_clicked             { kind, platform, mapId }               kind: positions|rank|invite|reward; platform: twitter|telegram|whatsapp|clipboard
+ *   share_handoff_failed      { kind, platform, mapId }               a share tapped inside a host WebView did not reach the native app — the one signal that says whether the escape in lib/externalLink.ts works on real devices
  *   reward_viewed             { campaignId, amountUsd }               the "you won $X" announcement was shown
  *   support_form_opened       {}
  *   activity_feed_shown       { mapId, batchId }                     a live-purchase toast was surfaced (fires per toast, not per session)

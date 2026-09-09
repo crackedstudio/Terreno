@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { track } from '@/lib/analytics'
-import { openExternal, type ExternalTarget } from '@/lib/externalLink'
+import {
+  externalHref,
+  isEmbeddedWebView,
+  shouldOpenInNewTab,
+  watchHandoff,
+  type ExternalTarget,
+} from '@/lib/externalLink'
 import {
   type ShareKind,
   type ShareParams,
@@ -31,10 +37,21 @@ import {
  * + Copy get a single string with the link folded in (some apps drop a payload's
  * text when a url is also set).
  *
- * Every target is opened through `openExternal`, which is what makes the share
- * leave Nimiq Pay. Inside the mini app a plain https link is captured by the
- * host's own in-app browser, so a player tapping X landed on a logged-out
- * x.com INSIDE Nimiq Pay and could not post at all — see `lib/externalLink.ts`.
+ * Each target is a REAL anchor, and that is load-bearing rather than tidy
+ * markup. Inside Nimiq Pay's WebView a share has to escape the host app, and
+ * what a WebView host keys on when deciding whether to hand a navigation to
+ * the OS is whether it was a genuine link activation. Opening the same URL
+ * from script — `window.open`, a `location.href` assignment, a synthetic
+ * `.click()` on a detached anchor — arrives at the host as an ordinary
+ * programmatic navigation and gets kept in the in-app browser. That was the
+ * first fix here and it did not work on a device. So the player's own tap
+ * navigates, and this component only decides what the anchor points AT: the
+ * native scheme in a WebView, the https URL in a browser.
+ *
+ * When the tap goes nowhere — no X app installed, or a host that refuses
+ * schemes — the share is NOT quietly reopened in the in-app browser, which is
+ * the broken outcome wearing a fix's clothes. The post goes to the clipboard
+ * and the player is told, with opening x.com left as their choice.
  */
 export function ShareButton({
   kind,
@@ -56,13 +73,29 @@ export function ShareButton({
 }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  /** Which target's tap went nowhere, so the menu can offer a way through. */
+  const [stranded, setStranded] = useState<{ platform: string; web: string } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  const cancelWatch = useRef<(() => void) | null>(null)
+
+  // Resolved after mount: `navigator` does not exist during SSR, and an href
+  // that differed between the server and client render would be a hydration
+  // mismatch on every share button in the app.
+  const [embedded, setEmbedded] = useState(false)
+  useEffect(() => setEmbedded(isEmbeddedWebView()), [])
+
+  // A watchdog outlives the click that started it, so it has to be cancelled
+  // on unmount or it fires against a component that is gone.
+  useEffect(() => () => cancelWatch.current?.(), [])
 
   // Close the fallback menu on an outside click.
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+      if (!rootRef.current?.contains(e.target as Node)) {
+        setOpen(false)
+        setStranded(null)
+      }
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -74,18 +107,42 @@ export function ShareButton({
 
   // Our own menu is the single, consistent UI on every device. We deliberately
   // don't call the Web Share API: on iOS it popped the system sheet AND then
-  // this menu, and it hid our chosen targets behind the OS picker. Tapping a
-  // target below opens it directly, through `openExternal`.
-  const onShare = () => setOpen((v) => !v)
+  // this menu, and it hid our chosen targets behind the OS picker. Each target
+  // below is a link the player taps — see the note above on why that matters.
+  const onShare = () => {
+    setStranded(null)
+    setOpen((v) => !v)
+  }
 
-  const openTarget = (platform: string, target: ExternalTarget) => {
+  /**
+   * Runs alongside the anchor's own navigation — never instead of it. The
+   * default is deliberately not prevented: the whole point is that the host
+   * sees the player's tap, not ours.
+   */
+  const onTargetTap = (platform: string, target: ExternalTarget) => {
     track('share_clicked', { kind, platform, mapId: params.mapId ?? null })
-    openExternal(target)
-    setOpen(false)
+    setStranded(null)
+
+    // A browser tab always opens, so there is nothing to watch and no menu to
+    // keep around. Only a WebView can swallow the tap.
+    if (!embedded) {
+      setOpen(false)
+      return
+    }
+
+    cancelWatch.current?.()
+    cancelWatch.current = watchHandoff(() => {
+      track('share_handoff_failed', { kind, platform, mapId: params.mapId ?? null })
+      // Put the post somewhere they can use it before telling them it failed,
+      // so the notice is describing something already true.
+      void navigator.clipboard?.writeText(message).catch(() => {})
+      setStranded({ platform, web: target.web })
+    })
   }
 
   const copyLink = async () => {
     track('share_clicked', { kind, platform: 'clipboard', mapId: params.mapId ?? null })
+    setStranded(null)
     try {
       await navigator.clipboard.writeText(message)
       setCopied(true)
@@ -134,60 +191,138 @@ export function ShareButton({
           <TargetRow
             icon={<XGlyph />}
             label="X"
-            onClick={() =>
-              openTarget('twitter', {
-                web: buildXIntentUrl(composeXText(kind, params), url),
-                app: buildXAppUrl(composeXText(kind, params), url),
-              })
-            }
+            target={{
+              web: buildXIntentUrl(composeXText(kind, params), url),
+              app: buildXAppUrl(composeXText(kind, params), url),
+            }}
+            embedded={embedded}
+            onTap={(t) => onTargetTap('twitter', t)}
           />
           <TargetRow
             icon={<WhatsAppGlyph />}
             label="WhatsApp"
-            onClick={() =>
-              openTarget('whatsapp', {
-                web: buildWhatsAppUrl(message),
-                app: buildWhatsAppAppUrl(message),
-              })
-            }
+            target={{ web: buildWhatsAppUrl(message), app: buildWhatsAppAppUrl(message) }}
+            embedded={embedded}
+            onTap={(t) => onTargetTap('whatsapp', t)}
           />
           <TargetRow
             icon={<TelegramGlyph />}
             label="Telegram"
-            onClick={() =>
-              openTarget('telegram', {
-                web: buildTelegramUrl(telegramText, url),
-                app: buildTelegramAppUrl(telegramText, url),
-              })
-            }
+            target={{
+              web: buildTelegramUrl(telegramText, url),
+              app: buildTelegramAppUrl(telegramText, url),
+            }}
+            embedded={embedded}
+            onTap={(t) => onTargetTap('telegram', t)}
           />
-          <TargetRow icon={<LinkGlyph />} label={copied ? 'Copied' : 'Copy link'} onClick={copyLink} />
+          <CopyRow icon={<LinkGlyph />} label={copied ? 'Copied' : 'Copy link'} onClick={copyLink} />
+
+          {/* The tap went nowhere. Say so, say what we did about it, and leave
+              opening x.com in here as the player's decision rather than ours —
+              silently doing it for them is the bug this replaced. */}
+          {stranded && (
+            <div
+              role="status"
+              style={{
+                borderTop: '2px solid var(--edge)',
+                marginTop: 4,
+                paddingTop: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 7,
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 10,
+                  lineHeight: 1.55,
+                  color: 'var(--text)',
+                }}
+              >
+                {stranded.platform === 'twitter' ? 'X' : 'That app'} didn&apos;t open. Your post is
+                copied — paste it there.
+              </p>
+              <a
+                href={stranded.web}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pixel-btn pixel-btn-sm"
+                style={{ fontSize: 9, textDecoration: 'none', justifyContent: 'center' }}
+                onClick={() => setOpen(false)}
+              >
+                OPEN IN THIS APP INSTEAD
+              </a>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-function TargetRow({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+/**
+ * One share destination, as a real link.
+ *
+ * An anchor rather than a button because the element type is the fix: a tap on
+ * `<a href>` reaches a WebView host as a link activation, which is what it
+ * needs to see before it will hand the URL to the OS. A button calling
+ * `window.open` reaches it as a script navigation and stays in the in-app
+ * browser. `onTap` runs alongside the navigation and never cancels it.
+ */
+function TargetRow({
+  icon,
+  label,
+  target,
+  embedded,
+  onTap,
+}: {
+  icon: React.ReactNode
+  label: string
+  target: ExternalTarget
+  embedded: boolean
+  onTap: (target: ExternalTarget) => void
+}) {
+  const href = externalHref(target, embedded)
+  const newTab = shouldOpenInNewTab(href)
+  return (
+    <a
+      href={href}
+      // A scheme link must navigate the page it is on: pointing `_blank` at
+      // `twitter://` opens a blank tab in a browser and the in-app browser in
+      // a WebView, which is the outcome being avoided.
+      target={newTab ? '_blank' : undefined}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      role="menuitem"
+      onClick={() => onTap(target)}
+      className="font-display"
+      style={ROW_STYLE}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(31,59,232,0.14)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      <span style={{ display: 'flex', width: 16, height: 16, color: 'var(--held)' }}>{icon}</span>
+      {label.toUpperCase()}
+    </a>
+  )
+}
+
+/** Copy stays a button — it navigates nowhere and has nothing to hand off. */
+function CopyRow({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+}) {
   return (
     <button
       onClick={onClick}
       role="menuitem"
       className="font-display"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%',
-        padding: '9px 10px',
-        fontSize: 15,
-        letterSpacing: 1.5,
-        color: 'var(--text)',
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        textAlign: 'left',
-      }}
+      style={{ ...ROW_STYLE, border: 'none' }}
       onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(31,59,232,0.14)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
@@ -195,6 +330,22 @@ function TargetRow({ icon, label, onClick }: { icon: React.ReactNode; label: str
       {label.toUpperCase()}
     </button>
   )
+}
+
+const ROW_STYLE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  width: '100%',
+  padding: '9px 10px',
+  fontSize: 15,
+  letterSpacing: 1.5,
+  color: 'var(--text)',
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  textAlign: 'left',
+  textDecoration: 'none',
 }
 
 /* Minimal inline brand glyphs (lucide has no brand logos). 16px, currentColor. */
