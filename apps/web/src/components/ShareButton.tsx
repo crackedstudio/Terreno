@@ -2,13 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { track } from '@/lib/analytics'
+import { openExternal, type ExternalTarget } from '@/lib/externalLink'
 import {
   type ShareKind,
   type ShareParams,
   SHARE_LINK,
   buildXIntentUrl,
+  buildXAppUrl,
   buildTelegramUrl,
+  buildTelegramAppUrl,
   buildWhatsAppUrl,
+  buildWhatsAppAppUrl,
   composeXText,
   composeTelegramText,
   composeShareMessage,
@@ -26,6 +30,11 @@ import {
  * The text always travels with the link: the X intent takes text+url; WhatsApp
  * + Copy get a single string with the link folded in (some apps drop a payload's
  * text when a url is also set).
+ *
+ * Every target is opened through `openExternal`, which is what makes the share
+ * leave Nimiq Pay. Inside the mini app a plain https link is captured by the
+ * host's own in-app browser, so a player tapping X landed on a logged-out
+ * x.com INSIDE Nimiq Pay and could not post at all — see `lib/externalLink.ts`.
  */
 export function ShareButton({
   kind,
@@ -66,12 +75,12 @@ export function ShareButton({
   // Our own menu is the single, consistent UI on every device. We deliberately
   // don't call the Web Share API: on iOS it popped the system sheet AND then
   // this menu, and it hid our chosen targets behind the OS picker. Tapping a
-  // target below opens it directly (each is a user-gesture window.open).
+  // target below opens it directly, through `openExternal`.
   const onShare = () => setOpen((v) => !v)
 
-  const openTarget = (platform: string, href: string) => {
+  const openTarget = (platform: string, target: ExternalTarget) => {
     track('share_clicked', { kind, platform, mapId: params.mapId ?? null })
-    window.open(href, '_blank', 'noopener,noreferrer')
+    openExternal(target)
     setOpen(false)
   }
 
@@ -122,9 +131,36 @@ export function ShareButton({
             gap: 2,
           }}
         >
-          <TargetRow icon={<XGlyph />} label="X" onClick={() => openTarget('twitter', buildXIntentUrl(composeXText(kind, params), url))} />
-          <TargetRow icon={<WhatsAppGlyph />} label="WhatsApp" onClick={() => openTarget('whatsapp', buildWhatsAppUrl(message))} />
-          <TargetRow icon={<TelegramGlyph />} label="Telegram" onClick={() => openTarget('telegram', buildTelegramUrl(telegramText, url))} />
+          <TargetRow
+            icon={<XGlyph />}
+            label="X"
+            onClick={() =>
+              openTarget('twitter', {
+                web: buildXIntentUrl(composeXText(kind, params), url),
+                app: buildXAppUrl(composeXText(kind, params), url),
+              })
+            }
+          />
+          <TargetRow
+            icon={<WhatsAppGlyph />}
+            label="WhatsApp"
+            onClick={() =>
+              openTarget('whatsapp', {
+                web: buildWhatsAppUrl(message),
+                app: buildWhatsAppAppUrl(message),
+              })
+            }
+          />
+          <TargetRow
+            icon={<TelegramGlyph />}
+            label="Telegram"
+            onClick={() =>
+              openTarget('telegram', {
+                web: buildTelegramUrl(telegramText, url),
+                app: buildTelegramAppUrl(telegramText, url),
+              })
+            }
+          />
           <TargetRow icon={<LinkGlyph />} label={copied ? 'Copied' : 'Copy link'} onClick={copyLink} />
         </div>
       )}

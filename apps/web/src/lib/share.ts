@@ -143,10 +143,32 @@ export function buildXIntentUrl(text: string, url: string): string {
   return `https://x.com/intent/tweet?${q.toString()}`
 }
 
+/**
+ * The same X composer, addressed to the installed app rather than the web.
+ *
+ * Undocumented and unsupported by X — the app kept the pre-rebrand `twitter://`
+ * scheme and never published a replacement — so nothing may assume it works:
+ * `openExternal` falls back to {@link buildXIntentUrl} when the hand-off does
+ * not happen. It exists because inside a host WebView the https URL cannot
+ * reach a logged-in X, and a composer nobody is signed into posts nothing.
+ *
+ * The scheme takes ONE field, so the link is folded into the message here
+ * rather than riding a separate `url` param as it does on the web intent.
+ */
+export function buildXAppUrl(text: string, url: string): string {
+  return `twitter://post?message=${encodeURIComponent(`${text}\n\n${url}`)}`
+}
+
 /** Telegram share URL (prefills the message with the link + brag text). */
 export function buildTelegramUrl(text: string, url: string): string {
   const q = new URLSearchParams({ url, text })
   return `https://t.me/share/url?${q.toString()}`
+}
+
+/** The same Telegram share, addressed to the installed app. */
+export function buildTelegramAppUrl(text: string, url: string): string {
+  const q = new URLSearchParams({ url, text })
+  return `tg://msg_url?${q.toString()}`
 }
 
 /**
@@ -157,6 +179,12 @@ export function buildTelegramUrl(text: string, url: string): string {
 export function buildWhatsAppUrl(message: string): string {
   const q = new URLSearchParams({ text: message })
   return `https://api.whatsapp.com/send?${q.toString()}`
+}
+
+/** The same WhatsApp message, addressed to the installed app. */
+export function buildWhatsAppAppUrl(message: string): string {
+  const q = new URLSearchParams({ text: message })
+  return `whatsapp://send?${q.toString()}`
 }
 
 /**

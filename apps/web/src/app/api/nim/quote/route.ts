@@ -185,6 +185,11 @@ export async function POST(request: Request) {
       usdMicros: usdMicros.toString(),
       bufferBps: NIM_BUFFER_BPS,
       expiresAt: order.expiresAt,
+      // The client draws how much of the quote is left as a meter, and a
+      // meter needs a full scale. Sent rather than mirrored client-side:
+      // NIM_QUOTE_TTL_SECONDS is an env var, and a copy in the bundle would
+      // keep drawing a confident bar months after somebody changed it.
+      ttlSeconds: NIM_QUOTE_TTL_SECONDS,
     })
   } catch (err) {
     logger.error('nim quote failed', { err: String(err), mapId })

@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { NimiqProviderError, sendNimWithData } from '@/lib/nimiqProvider'
 import { isNimiqPay } from '@/lib/nimiq'
+import { MAX_POLLS, POLL_MS, isQuotePayable } from '@/lib/nim/quote'
 import type { MapId } from '@/lib/maps/types'
 
 /**
@@ -46,10 +47,10 @@ export interface NimQuote {
   usdMicros: string
   bufferBps: number
   expiresAt: number
+  /** Full life of the quote in seconds, for the client's countdown meter.
+   *  Optional: a response cached from before it was added still pays fine. */
+  ttlSeconds?: number
 }
-
-const POLL_MS = 4_000
-const MAX_POLLS = 45 // ~3 minutes
 
 export function useNimPayment(mapId: MapId, recipient: string | undefined) {
   const [status, setStatus] = useState<NimPayStatus>('idle')
@@ -101,6 +102,17 @@ export function useNimPayment(mapId: MapId, recipient: string | undefined) {
   /** Step 2 + 3. Tap only — this is what raises the native dialog. */
   const payAndSettle = useCallback(async () => {
     if (!quote) return
+    // Refuse before the wallet dialog, never after. Past this line the NIM has
+    // left the player's account and an expired order cannot be settled or
+    // automatically refunded, so a stale quote is dropped and re-quoted rather
+    // than paid — see SETTLEMENT_WINDOW_MS.
+    if (!isQuotePayable(quote)) {
+      setQuote(null)
+      setStatus('idle')
+      setProgress(null)
+      setError('That price is too old to pay safely. Get a fresh NIM price.')
+      return
+    }
     setError(null)
     setStatus('awaiting-payment')
     // Names the wallet the player is actually looking at. In a browser the
