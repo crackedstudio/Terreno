@@ -35,21 +35,25 @@ export const metadata: Metadata = {
   // 17, older Firefox), with sizes declared so a browser picks the right file
   // rather than downscaling 32 to 16 and blurring it.
   //
-  // Both slots used to point at Mondeto-era artwork: a green globe, from before
-  // the rename. Worse, the SVG path did not exist at all, so the site shipped
-  // with no favicon for a while. Anything added here should be checked as a 200
-  // on the deployed URL, not just as a file in public/.
+  // `/favicon.ico` is listed too: browsers, bookmark managers, in-app
+  // webviews and link unfurlers fetch that path unconditionally, before (or
+  // instead of) reading these tags, and a 404 there leaves whatever icon the
+  // client last cached in place. Every file here must be the Terreno mark
+  // and must be checked as a 200 on the deployed URL, not just as a file in
+  // public/.
   //
-  // `apple-touch-icon.png` is rasterised from the same 7x7 grid as the SVG, so
-  // the two cannot drift, and is deliberately OPAQUE on the brand paper
-  // (#E8E6E1, sampled from logo-stacked.png). iOS composites a transparent
-  // home-screen icon onto black, and this mark is near-black.
+  // All raster files are rasterised from the same 7x7 grid as the SVG, so
+  // they cannot drift. `apple-touch-icon.png` is deliberately OPAQUE on the
+  // brand paper (#E8E6E1, sampled from logo-stacked.png): iOS composites a
+  // transparent home-screen icon onto black, and this mark is near-black.
   icons: {
     icon: [
       { url: '/brand/logo/logo-mark-color.svg', type: 'image/svg+xml' },
       { url: '/favicon/favicon-32.png', sizes: '32x32', type: 'image/png' },
       { url: '/favicon/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '48x48 32x32 16x16', type: 'image/x-icon' },
     ],
+    shortcut: '/favicon.ico',
     apple: '/favicon/apple-touch-icon.png',
   },
   openGraph: {
